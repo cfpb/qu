@@ -1,0 +1,17 @@
+/doc
+/docs
+/target
+/lib
+/classes
+/checkouts
+pom.xml
+*.jar
+*.class
+.lein-deps-sum
+.lein-failures
+.lein-plugins
+.lein-env
+/out
+/node_modules/
+/resources/components/
+.lein-repl-history

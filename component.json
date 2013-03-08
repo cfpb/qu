@@ -1,0 +1,10 @@
+{
+  "name": "data-api",
+  "version": "0.0.1",
+  "main": ["./resources/css/app.css", "./resources/js/app.js"],
+  "dependencies": {
+    "jquery": "~1.8.0",
+    "underscore": "~1.4.4",
+    "bootstrap": "~2.3.1"
+  }
+}

@@ -1,0 +1,183 @@
+{ "info": {
+    "name": "2011 State Populations",
+    "description": "State population by age, sex, race, and Hispanic origin.",
+    "url": "http://www.census.gov/popest/data/datasets.html"
+  },
+  "concepts": {
+    "state": {
+      "type": "string",
+      "attributes": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "slices": {
+    "population_estimates": {
+      "table": "population_estimates",
+      "dimensions": [
+        "region", "division", "state",
+        "sex", "origin", "race", "age"
+      ],
+      "metrics": [
+        "population_2010",
+        "population_estimate_2010",
+        "population_estimate_2011"
+      ]
+    }
+  },  
+  "tables": {
+    "population_estimates": {
+      "sources": [
+        "SC-EST2011-alldata6-AL_ID.csv",
+        "SC-EST2011-alldata6-IL_MO.csv",
+        "SC-EST2011-alldata6-MT_PA.csv",
+        "SC-EST2011-alldata6-RI_WY.csv"
+      ],
+      "columns": {
+        "SUMLEV": {
+          "skip": true,
+          "type": "string"
+        },
+        "REGION": {
+          "name": "region",
+          "type": "lookup",
+          "lookup": {
+            "1": "Northeast",
+            "2": "Midwest",
+            "3": "South",
+            "4": "West"
+          }
+        },
+        "DIVISION": {
+          "name": "division",
+          "type": "lookup",
+          "lookup": {
+            "1": "New England",
+            "2": "Middle Atlantic",
+            "3": "East North Central",
+            "4": "West North Central",
+            "5": "South Atlantic",
+            "6": "East South Central",
+            "7": "West South Central",
+            "8": "Mountain",
+            "9": "Pacific"
+          }
+        },
+        "STATE": {
+          "name": "state",
+          "type": "lookup",
+          "lookup": {
+            "01": "Alabama",
+            "02": "Alaska",
+            "04": "Arizona",
+            "05": "Arkansas",
+            "06": "California",
+            "08": "Colorado",
+            "09": "Connecticut",
+            "10": "Delaware",
+            "11": "District of Columbia",
+            "12": "Florida",
+            "13": "Georgia",
+            "15": "Hawaii",
+            "16": "Idaho",
+            "17": "Illinois",
+            "18": "Indiana",
+            "19": "Iowa",
+            "20": "Kansas",
+            "21": "Kentucky",
+            "22": "Louisiana",
+            "23": "Maine",
+            "24": "Maryland",
+            "25": "Massachusetts",
+            "26": "Michigan",
+            "27": "Minnesota",
+            "28": "Mississippi",
+            "29": "Missouri",
+            "30": "Montana",
+            "31": "Nebraska",
+            "32": "Nevada",
+            "33": "New Hampshire",
+            "34": "New Jersey",
+            "35": "New Mexico",
+            "36": "New York",
+            "37": "North Carolina",
+            "38": "North Dakota",
+            "39": "Ohio",
+            "40": "Oklahoma",
+            "41": "Oregon",
+            "42": "Pennsylvania",
+            "44": "Rhode Island",
+            "45": "South Carolina",
+            "46": "South Dakota",
+            "47": "Tennessee",
+            "48": "Texas",
+            "49": "Utah",
+            "50": "Vermont",
+            "51": "Virginia",
+            "53": "Washington",
+            "54": "West Virginia",
+            "55": "Wisconsin",
+            "56": "Wyoming",
+            "72": "Puerto Rico"
+          }
+        },
+        "SEX": {
+          "name": "sex",
+          "type": "lookup",
+          "lookup": {
+            "0": "Total",
+            "1": "Male",
+            "2": "Female"
+          }
+        },
+        "ORIGIN": {
+          "name": "origin",
+          "type": "lookup",
+          "lookup": {
+            "0": "Total",
+            "1": "Not Hispanic",
+            "2": "Hispanic"
+          }
+        },
+        "RACE": {
+          "name": "race",
+          "type": "lookup",
+          "lookup": {
+            "1": "White",
+            "2": "Black or African American",
+            "3": "American Indian or Alaska Native",
+            "4": "Asian",
+            "5": "Native Hawaiian or Pacific Islander",
+            "6": "Two or More Races"
+          }
+        },
+        "AGE": {
+          "name": "age",
+          "type": "integer"
+        },
+        "CENSUS2010POP": {
+          "name": "population_2010",
+          "type": "integer",
+          "description": "4/1/2010 resident Census 2010 population"
+        },
+        "ESTIMATESBASE2010": {
+          "skip": true,
+          "type": "integer",
+          "description": "4/1/2010 resident population estimates base"
+        },
+        "POPESTIMATE2010": {
+          "name": "population_estimate_2010",
+          "type": "integer",
+          "description": "7/1/2010 resident population estimate"
+        },
+        "POPESTIMATE2011": {
+          "name": "population_estimate_2011",
+          "type": "integer",
+          "description": "7/1/2011 resident population estimate"
+        }
+      }
+    }
+  }
+}
