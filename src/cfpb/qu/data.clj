@@ -9,11 +9,6 @@ after retrieval."
              [collection :as coll]
              json]))
 
-(def ^{:doc "Allowed clauses for use in slice API requests. TODO: Move
-  this over to resources.clj."}
-  clauses
-  #{:$select :$where :$orderBy :$group :$limit :$offset})
-
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
 stored in a Mongo database called 'metadata'."

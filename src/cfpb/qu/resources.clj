@@ -59,22 +59,26 @@ querying the database."
                              value
                              (get-in slice-def [:types dimension]))))))
 
-(defn- parse-params
+(defn parse-params
   "Given a slice definition and the request parameters, convert those
 parameters into something we can use. Specifically, pull out the
 dimensions and clauses and cast the dimension values into something we
 can query with."
-  [dataset slice-def params]
-  (let [dimensions (set (:dimensions slice-def))]
+  [slice-def params]
+  (let [dimensions (set (:dimensions slice-def))
+        allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset}]
     {:dimensions (->> (into {} (filter (fn [[key value]]
                                          (and
                                           (not= value "")
                                           (dimensions (name key)))) params))
                       (cast-dimensions slice-def))
-     :clauses (into {} (filter (fn [[key value]]
-                                 (and
-                                  (not= value "")
-                                  (data/clauses key))) params))}))
+     :clauses (into {} (->> params
+                            (map (fn [[key value]]
+                                   [(keyword key) value]))
+                            (filter (fn [[key value]]
+                                      (and
+                                       (not= value "")
+                                       (allowed-clauses key))))))}))
 
 
 (defresource
@@ -101,7 +105,7 @@ can query with."
                      headers (:headers request)
                      slice-def (get-in metadata [:slices slice])]
                  (mongo/with-db (mongo/get-db dataset)
-                   (let [parsed-params (parse-params dataset slice-def params)
+                   (let [parsed-params (parse-params slice-def params)
                          data (data/get-data slice-def parsed-params)]
                      (views/slice (:media-type representation)
                                   data
