@@ -59,14 +59,15 @@ querying the database."
                              value
                              (get-in slice-def [:types dimension]))))))
 
+(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
+
 (defn parse-params
   "Given a slice definition and the request parameters, convert those
 parameters into something we can use. Specifically, pull out the
 dimensions and clauses and cast the dimension values into something we
 can query with."
   [slice-def params]
-  (let [dimensions (set (:dimensions slice-def))
-        allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset}]
+  (let [dimensions (set (:dimensions slice-def))]
     {:dimensions (->> (into {} (filter (fn [[key value]]
                                          (and
                                           (not= value "")
@@ -79,7 +80,6 @@ can query with."
                                       (and
                                        (not= value "")
                                        (allowed-clauses key))))))}))
-
 
 (defresource
   ^{:doc "Resource for an individual slice."}

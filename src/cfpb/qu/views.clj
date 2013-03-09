@@ -72,6 +72,11 @@
       (data/select-fields select)
       (data/slice-columns slice-def))))
 
+(defn- fill-in-input-value [params]
+  (fn [node]
+    ((html/set-attr :value (params (get-in node [:attrs :name])))
+     node)))
+
 (defsnippet slice-html "templates/slice.html" [:#content]
   [params action dataset metadata slice-name slice-def columns data]
 
@@ -106,6 +111,9 @@
                    (html/set-attr :id (str "field-" dimension))
                    (html/set-attr :value (or (params (keyword dimension))
                                              (params dimension)))))
+
+  [:.clause-field :input]
+  (fill-in-input-value params)
 
   [:#query-results :thead :tr]
   (html/content (html/html
