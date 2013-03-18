@@ -94,17 +94,44 @@
    :>= "$gte"
    :!= "$ne"})
 
-; TODO does not support :NOT
+(def mongo-opposites
+  {"$lt" "$gte"
+   "$lte" "$gt"
+   "$gt" "$lte"
+   "$gte" "$lt"
+   "$and" "$or"})
+
+(declare mongo-eval-not)
+
 (defn mongo-eval [ast]
   (cond
+   (get ast :not)
+   (mongo-eval-not (:not ast))
+   
    (get ast :op)
-   (let [op ((:op ast) mongo-ops)
-         left (:left ast)
-         right (:right ast)]
-     {op [(mongo-eval left) (mongo-eval right)]})
+   (let [{:keys [op left right]} ast]
+     {(op mongo-ops) [(mongo-eval left) (mongo-eval right)]})
 
    (get ast :comparison)
    (let [[ident op value] (:comparison ast)]
      (if (= op :=)
        {ident value}
        {ident {(op mongo-ops) value}}))))
+
+(defn mongo-eval-not [ast]
+  (cond
+   (get ast :not)
+   (mongo-eval (:not ast))
+   
+   (get ast :op)
+   (let [{:keys [op left right]} ast]
+     (case op
+       :OR {"$nor" [(mongo-eval left) (mongo-eval right)]}
+       :AND {"$or" [(mongo-eval-not left) (mongo-eval-not right)]}))
+
+   (get ast :comparison)
+   (let [[ident op value] (:comparison ast)]
+     (case op
+       :!= {ident value}
+       := {ident {"$ne" value}}
+       {ident {(mongo-opposites (op mongo-ops)) value}}))))
