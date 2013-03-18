@@ -19,6 +19,11 @@
   (is (= (p/parse value "'hello world'")
          "hello world")))
 
+(deftest parse-value-boolean-literals
+  (are [x y] (= x y)
+       {:bool true} (p/parse value "true")
+       {:bool false} (p/parse value "false")))
+
 (deftest parse-comp-op
   (are [x y] (= x y)
        :< (p/parse comp-op "<")
@@ -113,6 +118,14 @@
                   :right {:comparison [:name := "Pete"]}}}
          (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")"))))
 
+(deftest parse-is-null
+  (is (= {:comparison [:name := nil]}
+         (parse "name IS NULL"))))
+
+(deftest parse-is-not-null
+  (is (= {:comparison [:name :!= nil]}
+         (parse "name IS NOT NULL"))))
+
 (deftest mongo-eval-equality
   (is (= (mongo-eval (parse "length = 3"))
          {:length 3})))
@@ -178,8 +191,8 @@
   (is (=
        {"$nor" [{:length {"$gt" 3}}
                 {"$or" [{:height {"$lte" 4.5}}
-                        {:name {"$ne" "Pete"}}]}]}
-       (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name = \"Pete\"))")))))
+                        {:name nil}]}]}
+       (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name IS NOT NULL))")))))
 
 (deftest mongo-eval-double-not-and
   (is (=
