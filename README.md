@@ -44,10 +44,8 @@ commands:
 ```sh
 cd qu
 lein deps
-npm install grunt -g
-npm install bower -g
-npm install
-bower install
+npm install -g grunt-cli bower
+npm install && bower install
 grunt
 ```
 
