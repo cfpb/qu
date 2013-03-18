@@ -8,8 +8,10 @@
             number dq-str sq-str chr
             word-in regex starts-with?]]))
 
-;; TODO support NOT in mongo
-;; TODO support functions
+(defn ci-string
+  "Match case insensitive strings."
+  [string]
+  (regex (re-pattern (str "(?i)" string))))
 
 (defn numeric-expr []
   (let [expr (expr)]
@@ -21,8 +23,13 @@
 (defn strexp []
   (any dq-str sq-str))
 
+(defn boolean-literal []
+  (let [lit (any #(ci-string "true")
+                 #(ci-string "false"))]
+    {:bool (= (str/lower-case lit) "true")}))
+
 (defn value []
-  (any numeric strexp))
+  (any numeric strexp boolean-literal))
 
 (defn comp-op []
   (let [op (word-in [">" ">=" "=" "!=" "<" "<="])]
@@ -32,18 +39,34 @@
   (let [ident (regex #"[A-Za-z][A-Za-z0-9\-_]*")]
     (keyword ident)))
 
-(defn comparison []
+(defn comparison-normal []
   (let [identifier (identifier)
         op (comp-op)
         value (value)]
     {:comparison [identifier op value]}))
 
+(defn comparison-null []
+  (let [identifier (identifier)
+        is-null (ci-string "IS NULL")]
+    {:comparison [identifier := nil]}))
+
+(defn comparison-not-null []
+  (let [identifier (identifier)
+        is-null (ci-string "IS NOT NULL")]
+    {:comparison [identifier :!= nil]}))
+
+(defn comparison []
+  (any comparison-normal
+       comparison-null
+       comparison-not-null))
+
 (defn and-or-op []
-  (let [op (word-in ["AND" "OR" "and" "or"])]
+  (let [op (any #(ci-string "AND")
+                #(ci-string "OR"))]
     (keyword (str/upper-case op))))
 
 (defn not-op []
-  (let [op (word-in ["NOT" "not"])]
+  (let [op (ci-string "NOT")]
     (keyword (str/upper-case op))))
 
 (declare where-expr)
@@ -85,7 +108,7 @@
 (defn parse [clause]
   (p/parse where-expr clause))
 
-(def mongo-ops
+(def mongo-operators
   {:AND "$and"
    :OR "$or"
    :< "$lt"
@@ -110,13 +133,20 @@
    
    (get ast :op)
    (let [{:keys [op left right]} ast]
-     {(op mongo-ops) [(mongo-eval left) (mongo-eval right)]})
+     {(op mongo-operators) [(mongo-eval left) (mongo-eval right)]})
 
    (get ast :comparison)
-   (let [[ident op value] (:comparison ast)]
+   (let [[ident op value] (:comparison ast)
+         value (mongo-eval value)]
      (if (= op :=)
        {ident value}
-       {ident {(op mongo-ops) value}}))))
+       {ident {(op mongo-operators) value}}))
+
+   (get ast :bool)
+   (:bool ast)
+   
+   :default
+   ast))
 
 (defn mongo-eval-not [ast]
   (cond
@@ -130,8 +160,15 @@
        :AND {"$or" [(mongo-eval-not left) (mongo-eval-not right)]}))
 
    (get ast :comparison)
-   (let [[ident op value] (:comparison ast)]
+   (let [[ident op value] (:comparison ast)
+         value (mongo-eval value)]
      (case op
        :!= {ident value}
        := {ident {"$ne" value}}
-       {ident {(mongo-opposites (op mongo-ops)) value}}))))
+       {ident {(mongo-opposites (op mongo-operators)) value}}))
+
+   (get ast :bool)
+   (not (:bool ast))
+
+   :default
+   (not ast)))
