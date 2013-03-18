@@ -8,7 +8,7 @@
             [codox "0.6.4"]
             [lein-marginalia "0.7.1"]  
             [lein-outdated "1.0.0"]]
-  :dependencies [[org.clojure/clojure "1.5.0"]
+  :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.3"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
