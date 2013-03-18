@@ -113,3 +113,77 @@
                   :right {:comparison [:name := "Pete"]}}}
          (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")"))))
 
+(deftest mongo-eval-equality
+  (is (= (mongo-eval (parse "length = 3"))
+         {:length 3})))
+
+(deftest mongo-eval-comparison
+  (are [x y] (= x y)
+       
+       {:length {"$lt" 3}}
+       (mongo-eval (parse "length < 3"))
+
+       {:length {"$gte" 3}}
+       (mongo-eval (parse "length >= 3"))))
+
+(deftest mongo-eval-and
+  (is (=
+       {"$and" [ {:length {"$gt" 3}} {:height 4.5}]}
+       (mongo-eval (parse "length > 3 AND height = 4.5")))))
+
+(deftest mongo-eval-or
+  (is (=
+       {"$or" [{:length {"$gt" 3}} {:height 4.5}]}
+       (mongo-eval (parse "length > 3 OR height = 4.5")))))
+
+(deftest mongo-eval-parentheses
+  (is (=
+       {"$and" [{:length {"$gt" 3}}
+                {"$or" [{:height {"$lt" 4.5}}
+                        {:name "Pete"}]}]}
+       (mongo-eval
+        (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")")))))
+
+(deftest mongo-eval-not-equal
+  (is (=
+       {:name {"$ne" "Pete"}}
+       (mongo-eval (parse "NOT name = \"Pete\"")))))
+
+(deftest mongo-eval-not-ne
+  (is (=
+       {:name "Pete"}
+       (mongo-eval (parse "NOT name != \"Pete\"")))))
+
+(deftest mongo-eval-not-comparison
+  (is (=
+       {:length {"$gte" 3}}
+       (mongo-eval (parse "NOT length < 3")))))
+
+(deftest mongo-eval-not-and
+  (is (=
+       {"$or" [{:length {"$lte" 3}} {:height {"$ne" 4.5}}]}
+       (mongo-eval (parse "NOT (length > 3 AND height = 4.5)")))))
+
+(deftest mongo-eval-not-binding-less-than-and
+  (is (=
+       {"$and" [{:length {"$lte" 3}} {:height 4.5}]}
+       (mongo-eval (parse "NOT length > 3 AND height = 4.5")))))
+
+(deftest mongo-eval-not-and
+  (is (=
+       {"$nor" [{:length {"$gt" 3}} {:height 4.5}]}
+       (mongo-eval (parse "NOT (length > 3 OR height = 4.5)")))))
+
+(deftest mongo-eval-double-not-or
+  (is (=
+       {"$nor" [{:length {"$gt" 3}}
+                {"$or" [{:height {"$lte" 4.5}}
+                        {:name {"$ne" "Pete"}}]}]}
+       (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name = \"Pete\"))")))))
+
+(deftest mongo-eval-double-not-and
+  (is (=
+       {"$or" [{:length {"$lte" 3}}
+               {"$and" [{:height {"$gt" 4.5}}
+                        {:name "Pete"}]}]}
+       (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))")))))
