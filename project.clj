@@ -1,6 +1,6 @@
 (defproject qu "0.1.0-SNAPSHOT"
   :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :url "https://github.com/cfpb/qu"
   :source-paths ["src"]
   :plugins [[lein-ring "0.8.2"]
             [lein-kibit "0.0.7"]
@@ -21,5 +21,7 @@
                  [parse-ez "0.3.4"]]
   :main cfpb.qu.core
   :ring {:handler cfpb.qu.core/app}
+  :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
+          :src-linenum-anchor-prefix "L"}
   :profiles {:dev
              {:dependencies [[ring-mock "0.1.3"]]}})
