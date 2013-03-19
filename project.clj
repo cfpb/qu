@@ -3,11 +3,8 @@
   :url "https://github.com/cfpb/qu"
   :source-paths ["src"]
   :plugins [[lein-ring "0.8.2"]
-            [lein-kibit "0.0.7"]
-            [jonase/eastwood "0.0.2"]
             [codox "0.6.4"]
-            [lein-marginalia "0.7.1"]  
-            [lein-outdated "1.0.0"]]
+            [lein-cloverage "1.0.2"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.3"]
                  [ring/ring-core "1.1.6"]
