@@ -1,5 +1,7 @@
 # qu
 
+[![Build Status](https://travis-ci.org/cfpb/qu.png)](https://travis-ci.org/cfpb/qu)
+
 _qu_ is an **in-progress** data platform created by the [CFPB][] to
 serve their public data sets.
 
