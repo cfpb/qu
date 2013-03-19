@@ -13,6 +13,7 @@
                  [enlive "1.1.1"]
                  [com.ebaxt.enlive-partials "0.1.1"]
                  [com.novemberain/monger "1.4.2"]
+                 [com.novemberain/validateur "1.2.0"]
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [parse-ez "0.3.4"]]

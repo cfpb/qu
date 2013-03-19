@@ -165,31 +165,3 @@
 
 (defmethod slice :default [format _ _]
   (route/not-found (str "format not found: " format)))
-
-(defmulti where-error (fn [format _]
-                        format))
-
-;; TODO highlight error
-(defmethod where-error "text/html" [_ {:keys [dataset slice-def params headers]}]
-  (let [metadata (data/get-metadata dataset)
-        slice-name (:slice params)
-        action (str "http://" (headers "host") "/data/" dataset "/" slice-name)
-        columns (columns-for-view slice-def params)
-        data []]
-
-    {:status (http-status :bad-request)
-     :body (apply str (layout-html (slice-html params
-                                               action
-                                               dataset
-                                               metadata
-                                               slice-def
-                                               columns
-                                               data)))}))
-
-(defmethod where-error "application/json" [_ {:keys [params]}]
-  {:status (http-status :bad-request)
-   :body (json-error "invalid where clause" {:$where (params "$where")})})
-
-(defmethod where-error :default [_ {:keys [params]}]
-  {:status (http-status :bad-request)
-   :body "Invalid where clause"})

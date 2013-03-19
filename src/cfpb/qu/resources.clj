@@ -7,10 +7,14 @@ In Liberator, returning a map from a function adds that map to the
 context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
   (:require
+   [clojure.string :as str]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
+   [validateur.validation :as valid]
+   [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
-   [cfpb.qu.views :as views]))
+   [cfpb.qu.views :as views]
+   [cfpb.qu.where.parse-fns :refer [where-expr]]))
 
 (defn index [_]
   (views/layout-html
@@ -81,11 +85,27 @@ can query with."
                                        (not= value "")
                                        (allowed-clauses key))))))}))
 
+(defn- parses-correctly [key parsefn & {:keys [allow-nil] :or {allow-nil true}}]
+  (fn [m]
+    (let [input (m key)]
+      (try        
+        (if (or (and allow-nil (str/blank? input))
+                (parse parsefn key))
+          [true #{}]
+          [false {key #{"does not parse correctly"}}])
+        (catch Exception e
+          [false {key #{"does not parse correctly"}}])))))
+
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
   :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
+  :malformed? (fn [{:keys [request]}]
+                (let [params (:params request)
+                      validator (valid/validation-set
+                                 (parses-correctly "$where" where-expr))]
+                  (valid/invalid? slice-params-validator params)))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
@@ -110,14 +130,8 @@ can query with."
                                :params params
                                :headers headers}]
                  (mongo/with-db (mongo/get-db dataset)
-                   (try
-                     (let [parsed-params (parse-params slice-def params)
-                           data (data/get-data slice-def parsed-params)]
-                       (views/slice (:media-type representation)
-                                    data
-                                    view-map))
-                     (catch Exception e
-                       (if (re-find #"^Parse Error" (.getMessage e))
-                         (views/where-error (:media-type representation)
-                                            view-map)
-                         (throw e))))))))
+                   (let [parsed-params (parse-params slice-def params)
+                         data (data/get-data slice-def parsed-params)]
+                     (views/slice (:media-type representation)
+                                  data
+                                  view-map))))))
