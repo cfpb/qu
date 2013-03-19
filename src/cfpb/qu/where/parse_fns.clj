@@ -2,10 +2,11 @@
   "Parse functions for WHERE queries."
   (:require
    [clojure.string :as str]
-   [protoflex.parse
+   [protoflex.parse :as p
     :refer [expr eval-expr-tree
             any attempt multi* series
             number dq-str sq-str chr
+            parens sep-by
             word-in string-in
             regex starts-with?]]))
 
@@ -36,11 +37,13 @@ false will make the parser think it's failed to match."
                  #(ci-string "false"))]
     {:bool (= (str/lower-case lit) "true")}))
 
+(declare function)
+
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
-numeric expressions, strings, and booleans."
+numeric expressions, strings, booleans, and functions."
   []
-  (any numeric string-literal boolean-literal))
+  (any numeric string-literal boolean-literal function))
 
 (defn- comparison-operator []
   (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]
@@ -86,6 +89,23 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
 (defn- not-operator []
   (let [op (ci-string "NOT")]
     (keyword (str/upper-case op))))
+
+(defn- arg []
+  (any value identifier))
+
+(defn- arglist []
+  (let [first (arg)
+        rest (multi* #(series (fn [] (chr \,)) arg))]
+    (if rest
+      (vec (conj (map second rest) first))
+      [first])))
+
+(defn function []
+  ; identifier + ( + identifier or value separated by commas + )
+  (let [fnname (identifier)
+        args (parens arglist)]
+    {:function {:name fnname
+                :args args}}))
 
 (declare where-expr)
 

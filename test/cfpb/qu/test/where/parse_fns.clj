@@ -2,7 +2,7 @@
   (:require [clojure.test :refer :all]
             [protoflex.parse :as p]
             [cfpb.qu.where.parse-fns
-             :refer [value identifier comparison where-expr]]))
+             :refer [value identifier function comparison where-expr]]))
 
 (deftest parse-value-number
   (is (= (p/parse value "4.5")
@@ -24,6 +24,18 @@
   (are [x y] (= x y)
        {:bool true} (p/parse value "true")
        {:bool false} (p/parse value "false")))
+
+(deftest parse-value-function
+  (is (= (p/parse value "hello(world, 2)")
+         {:function {:name :hello :args [:world 2]}})))
+
+(deftest parse-nested-functions
+  (is (= (p/parse function "hello(world, min(2, 3), 3)")
+         {:function {:name :hello
+                     :args [:world
+                            {:function {:name :min
+                                        :args [2 3]}}
+                            3]}})))
 
 (deftest parse-identifier
   (are [x y] (= x y)
