@@ -123,7 +123,6 @@ turn it into a tree built in proper precedence order."
   []
   (if-let [left (attempt boolean-factor)]
     (if-let [rhs (multi* #(series and-or-operator boolean-factor))]
-      (do
-        (-> (into [left] (apply concat rhs))
-            build-boolean-tree))
+      (build-boolean-tree
+       (into [left] (apply concat rhs)))
       left)))

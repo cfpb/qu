@@ -28,7 +28,7 @@ connection per web request may not be the best option here, but it is
 easy for now."
   [handler]
   (fn [request]
-    (when (not (bound? (var mongo/*mongodb-connection*)))
+    (when-not (bound? (var mongo/*mongodb-connection*))
       (mongo/connect!))
     (let [response (handler request)]
       response)))

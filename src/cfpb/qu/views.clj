@@ -78,7 +78,7 @@
      node)))
 
 (defsnippet slice-html "templates/slice.html" [:#content]
-  [params action dataset metadata slice-name slice-def columns data]
+  [params action dataset metadata slice-def columns data]
 
   [:form#query-form]
   (html/do->
@@ -140,7 +140,6 @@
                                         action
                                         dataset
                                         metadata
-                                        slice-name
                                         slice-def
                                         columns
                                         data)))))
