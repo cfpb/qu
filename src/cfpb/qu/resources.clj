@@ -84,6 +84,7 @@ can query with."
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
+  :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
@@ -103,14 +104,20 @@ can query with."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [params (:params request)
                      headers (:headers request)
-                     slice-def (get-in metadata [:slices slice])]
+                     slice-def (get-in metadata [:slices slice])
+                     view-map {:dataset dataset
+                               :slice-def slice-def
+                               :params params
+                               :headers headers}]
                  (mongo/with-db (mongo/get-db dataset)
-                   (let [parsed-params (parse-params slice-def params)
-                         data (data/get-data slice-def parsed-params)]
-                     (views/slice (:media-type representation)
-                                  data
-                                  {:dataset dataset
-                                  :slice-def slice-def
-                                  :params params
-                                  :headers headers})))))
-  :available-media-types ["text/html" "text/csv" "application/json"])
+                   (try
+                     (let [parsed-params (parse-params slice-def params)
+                           data (data/get-data slice-def parsed-params)]
+                       (views/slice (:media-type representation)
+                                    data
+                                    view-map))
+                     (catch Exception e
+                       (if (re-find #"^Parse Error" (.getMessage e))
+                         (views/where-error (:media-type representation)
+                                            view-map)
+                         (throw e))))))))
