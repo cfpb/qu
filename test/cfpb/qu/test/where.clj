@@ -24,11 +24,11 @@
        {:bool true} (p/parse value "true")
        {:bool false} (p/parse value "false")))
 
-(deftest parse-comp-op
+(deftest parse-comparison-operator
   (are [x y] (= x y)
-       :< (p/parse comp-op "<")
-       :> (p/parse comp-op ">")
-       :!= (p/parse comp-op "!=")))
+       :< (p/parse comparison-operator "<")
+       :> (p/parse comparison-operator ">")
+       :!= (p/parse comparison-operator "!=")))
 
 (deftest parse-identifier
   (are [x y] (= x y)
@@ -42,6 +42,10 @@
 
        {:comparison [:length :> 3]}
        (p/parse comparison "length > 3")
+
+       ; Ensure this works without spaces.
+       {:comparison [:length :> 3]}
+       (p/parse comparison "length>3")
 
        {:comparison [:length :< 3]}
        (p/parse comparison "length < 3")

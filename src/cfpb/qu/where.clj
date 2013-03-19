@@ -1,4 +1,6 @@
 (ns cfpb.qu.where
+  "This namespace parses WHERE clauses into an AST and turns that AST
+into a Monger query."
   (:require
    [clojure.string :as str]
    [protoflex.parse
@@ -6,21 +8,25 @@
     :refer [expr eval-expr-tree
             any attempt multi* series
             number dq-str sq-str chr
-            word-in regex starts-with?]]))
+            word-in string-in
+            regex starts-with?]]))
 
 (defn ci-string
   "Match case insensitive strings."
   [string]
   (regex (re-pattern (str "(?i)" string))))
 
-(defn numeric-expr []
+(defn numeric-expr
+  "Simple numeric expressions in WHERE clauses should be evaluated at
+  parse time."
+  []
   (let [expr (expr)]
     (eval-expr-tree expr)))
 
 (defn numeric []
   (any numeric-expr number))
 
-(defn strexp []
+(defn string-literal []
   (any dq-str sq-str))
 
 (defn boolean-literal []
@@ -28,11 +34,14 @@
                  #(ci-string "false"))]
     {:bool (= (str/lower-case lit) "true")}))
 
-(defn value []
-  (any numeric strexp boolean-literal))
+(defn value
+  "The valid values in WHERE queries are numbers, numeric expressions,
+strings, and booleans."
+  []
+  (any numeric string-literal boolean-literal))
 
-(defn comp-op []
-  (let [op (word-in [">" ">=" "=" "!=" "<" "<="])]
+(defn comparison-operator []
+  (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]
     (keyword op)))
 
 (defn identifier []
@@ -40,9 +49,8 @@
     (keyword ident)))
 
 (defn comparison-normal []
-  (let [identifier (identifier)
-        op (comp-op)
-        value (value)]
+  (let [[identifier op value]
+        (series identifier comparison-operator value)]
     {:comparison [identifier op value]}))
 
 (defn comparison-null []
