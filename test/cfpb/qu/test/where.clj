@@ -1,113 +1,86 @@
 (ns cfpb.qu.test.where
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
             [cfpb.qu.where :refer [parse mongo-eval]]))
 
-(deftest parse-simple-comparison
-  (is (= {:comparison [:length :> 3]}
-         (parse "length > 3"))))
+(facts "about parse"
+       (fact "can parse simple comparisons"
+             (parse "length > 3") => {:comparison [:length :> 3]}
+             (parse "name IS NULL") => {:comparison [:name := nil]}
+             (parse "name IS NOT NULL") => {:comparison [:name :!= nil]})
 
-(deftest parse-double-comparison
-  (is (= {:left {:comparison [:length :> 3]}
-          :op :AND
-          :right {:comparison [:height :< 4.5]}}
-         (parse "length > 3 AND height < 4.5"))))
+       (fact "can parse complex comparisons"
+             (parse "length > 3 AND height < 4.5") =>
+             {:left {:comparison [:length :> 3]}
+              :op :AND
+              :right {:comparison [:height :< 4.5]}}
 
-(deftest parse-triple-comparison
-  (is (= {:left {:left {:comparison [:length :> 3]}
-                 :op :AND
-                 :right {:comparison [:height :< 4.5]}}
-          :op :OR
-          :right {:comparison [:name := "Pete"]}}
-         (parse "length > 3 AND height < 4.5 OR name = \"Pete\""))))
+             (parse "length > 3 AND height < 4.5 OR name = \"Pete\"") =>
+             {:left {:left {:comparison [:length :> 3]}
+                     :op :AND
+                     :right {:comparison [:height :< 4.5]}}
+              :op :OR
+              :right {:comparison [:name := "Pete"]}}
 
-(deftest parse-nested-comparison
-  (is (= {:left {:comparison [:length :> 3]}
-          :op :AND
-          :right {:left {:comparison [:height :< 4.5]}
-                  :op :OR
-                  :right {:comparison [:name := "Pete"]}}}
-         (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")"))))
+             (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")") =>
+             {:left {:comparison [:length :> 3]}
+              :op :AND
+              :right {:left {:comparison [:height :< 4.5]}
+                      :op :OR
+                      :right {:comparison [:name := "Pete"]}}}))
 
-(deftest parse-is-null
-  (is (= {:comparison [:name := nil]}
-         (parse "name IS NULL"))))
+(facts "about mongo-eval"
+       (fact "handles equality correctly"
+             (mongo-eval (parse "length = 3")) => {:length 3})
 
-(deftest parse-is-not-null
-  (is (= {:comparison [:name :!= nil]}
-         (parse "name IS NOT NULL"))))
+       (fact "handles non-equality comparisons"
+             (mongo-eval (parse "length < 3")) => {:length {"$lt" 3}}
+             (mongo-eval (parse "length >= 3")) => {:length {"$gte" 3}})
 
-(deftest mongo-eval-equality
-  (is (= (mongo-eval (parse "length = 3"))
-         {:length 3})))
+       (fact "handles complex comparisons"
+             (mongo-eval (parse "length > 3 AND height = 4.5")) =>
+             {"$and" [ {:length {"$gt" 3}} {:height 4.5}]}
 
-(deftest mongo-eval-comparison
-  (are [x y] (= x y)
-       
-       {:length {"$lt" 3}}
-       (mongo-eval (parse "length < 3"))
+             (mongo-eval (parse "length > 3 OR height = 4.5")) =>
+             {"$or" [{:length {"$gt" 3}} {:height 4.5}]}
 
-       {:length {"$gte" 3}}
-       (mongo-eval (parse "length >= 3"))))
+             (mongo-eval (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")")) =>
+             {"$and" [{:length {"$gt" 3}}
+                      {"$or" [{:height {"$lt" 4.5}}
+                              {:name "Pete"}]}]}
+             )
 
-(deftest mongo-eval-and
-  (is (=
-       {"$and" [ {:length {"$gt" 3}} {:height 4.5}]}
-       (mongo-eval (parse "length > 3 AND height = 4.5")))))
+       (fact "handles simplex comparisons with NOT"
+             (mongo-eval (parse "NOT name = \"Pete\"")) =>
+             {:name {"$ne" "Pete"}}
 
-(deftest mongo-eval-or
-  (is (=
-       {"$or" [{:length {"$gt" 3}} {:height 4.5}]}
-       (mongo-eval (parse "length > 3 OR height = 4.5")))))
+             (mongo-eval (parse "NOT name != \"Pete\"")) =>
+             {:name "Pete"}
 
-(deftest mongo-eval-parentheses
-  (is (=
-       {"$and" [{:length {"$gt" 3}}
-                {"$or" [{:height {"$lt" 4.5}}
-                        {:name "Pete"}]}]}
-       (mongo-eval
-        (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")")))))
+             (mongo-eval (parse "NOT length < 3")) =>
+             {:length {"$gte" 3}})
 
-(deftest mongo-eval-not-equal
-  (is (=
-       {:name {"$ne" "Pete"}}
-       (mongo-eval (parse "NOT name = \"Pete\"")))))
+       (fact "handles complex comparisons with NOT and AND"
+             (mongo-eval (parse "NOT (length > 3 AND height = 4.5)")) =>
+             {"$or" [{:length {"$lte" 3}} {:height {"$ne" 4.5}}]})
 
-(deftest mongo-eval-not-ne
-  (is (=
-       {:name "Pete"}
-       (mongo-eval (parse "NOT name != \"Pete\"")))))
+       (fact "uses $nor on complex comparisons with NOT and OR"
+             (mongo-eval (parse "NOT (length > 3 OR height = 4.5)")) =>
+             {"$nor" [{:length {"$gt" 3}} {:height 4.5}]})
 
-(deftest mongo-eval-not-comparison
-  (is (=
-       {:length {"$gte" 3}}
-       (mongo-eval (parse "NOT length < 3")))))
+       (fact "NOT binds tighter than AND"
+             (mongo-eval (parse "NOT length > 3 AND height = 4.5")) =>
+             {"$and" [{:length {"$lte" 3}} {:height 4.5}]})
 
-(deftest mongo-eval-not-and
-  (is (=
-       {"$or" [{:length {"$lte" 3}} {:height {"$ne" 4.5}}]}
-       (mongo-eval (parse "NOT (length > 3 AND height = 4.5)")))))
+       (fact "handles nested comparisons with multiple NOTs"
+             (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name IS NOT NULL))")) =>
+             {"$nor" [{:length {"$gt" 3}}
+                      {"$or" [{:height {"$lte" 4.5}}
+                              {:name nil}]}]}
 
-(deftest mongo-eval-not-binding-less-than-and
-  (is (=
-       {"$and" [{:length {"$lte" 3}} {:height 4.5}]}
-       (mongo-eval (parse "NOT length > 3 AND height = 4.5")))))
+             (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))"))
+             {"$or" [{:length {"$lte" 3}}
+                     {"$and" [{:height {"$gt" 4.5}}
+                              {:name "Pete"}]}]}))
 
-(deftest mongo-eval-not-and
-  (is (=
-       {"$nor" [{:length {"$gt" 3}} {:height 4.5}]}
-       (mongo-eval (parse "NOT (length > 3 OR height = 4.5)")))))
 
-(deftest mongo-eval-double-not-or
-  (is (=
-       {"$nor" [{:length {"$gt" 3}}
-                {"$or" [{:height {"$lte" 4.5}}
-                        {:name nil}]}]}
-       (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name IS NOT NULL))")))))
-
-(deftest mongo-eval-double-not-and
-  (is (=
-       {"$or" [{:length {"$lte" 3}}
-               {"$and" [{:height {"$gt" 4.5}}
-                        {:name "Pete"}]}]}
-       (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))")))))
