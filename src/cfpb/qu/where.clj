@@ -21,11 +21,41 @@ for use in constructing Mongo queries."
    :>= "$gte"
    :!= "$ne"})
 
-(def mongo-opposites
-  {"$lt" "$gte"
-   "$lte" "$gt"
-   "$gt" "$lte"
-   "$gte" "$lt"})
+(defmulti mongo-fn
+  (fn [name args]
+    name))
+
+;; TODO Make sure the strings coming into these are escaped so that
+;; they do not allow other regex characters
+
+(defmethod mongo-fn :starts_with [_ [ident string]]
+  {ident (re-pattern (str "^" string))})
+
+(defmethod mongo-fn :contains [_ [ident string]]
+  {ident (re-pattern string)})
+
+(defmethod mongo-fn :default [name args]
+  (throw (ex-info "Function not found" {:error "func-not-found"
+                                        :function name
+                                        :args args})))
+
+(defn mongo-not [comparison]
+  (let [ident (first (keys comparison))
+        operation (first (vals comparison))]
+
+    (cond
+     (map? operation)
+     (let [operator (first (keys operation))
+           value (first (vals operation))]
+       (if (= operator "$ne")
+         {ident value}
+         {ident {"$not" operation}}))
+
+     (= (type operation) java.util.regex.Pattern)
+     {ident {"$not" operation}}
+
+     :default
+     {ident {"$ne" operation}})))
 
 (declare mongo-eval-not)
 
@@ -50,6 +80,11 @@ a valid Monger query."
 
    (get ast :bool)
    (:bool ast)
+
+   (get ast :function)
+   (let [fnname (get-in ast [:function :name])
+         args (get-in ast [:function :args])]
+     (mongo-fn fnname args))
    
    :default
    ast))
@@ -66,12 +101,10 @@ a valid Monger query."
        :AND {"$or" [(mongo-eval-not left) (mongo-eval-not right)]}))
 
    (get ast :comparison)
-   (let [[ident op value] (:comparison ast)
-         value (mongo-eval value)]
-     (case op
-       :!= {ident value}
-       := {ident {"$ne" value}}
-       {ident {(mongo-opposites (op mongo-operators)) value}}))
+   (mongo-not (mongo-eval ast))
+
+   (get ast :function)
+   (mongo-not (mongo-eval ast))
 
    (get ast :bool)
    (not (:bool ast))

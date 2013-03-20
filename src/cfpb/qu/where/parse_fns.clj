@@ -41,9 +41,9 @@ false will make the parser think it's failed to match."
 
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
-numeric expressions, strings, booleans, and functions."
+numeric expressions, strings, and booleans."
   []
-  (any numeric string-literal boolean-literal function))
+  (any numeric string-literal boolean-literal))
 
 (defn- comparison-operator []
   (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]

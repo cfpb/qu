@@ -17,18 +17,7 @@
 
        (fact "can parse boolean literals"
              (p/parse value "true") => {:bool true}
-             (p/parse value "false") => {:bool false})
-
-       (fact "can parse functions"
-             (p/parse value "hello(world, 2)") =>
-             {:function {:name :hello :args [:world 2]}}
-
-             (p/parse function "hello(world, min(2, 3), 3)") =>
-             {:function {:name :hello
-                         :args [:world
-                                {:function {:name :min
-                                            :args [2 3]}}
-                                3]}}))
+             (p/parse value "false") => {:bool false}))
 
 (facts "about identifiers"
        (fact "identifiers can be made up of letters, numbers, dashes, and underscores"
@@ -40,6 +29,24 @@
        (fact "identifiers must start with a letter"
              (p/parse identifier "3times") => (throws Exception #"^Parse Error")))
 
+(facts "about functions"
+       (fact "can be parsed"
+             (p/parse function "hello(world)") =>
+             {:function {:name :hello :args [:world]}})
+
+       (fact "can have values or identifiers as arguments"
+             (p/parse function "hello(world, 2)") =>
+             {:function {:name :hello :args [:world 2]}}
+
+             (p/parse function "hello(2+1)") =>
+             {:function {:name :hello :args [3]}})
+
+       (fact "spaces in the arglist are irrelevant"
+             (p/parse function "hello(world,2)") =>
+             {:function {:name :hello :args [:world 2]}}
+
+             (p/parse function "hello(   world,        2    )") =>
+             {:function {:name :hello :args [:world 2]}}))
 
 (facts "about comparisons"
        (fact "simple comparisons can be parsed"

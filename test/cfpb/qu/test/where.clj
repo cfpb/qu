@@ -3,6 +3,13 @@
             [protoflex.parse :as p]
             [cfpb.qu.where :refer [parse mongo-eval]]))
 
+(defn has-ex-data [& data]
+  (let [data (apply hash-map data)]
+    (throws Exception
+            (fn [ex] (every? (fn [[k v]]
+                               (= (get (ex-data ex) k)
+                                  v)) data)))))
+
 (facts "about parse"
        (fact "can parse simple comparisons"
              (parse "length > 3") => {:comparison [:length :> 3]}
@@ -47,10 +54,9 @@
              (mongo-eval (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")")) =>
              {"$and" [{:length {"$gt" 3}}
                       {"$or" [{:height {"$lt" 4.5}}
-                              {:name "Pete"}]}]}
-             )
+                              {:name "Pete"}]}]})
 
-       (fact "handles simplex comparisons with NOT"
+       (fact "handles simple comparisons with NOT"
              (mongo-eval (parse "NOT name = \"Pete\"")) =>
              {:name {"$ne" "Pete"}}
 
@@ -58,11 +64,11 @@
              {:name "Pete"}
 
              (mongo-eval (parse "NOT length < 3")) =>
-             {:length {"$gte" 3}})
+             {:length {"$not" {"$lt" 3}}})
 
        (fact "handles complex comparisons with NOT and AND"
              (mongo-eval (parse "NOT (length > 3 AND height = 4.5)")) =>
-             {"$or" [{:length {"$lte" 3}} {:height {"$ne" 4.5}}]})
+             {"$or" [{:length {"$not" {"$gt" 3}}} {:height {"$ne" 4.5}}]})
 
        (fact "uses $nor on complex comparisons with NOT and OR"
              (mongo-eval (parse "NOT (length > 3 OR height = 4.5)")) =>
@@ -70,17 +76,35 @@
 
        (fact "NOT binds tighter than AND"
              (mongo-eval (parse "NOT length > 3 AND height = 4.5")) =>
-             {"$and" [{:length {"$lte" 3}} {:height 4.5}]})
+             {"$and" [{:length {"$not" {"$gt" 3}}} {:height 4.5}]})
 
        (fact "handles nested comparisons with multiple NOTs"
              (mongo-eval (parse "NOT (length > 3 OR NOT (height > 4.5 AND name IS NOT NULL))")) =>
              {"$nor" [{:length {"$gt" 3}}
-                      {"$or" [{:height {"$lte" 4.5}}
+                      {"$or" [{:height {"$not" {"$gt" 4.5}}}
                               {:name nil}]}]}
 
-             (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))"))
-             {"$or" [{:length {"$lte" 3}}
+             (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))")) =>
+             {"$or" [{:length {"$not" {"$gt" 3}}}
                      {"$and" [{:height {"$gt" 4.5}}
-                              {:name "Pete"}]}]}))
+                              {:name "Pete"}]}]})
+
+       (fact "handles the starts_with function"
+             "Ambrose Bierce" =>
+             (:name (mongo-eval (parse "starts_with(name, 'Ambrose')"))))
+
+       (fact "handles the contains function"
+             "Bierce, Ambrose P." =>
+             (:name (mongo-eval (parse "contains(name, 'Ambrose')"))))
+
+       (fact "handles no other functions"
+             (mongo-eval (parse "hello(world)")) =>
+             (has-ex-data :function :hello :args [:world]))
+
+       (fact "handles NOT and a function"
+             "Ambrose Bierce" =>
+             (get-in
+              (mongo-eval (parse "NOT starts_with(name, 'Ambrose')"))
+              [:name "$not"])))
 
 
