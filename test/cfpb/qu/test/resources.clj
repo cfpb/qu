@@ -1,9 +1,8 @@
 (ns cfpb.qu.test.resources
-  (:require [clojure.test :refer :all]
+  (:require [midje.sweet :refer :all]
             [cfpb.qu.resources :refer :all]))
 
-(deftest parse-params-returns-string-clauses
-  (let [slice-def {}
-        params {"$select" "age,race"}]
-    (is (= (:clauses (parse-params slice-def params))
-           {:$select "age,race"}))))
+(fact "parse-params returns string clauses"
+      (let [slice-def {}
+            params {"$select" "age,race"}]
+        (:clauses (parse-params slice-def params)) => {:$select "age,race"}))
