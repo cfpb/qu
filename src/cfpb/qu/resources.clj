@@ -105,7 +105,7 @@ can query with."
                 (let [params (:params request)
                       validator (valid/validation-set
                                  (parses-correctly "$where" where-expr))]
-                  (valid/invalid? slice-params-validator params)))
+                  (valid/invalid? validator params)))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
