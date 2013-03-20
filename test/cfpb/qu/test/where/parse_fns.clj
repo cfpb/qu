@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
             [cfpb.qu.where.parse-fns
-             :refer [value identifier function comparison where-expr]]))
+             :refer [value identifier function comparison predicate where-expr]]))
 
 (facts "about value"
        (fact "can parse numbers"
@@ -47,8 +47,23 @@
              (p/parse comparison "length < 3") => {:comparison [:length :< 3]}
              (p/parse comparison "size != 12.5") => {:comparison [:size :!= 12.5]})
 
+       (fact "IS NULL and IS NOT NULL comparisons can be parsed"
+             (p/parse comparison "length IS NULL") =>
+             {:comparison [:length := nil]}
+
+             (p/parse comparison "length IS NOT NULL") =>
+             {:comparison [:length :!= nil]})
+
        (fact "spaces are irrelevant"
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))
+
+
+(facts "about predicates"
+       (fact "can be comparisons or functions"
+             (p/parse predicate "length > 3") => {:comparison [:length :> 3]}
+             (p/parse predicate "starts_with(name, 'Pete')") =>
+             {:function {:name :starts_with
+                         :args [:name "Pete"]}}))
 
 (facts "about where expressions"
        (fact "can be comparisons"

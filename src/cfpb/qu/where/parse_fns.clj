@@ -81,6 +81,13 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
        comparison-null
        comparison-not-null))
 
+(defn predicate
+  "Expression that returns true or false to be combined with boolean
+operators in WHERE queries. Predicates can be comparisons or functions."
+  []
+  (any comparison
+       function))
+
 (defn- and-or-operator []
   (let [op (any #(ci-string "AND")
                 #(ci-string "OR"))]
@@ -119,7 +126,7 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
   (let [not-operator (attempt not-operator)
         factor (if (starts-with? "(")
                  (paren-where-expr)
-                 (comparison))]
+                 (predicate))]
     (if not-operator
       {:not factor}
       factor)))
