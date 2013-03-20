@@ -4,7 +4,8 @@
   :source-paths ["src"]
   :plugins [[lein-ring "0.8.2"]
             [codox "0.6.4"]
-            [lein-cloverage "1.0.2"]]
+            [lein-cloverage "1.0.2"]
+            [lein-midje "3.0.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.3"]
                  [ring/ring-core "1.1.6"]
@@ -22,4 +23,5 @@
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"}
   :profiles {:dev
-             {:dependencies [[ring-mock "0.1.3"]]}})
+             {:dependencies [[ring-mock "0.1.3"]
+                             [midje "1.5.0"]]}})
