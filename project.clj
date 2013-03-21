@@ -1,5 +1,6 @@
 (defproject qu "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "qu is an **in-progress** data platform created by the CFPB to
+serve their public data sets."
   :url "https://github.com/cfpb/qu"
   :source-paths ["src"]
   :plugins [[lein-ring "0.8.2"]
