@@ -4,7 +4,8 @@ into a Monger query."
   (:require
    [clojure.string :as str]
    [protoflex.parse :as p]
-   [cfpb.qu.where.parse-fns :refer [where-expr]]))
+   [cfpb.qu.where.parse-fns :refer [where-expr]])
+  (:import (java.util.regex Pattern)))
 
 (defn parse
   "Parse a valid WHERE expression and return an abstract syntax tree
@@ -29,10 +30,12 @@ for use in constructing Mongo queries."
 ;; they do not allow other regex characters
 
 (defmethod mongo-fn :starts_with [_ [ident string]]
-  {ident (re-pattern (str "^" string))})
+  (let [string (Pattern/quote string)]
+    {ident (re-pattern (str "^" string))}))
 
 (defmethod mongo-fn :contains [_ [ident string]]
-  {ident (re-pattern string)})
+  (let [string (Pattern/quote string)]
+    {ident (re-pattern string)}))
 
 (defmethod mongo-fn :default [name args]
   (throw (ex-info "Function not found" {:error "func-not-found"
@@ -51,7 +54,7 @@ for use in constructing Mongo queries."
          {ident value}
          {ident {"$not" operation}}))
 
-     (= (type operation) java.util.regex.Pattern)
+     (= (type operation) Pattern)
      {ident {"$not" operation}}
 
      :default

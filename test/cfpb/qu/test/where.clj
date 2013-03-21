@@ -1,7 +1,7 @@
 (ns cfpb.qu.test.where
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where :refer [parse mongo-eval]]))
+            [cfpb.qu.where :refer [parse mongo-eval mongo-fn]]))
 
 (defn has-ex-data [& data]
   (let [data (apply hash-map data)]
@@ -35,6 +35,20 @@
               :right {:left {:comparison [:height :< 4.5]}
                       :op :OR
                       :right {:comparison [:name := "Pete"]}}}))
+
+(facts "about mongo-fn"
+       (fact "handles the starts_with function"
+             (-> (mongo-fn :starts_with [:name, "Ambrose"])
+                 :name
+                 str) => "^\\QAmbrose\\E")
+
+       (fact "handles the contains function"
+             (-> (mongo-fn :contains [:name, "Ambrose"])
+                 :name
+                 str) => "\\QAmbrose\\E")      
+
+       (fact "handles no other functions"
+             (mongo-fn :hello [:world]) => (has-ex-data :function :hello :args [:world])))
 
 (facts "about mongo-eval"
        (fact "handles equality correctly"
@@ -90,21 +104,22 @@
                               {:name "Pete"}]}]})
 
        (fact "handles the starts_with function"
-             "Ambrose Bierce" =>
-             (:name (mongo-eval (parse "starts_with(name, 'Ambrose')"))))
+             (-> (mongo-eval (parse "starts_with(name, 'Ambrose')"))
+                 :name
+                 str) => "^\\QAmbrose\\E")
 
        (fact "handles the contains function"
-             "Bierce, Ambrose P." =>
-             (:name (mongo-eval (parse "contains(name, 'Ambrose')"))))
+             (-> (mongo-eval (parse "contains(name, 'Ambrose')"))
+                 :name
+                 str) => "\\QAmbrose\\E")
 
        (fact "handles no other functions"
              (mongo-eval (parse "hello(world)")) =>
              (has-ex-data :function :hello :args [:world]))
 
        (fact "handles NOT and a function"
-             "Ambrose Bierce" =>
-             (get-in
-              (mongo-eval (parse "NOT starts_with(name, 'Ambrose')"))
-              [:name "$not"])))
+             (-> (mongo-eval (parse "NOT starts_with(name, 'Ambrose')"))
+                 (get-in [:name "$not"])
+                 str) => "^\\QAmbrose\\E"))
 
 
