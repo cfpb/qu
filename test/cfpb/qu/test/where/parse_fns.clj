@@ -74,7 +74,8 @@
 
 (facts "about where expressions"
        (fact "can be comparisons"
-             (p/parse where-expr "length > 3") => {:comparison [:length :> 3]})
+             (p/parse where-expr "length > 3") => {:comparison [:length :> 3]}
+             (p/parse where-expr "tax_returns > 20000") => {:comparison [:tax_returns :> 20000]})
 
        (fact "can have NOT operators"
              (p/parse where-expr "NOT length > 3") => {:not {:comparison [:length :> 3]}}
