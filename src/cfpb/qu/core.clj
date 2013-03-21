@@ -5,10 +5,11 @@
     [handler :as handler]
     [route :as route]]
    [clojure.java.io :as io]
-   [monger.core :as mongo]
+   [ring.middleware.logger :as logger]
    [ring.adapter.jetty :refer [run-jetty]]
-   [cfpb.qu.resources :as resources]
-   [com.ebaxt.enlive-partials :refer [handle-partials]]))
+   [monger.core :as mongo]
+   [com.ebaxt.enlive-partials :refer [handle-partials]]   
+   [cfpb.qu.resources :as resources]))
 
 (defroutes app-routes
   "Create the app routes. Provides GET-only access to the list of
@@ -60,6 +61,7 @@ media-type preference."
   Compojure."}
   app
   (-> (handler/api app-routes)
+      logger/wrap-with-logger
       wrap-mongo-connection
       (wrap-convert-suffix-to-accept-header
        {".html" "text/html"
@@ -74,3 +76,4 @@ media-type preference."
 
 (defn -main [& args]
   (boot 8080))
+

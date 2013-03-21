@@ -41,9 +41,9 @@ false will make the parser think it's failed to match."
 
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
-numeric expressions, strings, booleans, and functions."
+numeric expressions, strings, and booleans."
   []
-  (any numeric string-literal boolean-literal function))
+  (any numeric string-literal boolean-literal))
 
 (defn- comparison-operator []
   (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]
@@ -80,6 +80,13 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
   (any comparison-normal
        comparison-null
        comparison-not-null))
+
+(defn predicate
+  "Expression that returns true or false to be combined with boolean
+operators in WHERE queries. Predicates can be comparisons or functions."
+  []
+  (any comparison
+       function))
 
 (defn- and-or-operator []
   (let [op (any #(ci-string "AND")
@@ -119,7 +126,7 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
   (let [not-operator (attempt not-operator)
         factor (if (starts-with? "(")
                  (paren-where-expr)
-                 (comparison))]
+                 (predicate))]
     (if not-operator
       {:not factor}
       factor)))
