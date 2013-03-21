@@ -11,6 +11,7 @@ serve their public data sets."
                  [compojure "1.1.3"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
+                 [ring.middleware.logger "0.4.0"]
                  [liberator "0.8.0"]
                  [enlive "1.1.1"]
                  [com.ebaxt.enlive-partials "0.1.1"]
