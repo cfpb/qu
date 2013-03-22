@@ -85,16 +85,17 @@
 
 (defn- fill-in-input-value [params]
   (fn [node]
-    (let [field (keyword (get-in node [:attrs :name]))]
-      ((html/set-attr :value (params field))
-       node))))
+    (let [field (keyword (get-in node [:attrs :data-clause]))]
+      (html/at node
+               [:input]
+               (html/set-attr :value (params field))))))
 
-(defn- highlight-error [params]
+(defn- highlight-errors [params]
   (fn [node]
-    (let [field (keyword (get-in node [:attrs :name]))]
+    (let [field (keyword (get-in node [:attrs :data-clause]))]
       (if (valid/errors? field)
         ((html/do->
-          (html/wrap :div {:class "control-group error"})
+          (html/add-class "error")
           (html/append (map (fn [error] {:tag :span
                                          :attrs {:class "help-inline"}
                                          :content error})
@@ -137,11 +138,11 @@
                    (html/set-attr :value (or (params (keyword dimension))
                                              (params dimension)))))
 
-  [:.clause-field :input]
+  [:.clause-fields :.control-group]
   (html/do->
    (fill-in-input-value params)
-   (highlight-error params))
-
+   (highlight-errors params))
+  
   [:#query-results :thead :tr]
   (html/content (html/html
                  (for [column columns]

@@ -66,18 +66,6 @@ media-type preference."
   MongoDB connection for the request before handing off the request to
   Compojure."}
   app
-  (-> (handler/api app-routes)
-      valid/wrap-noir-validation
-      logger/wrap-with-logger
-      valid/wrap-noir-validation
-      wrap-mongo-connection
-      (wrap-convert-suffix-to-accept-header
-       {".html" "text/html"
-        ".json" "application/json"
-        ".csv" "text/csv"})
-      (handle-partials "templates")))
-
-(def app
   (-> app-routes
       wrap-keyword-params
       wrap-nested-params
