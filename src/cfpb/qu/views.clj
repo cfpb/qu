@@ -84,7 +84,7 @@
 
 (defn- fill-in-input-value [params]
   (fn [node]
-    ((html/set-attr :value (params (get-in node [:attrs :name])))
+    ((html/set-attr :value (params (keyword (get-in node [:attrs :name]))))
      node)))
 
 (defsnippet slice-html "templates/slice.html" [:#content]
