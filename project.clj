@@ -1,5 +1,6 @@
 (defproject qu "0.1.0-SNAPSHOT"
-  :description "FIXME: write description"
+  :description "qu is an **in-progress** data platform created by the CFPB to
+serve their public data sets."
   :url "https://github.com/cfpb/qu"
   :source-paths ["src"]
   :plugins [[lein-ring "0.8.2"]
@@ -10,11 +11,12 @@
                  [compojure "1.1.3"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
+                 [ring.middleware.logger "0.4.0"]
                  [liberator "0.8.0"]
                  [enlive "1.1.1"]
                  [com.ebaxt.enlive-partials "0.1.1"]
                  [com.novemberain/monger "1.4.2"]
-                 [com.novemberain/validateur "1.2.0"]
+                 [com.novemberain/validateur "1.4.0"]
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [parse-ez "0.3.4"]]

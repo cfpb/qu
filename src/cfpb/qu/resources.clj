@@ -90,7 +90,7 @@ can query with."
     (let [input (m key)]
       (try        
         (if (or (and allow-nil (str/blank? input))
-                (parse parsefn key))
+                (parse parsefn input))
           [true #{}]
           [false {key #{"does not parse correctly"}}])
         (catch Exception e

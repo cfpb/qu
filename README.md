@@ -105,6 +105,6 @@ If you want the tests to automatically run whenever you change the
 code, eliminating the JVM startup time and generally being great, run:
 
 ```sh
-lein midge :autotest
+lein midje :autotest
 ```
 
