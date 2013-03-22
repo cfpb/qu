@@ -11,7 +11,10 @@ into a Monger query."
   "Parse a valid WHERE expression and return an abstract syntax tree
 for use in constructing Mongo queries."
   [clause]
-  (p/parse where-expr clause))
+  (try
+    (p/parse where-expr clause)
+    (catch Exception e
+      {:error true})))
 
 (def mongo-operators
   {:AND "$and"
@@ -88,6 +91,9 @@ a valid Monger query."
    (let [fnname (get-in ast [:function :name])
          args (get-in ast [:function :args])]
      (mongo-fn fnname args))
+
+   (get ast :error)
+   {:_id false}
    
    :default
    ast))
@@ -111,6 +117,9 @@ a valid Monger query."
 
    (get ast :bool)
    (not (:bool ast))
+
+   (get ast :error)
+   (mongo-eval ast)
 
    :default
    (not ast)))

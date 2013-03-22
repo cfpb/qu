@@ -8,6 +8,7 @@
    [compojure
     [route :as route]
     [response :refer [render]]]
+   [noir.validation :as valid]
    [clojure-csv.core :refer [write-csv]]
    [cheshire.core :as json]
    [monger
@@ -84,8 +85,22 @@
 
 (defn- fill-in-input-value [params]
   (fn [node]
-    ((html/set-attr :value (params (keyword (get-in node [:attrs :name]))))
-     node)))
+    (let [field (keyword (get-in node [:attrs :name]))]
+      ((html/set-attr :value (params field))
+       node))))
+
+(defn- highlight-error [params]
+  (fn [node]
+    (let [field (keyword (get-in node [:attrs :name]))]
+      (if (valid/errors? field)
+        ((html/do->
+          (html/wrap :div {:class "control-group error"})
+          (html/append (map (fn [error] {:tag :span
+                                         :attrs {:class "help-inline"}
+                                         :content error})
+                            (valid/get-errors field))))
+         node)
+        node))))
 
 (defsnippet slice-html "templates/slice.html" [:#content]
   [params action dataset metadata slice-def columns data]
@@ -123,7 +138,9 @@
                                              (params dimension)))))
 
   [:.clause-field :input]
-  (fill-in-input-value params)
+  (html/do->
+   (fill-in-input-value params)
+   (highlight-error params))
 
   [:#query-results :thead :tr]
   (html/content (html/html

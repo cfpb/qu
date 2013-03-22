@@ -92,7 +92,7 @@ can query with."
 
 (defn valid-params? [{where :$where}]
   (valid/rule (where-parses? where)
-               [:$where "The WHERE clauses does not parse correctly."])
+               [:$where "The WHERE clause does not parse correctly."])
   (not (valid/errors? :$where)))
 
 (defresource
@@ -101,7 +101,9 @@ can query with."
   :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
   :malformed? (fn [{:keys [request]}]
-                (not (valid-params? (:params request))))
+                (let [media-type (get-in request [:headers "accept"])]
+                  (not (or (valid-params? (:params request))
+                           (= media-type "text/html")))))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
