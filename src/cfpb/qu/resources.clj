@@ -104,6 +104,11 @@ can query with."
                 (let [media-type (get-in request [:headers "accept"])]
                   (not (or (valid-params? (:params request))
                            (= media-type "text/html")))))
+  :handle-malformed (fn [{:keys [request representation]}]
+                      (let [media-type (get-in request [:headers "accept"])]
+                        (case media-type
+                          "application/json" (views/json-error 400 {:errors @valid/*errors*})
+                          {:status 400 :body (valid/get-errors)})))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)

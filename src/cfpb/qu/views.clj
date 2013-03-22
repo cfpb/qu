@@ -27,9 +27,9 @@
    :not-found 404})
 
 (defn json-error
-  ([msg] (json-error msg {}))
-  ([msg body]
-     (let [body (merge body {:error msg})]
+  ([status] (json-error status {}))
+  ([status body]
+     (let [body (merge body {:status status})]
        (json/generate-string body))))
 
 (deftemplate layout-html "templates/layout.html"
