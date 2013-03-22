@@ -73,7 +73,7 @@
   "tables": {
     "hmda_lar": {
       "sources": [
-        "2011HMDALAR - National.csv"//http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip
+        "hmda_lar_2011.csv"//http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip
 
       ], 
       "columns": {
