@@ -8,9 +8,10 @@ context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
   (:require
    [clojure.string :as str]
+   [clojure.tools.logging :refer [info error]]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
-   [validateur.validation :as valid]
+   [noir.validation :as valid]
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
@@ -77,24 +78,22 @@ can query with."
                                           (not= value "")
                                           (dimensions (name key)))) params))
                       (cast-dimensions slice-def))
-     :clauses (into {} (->> params
-                            (map (fn [[key value]]
-                                   [(keyword key) value]))
-                            (filter (fn [[key value]]
-                                      (and
-                                       (not= value "")
-                                       (allowed-clauses key))))))}))
+     :clauses (into {} (filter (fn [[key value]]
+                                 (and
+                                  (not= value "")
+                                  (allowed-clauses key))) params))}))
 
-(defn- parses-correctly [key parsefn & {:keys [allow-nil] :or {allow-nil true}}]
-  (fn [m]
-    (let [input (m key)]
-      (try        
-        (if (or (and allow-nil (str/blank? input))
-                (parse parsefn input))
-          [true #{}]
-          [false {key #{"does not parse correctly"}}])
-        (catch Exception e
-          [false {key #{"does not parse correctly"}}])))))
+(defn where-parses? [where]
+  (try
+    (or (str/blank? where)
+        (parse where-expr where))
+    (catch Exception e
+      false)))
+
+(defn valid-params? [{where :$where}]
+  (valid/rule (where-parses? where)
+               [:$where "The WHERE clause does not parse correctly."])
+  (not (valid/errors? :$where)))
 
 (defresource
   ^{:doc "Resource for an individual slice."}
@@ -102,10 +101,14 @@ can query with."
   :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
   :malformed? (fn [{:keys [request]}]
-                (let [params (:params request)
-                      validator (valid/validation-set
-                                 (parses-correctly "$where" where-expr))]
-                  (valid/invalid? validator params)))
+                (let [media-type (get-in request [:headers "accept"])]
+                  (not (or (valid-params? (:params request))
+                           (= media-type "text/html")))))
+  :handle-malformed (fn [{:keys [request representation]}]
+                      (let [media-type (get-in request [:headers "accept"])]
+                        (case media-type
+                          "application/json" (views/json-error 400 {:errors @valid/*errors*})
+                          {:status 400 :body (valid/get-errors)})))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
