@@ -5,8 +5,14 @@
     [handler :as handler]
     [route :as route]]
    [clojure.java.io :as io]
-   [ring.middleware.logger :as logger]
+   [ring.middleware
+    [nested-params :refer [wrap-nested-params]]
+    [params :refer [wrap-params]]
+    [logger :as logger]]
+   [cfpb.qu.middleware
+    [keyword-params :refer [wrap-keyword-params]]]
    [ring.adapter.jetty :refer [run-jetty]]
+   [noir.validation :as valid]
    [monger.core :as mongo]
    [com.ebaxt.enlive-partials :refer [handle-partials]]   
    [cfpb.qu.resources :as resources]))
@@ -60,8 +66,12 @@ media-type preference."
   MongoDB connection for the request before handing off the request to
   Compojure."}
   app
-  (-> (handler/api app-routes)
+  (-> app-routes
+      wrap-keyword-params
+      wrap-nested-params
+      wrap-params
       logger/wrap-with-logger
+      valid/wrap-noir-validation
       wrap-mongo-connection
       (wrap-convert-suffix-to-accept-header
        {".html" "text/html"

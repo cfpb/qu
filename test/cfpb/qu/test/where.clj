@@ -34,7 +34,10 @@
               :op :AND
               :right {:left {:comparison [:height :< 4.5]}
                       :op :OR
-                      :right {:comparison [:name := "Pete"]}}}))
+                      :right {:comparison [:name := "Pete"]}}})
+
+       (fact "returns an error when attempting to parse the unparsable"
+             (parse "length <==> 3") => {:error true}))
 
 (facts "about mongo-fn"
        (fact "handles the starts_with function"
