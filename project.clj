@@ -21,7 +21,9 @@ serve their public data sets."
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [parse-ez "0.3.4"]]
   :main cfpb.qu.core
-  :ring {:handler cfpb.qu.core/app}
+  :ring {:handler cfpb.qu.handler/app
+         :init cfpb.qu.handler/init
+         :destroy cfpb.qu.handler/destroy}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"}
   :profiles {:dev

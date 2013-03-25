@@ -1,8 +1,6 @@
 TODO
 
 * Use noir responses where it makes sense: http://yogthos.github.com/lib-noir/noir.response.html
-* Move cfpb.qu.core to cfpb.qu.handler
-* Add setup and teardown functions and remove wrapper function to connect to Mongo: http://www.luminusweb.net/docs
 * Add configuration: 
   * https://github.com/paulbellamy/cconf
   * http://cemerick.com/2011/10/17/a-la-carte-configuration-in-clojure-apis/
