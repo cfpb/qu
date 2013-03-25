@@ -1,8 +1,5 @@
 TODO
 
-* Add configuration: 
-  * https://github.com/paulbellamy/cconf
-  * http://cemerick.com/2011/10/17/a-la-carte-configuration-in-clojure-apis/
 * Add better logging:
   * https://github.com/malcolmsparks/clj-logging-config
   * http://www.paullegato.com/blog/log4j-clojure/

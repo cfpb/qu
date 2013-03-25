@@ -6,9 +6,11 @@ serve their public data sets."
   :plugins [[lein-ring "0.8.2"]
             [codox "0.6.4"]
             [lein-cloverage "1.0.2"]
-            [lein-midje "3.0.0"]]
+            [lein-midje "3.0.0"]
+            [lein-environ "0.4.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.3"]
+                 [environ "0.4.0"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
                  [ring.middleware.logger "0.4.0"]
@@ -26,6 +28,8 @@ serve their public data sets."
          :destroy cfpb.qu.handler/destroy}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"}
-  :profiles {:dev
-             {:dependencies [[ring-mock "0.1.3"]
+  :profiles {:dev             
+             {:env {:mongo-host "127.0.0.1"
+                    :mongo-port 27017}
+              :dependencies [[ring-mock "0.1.3"]
                              [midje "1.5.0"]]}})

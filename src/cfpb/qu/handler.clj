@@ -6,6 +6,7 @@
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [logger :as logger]]
+   [environ.core :refer [env]]
    [cfpb.qu.middleware
     [keyword-params :refer [wrap-keyword-params]]]
    [ring.adapter.jetty :refer [run-jetty]]
@@ -37,9 +38,14 @@ media-type preference."
             handler)
         (handler request)))))
 
-(defn init []
+(defn ensure-mongo-connection []
   (when-not (bound? #'mongo/*mongodb-connection*)
-    (mongo/connect!)))
+    (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
+          options (mongo/mongo-options)]
+      (mongo/connect! address options))))
+
+(defn init []
+  (ensure-mongo-connection))
 
 (defn destroy []
   (mongo/disconnect!))
