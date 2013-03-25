@@ -1,6 +1,5 @@
 TODO
 
-* Use noir responses where it makes sense: http://yogthos.github.com/lib-noir/noir.response.html
 * Add configuration: 
   * https://github.com/paulbellamy/cconf
   * http://cemerick.com/2011/10/17/a-la-carte-configuration-in-clojure-apis/
@@ -8,6 +7,9 @@ TODO
   * https://github.com/malcolmsparks/clj-logging-config
   * http://www.paullegato.com/blog/log4j-clojure/
   * https://github.com/ptaoussanis/timbre
+* Fix .ext so that it always gives some representation
+* Split out resources
+
 
 # Think about it
 * slingshot: https://github.com/scgilardi/slingshot

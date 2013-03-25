@@ -2,6 +2,7 @@
   "Functions to display resource data in HTML, CSV, and JSON formats."
   (:require
    [clojure.java.io :as io]
+   [clojure.tools.logging :refer [info error]]
    [clojure
     [string :as str]
     [pprint :refer [pprint]]]
@@ -10,7 +11,6 @@
     [response :refer [render]]]
    [noir.validation :as valid]
    [clojure-csv.core :refer [write-csv]]
-   [cheshire.core :as json]
    [monger
     [core :as mongo :refer [get-db with-db]]
     [collection :as coll]
@@ -20,17 +20,15 @@
     :refer [deftemplate defsnippet]]
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
+   [noir.response :as response]
    [cfpb.qu.data :as data]))
-
-(def http-status
-  {:bad-request 400
-   :not-found 404})
 
 (defn json-error
   ([status] (json-error status {}))
   ([status body]
-     (let [body (merge body {:status status})]
-       (json/generate-string body))))
+     (response/status
+      status
+      (response/json body))))
 
 (deftemplate layout-html "templates/layout.html"
   [content]
@@ -173,13 +171,20 @@
                                         data)))))
 
 (defmethod slice "application/json" [_ data _]
-  (json/generate-string data))
+  (response/json data))
 
 (defmethod slice "text/csv" [_ data {:keys [slice-def params]}]
   (let [table (:table slice-def)
         columns (columns-for-view slice-def params)
         rows (data/get-data-table data columns)]
-    (str (write-csv (vector columns)) (write-csv rows))))
+    (response/content-type
+     "text/csv; charset=utf-8"
+     (str (write-csv (vector columns)) (write-csv rows)))))
 
 (defmethod slice :default [format _ _]
-  (route/not-found (str "format not found: " format)))
+  (response/status
+   406
+   (response/content-type
+    "text/plain"
+    (str "Format not found: " format
+         ". Valid formats are application/json, text/csv, and text/html."))))
