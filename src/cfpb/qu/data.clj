@@ -2,8 +2,9 @@
   "This namespace contains all our functions for retrieving data from
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
-  (:require [clojure.string :as str]
-            [environ.core :refer [env]]            
+  (:require [taoensso.timbre :as log]
+            [clojure.string :as str]
+            [environ.core :refer [env]]
             [cfpb.qu.where :as where]
             [monger
              [core :as mongo :refer [with-db get-db]]

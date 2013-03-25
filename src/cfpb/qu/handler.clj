@@ -1,17 +1,18 @@
 (ns cfpb.qu.handler
   (:require
+   [clojure.string :as str]
    [compojure
     [handler :as handler]]
    [ring.middleware
     [nested-params :refer [wrap-nested-params]]
-    [params :refer [wrap-params]]
-    [logger :as logger]]
+    [params :refer [wrap-params]]]
    [cfpb.qu.middleware
     [keyword-params :refer [wrap-keyword-params]]]
    [ring.adapter.jetty :refer [run-jetty]]
    [noir.validation :as valid]
    [monger.core :as mongo]
    [com.ebaxt.enlive-partials :refer [handle-partials]]
+   [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]
    [cfpb.qu
     [data :as data]
     [routes :refer [app-routes]]
@@ -38,8 +39,61 @@ media-type preference."
             handler)
         (handler request)))))
 
+(defn- log-request-msg
+  [verb {:keys [request-method uri remote-addr query-string params] :as req}]
+  (str verb
+       " "
+       (str/upper-case (name request-method))
+       " "
+       uri
+       (if query-string (str "?" query-string))
+       " for " remote-addr))
+
+(defn- log-request
+  [{:keys [params] :as req}]
+  (info (log-request-msg "Started" req))
+  (if params
+    (info (str "Params:" params))))
+
+(defn- log-response
+  [req {:keys [status] :as resp} total]
+  (let [msg (str (log-request-msg "Finished" req)
+                 " in " total " ms.  Status: "
+                 status)]
+    (if (and (number? status)
+             (>= status 500))
+      (error msg)
+      (info msg))))
+
+(defn- log-exception
+  [req ex total]
+  (error (str (log-request-msg "Exception on " req)
+              " in " total " ms."))
+  (error ex "--- END STACKTRACE ---"))
+
+(defn- wrap-logging
+  [handler]
+  (fn [request]
+    (let [start (System/currentTimeMillis)]
+      (try
+        (log-request request)
+        (let [response (handler request)
+              finish (System/currentTimeMillis)
+              total  (- finish start)]
+          (log-response request response total)
+          response)
+        (catch Throwable ex
+          (let [finish (System/currentTimeMillis)
+                total (- finish start)]
+            (log-exception request ex total))
+          (throw ex))))))
+
 (defn init []
-  (data/ensure-mongo-connection))
+  (data/ensure-mongo-connection)
+  (log/set-config! [:prefix-fn]
+                      (fn [{:keys [level timestamp hostname ns]}]
+                        (str timestamp " " (-> level name str/upper-case)
+                             " [" ns "]"))))
 
 (defn destroy []
   (mongo/disconnect!))
@@ -53,7 +107,7 @@ media-type preference."
       wrap-keyword-params
       wrap-nested-params
       wrap-params
-      logger/wrap-with-logger
+      wrap-logging
       valid/wrap-noir-validation
       (wrap-convert-suffix-to-accept-header
        {".html" "text/html"
