@@ -1,12 +1,7 @@
 TODO
 
-* Add better logging:
-  * https://github.com/malcolmsparks/clj-logging-config
-  * http://www.paullegato.com/blog/log4j-clojure/
-  * https://github.com/ptaoussanis/timbre
 * Fix .ext so that it always gives some representation
 * Split out resources
-
 
 # Think about it
 * slingshot: https://github.com/scgilardi/slingshot

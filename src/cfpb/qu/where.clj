@@ -26,7 +26,7 @@ for use in constructing Mongo queries."
    :!= "$ne"})
 
 (defmulti mongo-fn
-  (fn [name args]
+  (fn [name _]
     name))
 
 ;; TODO Make sure the strings coming into these are escaped so that

@@ -18,6 +18,9 @@ after retrieval."
           options (mongo/mongo-options)]
       (mongo/connect! address options))))
 
+(defn disconnect-mongo []
+  (mongo/disconnect!))
+
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
 stored in a Mongo database called 'metadata'."

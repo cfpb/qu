@@ -6,17 +6,16 @@
    [ring.middleware
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]]
-   [cfpb.qu.middleware
-    [keyword-params :refer [wrap-keyword-params]]]
    [ring.adapter.jetty :refer [run-jetty]]
    [noir.validation :as valid]
-   [monger.core :as mongo]
    [com.ebaxt.enlive-partials :refer [handle-partials]]
-   [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]
+   [taoensso.timbre :as log]
    [cfpb.qu
     [data :as data]
-    [routes :refer [app-routes]]
-    [resources :as resources]]))
+    [routes :refer [app-routes]]]
+   [cfpb.qu.middleware
+    [keyword-params :refer [wrap-keyword-params]]
+    [logging :refer [wrap-with-logging]]]))
 
 (defn- wrap-convert-suffix-to-accept-header
   "A URI identifies a resource, not a representation. But conventional
@@ -39,55 +38,6 @@ media-type preference."
             handler)
         (handler request)))))
 
-(defn- log-request-msg
-  [verb {:keys [request-method uri remote-addr query-string params] :as req}]
-  (str verb
-       " "
-       (str/upper-case (name request-method))
-       " "
-       uri
-       (if query-string (str "?" query-string))
-       " for " remote-addr))
-
-(defn- log-request
-  [{:keys [params] :as req}]
-  (info (log-request-msg "Started" req))
-  (if params
-    (info (str "Params:" params))))
-
-(defn- log-response
-  [req {:keys [status] :as resp} total]
-  (let [msg (str (log-request-msg "Finished" req)
-                 " in " total " ms.  Status: "
-                 status)]
-    (if (and (number? status)
-             (>= status 500))
-      (error msg)
-      (info msg))))
-
-(defn- log-exception
-  [req ex total]
-  (error (str (log-request-msg "Exception on " req)
-              " in " total " ms."))
-  (error ex "--- END STACKTRACE ---"))
-
-(defn- wrap-logging
-  [handler]
-  (fn [request]
-    (let [start (System/currentTimeMillis)]
-      (try
-        (log-request request)
-        (let [response (handler request)
-              finish (System/currentTimeMillis)
-              total  (- finish start)]
-          (log-response request response total)
-          response)
-        (catch Throwable ex
-          (let [finish (System/currentTimeMillis)
-                total (- finish start)]
-            (log-exception request ex total))
-          (throw ex))))))
-
 (defn init []
   (data/ensure-mongo-connection)
   (log/set-config! [:prefix-fn]
@@ -96,7 +46,7 @@ media-type preference."
                              " [" ns "]"))))
 
 (defn destroy []
-  (mongo/disconnect!))
+  (data/disconnect-mongo))
 
 (def ^{:doc "The entry point into the web API. We look for URI
   suffixes and strip them to set the Accept header, then create a
@@ -107,7 +57,7 @@ media-type preference."
       wrap-keyword-params
       wrap-nested-params
       wrap-params
-      wrap-logging
+      wrap-with-logging
       valid/wrap-noir-validation
       (wrap-convert-suffix-to-accept-header
        {".html" "text/html"

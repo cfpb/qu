@@ -88,7 +88,7 @@
                [:input]
                (html/set-attr :value (params field))))))
 
-(defn- highlight-errors [params]
+(defn- highlight-errors []
   (fn [node]
     (let [field (keyword (get-in node [:attrs :data-clause]))]
       (if (valid/errors? field)
@@ -139,7 +139,7 @@
   [:.clause-fields :.control-group]
   (html/do->
    (fill-in-input-value params)
-   (highlight-errors params))
+   (highlight-errors))
   
   [:#query-results :thead :tr]
   (html/content (html/html
