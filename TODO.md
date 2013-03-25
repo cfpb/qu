@@ -1,7 +1,6 @@
 TODO
 
 * Use noir responses where it makes sense: http://yogthos.github.com/lib-noir/noir.response.html
-* Move routes into cfpb.qu.routes
 * Move cfpb.qu.core to cfpb.qu.handler
 * Add setup and teardown functions and remove wrapper function to connect to Mongo: http://www.luminusweb.net/docs
 * Add configuration: 

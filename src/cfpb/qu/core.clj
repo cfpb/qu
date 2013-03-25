@@ -1,10 +1,7 @@
 (ns cfpb.qu.core
   (:require
    [compojure
-    [core :refer :all]
-    [handler :as handler]
-    [route :as route]]
-   [clojure.java.io :as io]
+    [handler :as handler]]
    [ring.middleware
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
@@ -14,19 +11,10 @@
    [ring.adapter.jetty :refer [run-jetty]]
    [noir.validation :as valid]
    [monger.core :as mongo]
-   [com.ebaxt.enlive-partials :refer [handle-partials]]   
-   [cfpb.qu.resources :as resources]))
-
-(defroutes app-routes
-  "Create the app routes. Provides GET-only access to the list of
-datasets, individual datasets, and slices. Static files are served
-through Jetty, not through another web server."
-  (GET "/" [] resources/index)
-  (GET "/data" [] resources/index)
-  (GET "/data/:dataset" [dataset] resources/dataset)
-  (GET "/data/:dataset/:slice" [dataset slice] resources/slice)
-  (route/files "/static" {:root (.getPath (io/resource "static/"))})
-  (route/not-found (resources/not-found "Route not found")))
+   [com.ebaxt.enlive-partials :refer [handle-partials]]
+   [cfpb.qu
+    [routes :refer [app-routes]]
+    [resources :as resources]]))
 
 (defn- wrap-mongo-connection
   "This allows us to create a MongoDB connection before handling a web
