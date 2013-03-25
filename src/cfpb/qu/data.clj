@@ -3,12 +3,19 @@
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [clojure.string :as str]
+            [environ.core :refer [env]]            
             [cfpb.qu.where :as where]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
              [collection :as coll]
              json]))
+
+(defn ensure-mongo-connection []
+  (when-not (bound? #'mongo/*mongodb-connection*)
+    (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
+          options (mongo/mongo-options)]
+      (mongo/connect! address options))))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
