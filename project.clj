@@ -17,11 +17,12 @@ serve their public data sets."
                  [compojure "1.1.3"]
                  [enlive "1.1.1"]
                  [environ "0.4.0"]
-                 [lib-noir "0.4.6"]
+                 [lib-noir "0.4.9"]
                  [liberator "0.8.0"]
                  [parse-ez "0.3.4"]
                  [ring/ring-core "1.1.6"]
-                 [ring/ring-jetty-adapter "1.1.6"]]
+                 [ring/ring-jetty-adapter "1.1.6"]
+                 [ring.middleware.mime-extensions "0.2.0"]]
   :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init
