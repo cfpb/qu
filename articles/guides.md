@@ -14,7 +14,7 @@ We recommend that you read these guides, if possible, in this order:
 
 How to set up Qu.
 
-### [The Qu Query API](/qu/articles/api.html)
+### [The Qu Query API](/qu/articles/queries.html)
 
 This guide covers:
 
