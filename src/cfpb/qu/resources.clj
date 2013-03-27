@@ -7,10 +7,15 @@ In Liberator, returning a map from a function adds that map to the
 context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
   (:require
+   [clojure.string :as str]
+   [clojure.tools.logging :refer [info error]]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
+   [noir.validation :as valid]
+   [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
-   [cfpb.qu.views :as views]))
+   [cfpb.qu.views :as views]
+   [cfpb.qu.where.parse-fns :refer [where-expr]]))
 
 (defn index [_]
   (views/layout-html
@@ -73,18 +78,37 @@ can query with."
                                           (not= value "")
                                           (dimensions (name key)))) params))
                       (cast-dimensions slice-def))
-     :clauses (into {} (->> params
-                            (map (fn [[key value]]
-                                   [(keyword key) value]))
-                            (filter (fn [[key value]]
-                                      (and
-                                       (not= value "")
-                                       (allowed-clauses key))))))}))
+     :clauses (into {} (filter (fn [[key value]]
+                                 (and
+                                  (not= value "")
+                                  (allowed-clauses key))) params))}))
+
+(defn where-parses? [where]
+  (try
+    (or (str/blank? where)
+        (parse where-expr where))
+    (catch Exception e
+      false)))
+
+(defn valid-params? [{where :$where}]
+  (valid/rule (where-parses? where)
+               [:$where "The WHERE clause does not parse correctly."])
+  (not (valid/errors? :$where)))
 
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
+  :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
+  :malformed? (fn [{:keys [request]}]
+                (let [media-type (get-in request [:headers "accept"])]
+                  (not (or (valid-params? (:params request))
+                           (= media-type "text/html")))))
+  :handle-malformed (fn [{:keys [request representation]}]
+                      (let [media-type (get-in request [:headers "accept"])]
+                        (case media-type
+                          "application/json" (views/json-error 400 {:errors @valid/*errors*})
+                          {:status 400 :body (valid/get-errors)})))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
@@ -103,14 +127,14 @@ can query with."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [params (:params request)
                      headers (:headers request)
-                     slice-def (get-in metadata [:slices slice])]
+                     slice-def (get-in metadata [:slices slice])
+                     view-map {:dataset dataset
+                               :slice-def slice-def
+                               :params params
+                               :headers headers}]
                  (mongo/with-db (mongo/get-db dataset)
                    (let [parsed-params (parse-params slice-def params)
                          data (data/get-data slice-def parsed-params)]
                      (views/slice (:media-type representation)
                                   data
-                                  {:dataset dataset
-                                  :slice-def slice-def
-                                  :params params
-                                  :headers headers})))))
-  :available-media-types ["text/html" "text/csv" "application/json"])
+                                  view-map))))))

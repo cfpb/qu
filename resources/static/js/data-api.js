@@ -20,16 +20,17 @@
     
     var formString = _(formVals).pairs()
       .map(function (pair) {
-        return pair.join("=");
+        return pair[0] + "=" +
+          encodeURIComponent(pair[1]).replace(/%20/g,'+');
       })
-      .join("&");
+      .join("<br />&");
 
     $form
       .attr("action", action)
       .find("#query-url")
       .html((formString === "") ?
             action :
-            action + "?" + formString);
+            action + "<br />?" + formString);
   };
 
   $(document).ready(function () {

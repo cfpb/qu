@@ -1,5 +1,7 @@
 # qu
 
+[![Build Status](https://travis-ci.org/cfpb/qu.png)](https://travis-ci.org/cfpb/qu)
+
 _qu_ is an **in-progress** data platform created by the [CFPB][] to
 serve their public data sets.
 
@@ -44,10 +46,8 @@ commands:
 ```sh
 cd qu
 lein deps
-npm install grunt -g
-npm install bower -g
-npm install
-bower install
+npm install -g grunt-cli bower
+npm install && bower install
 grunt
 ```
 
@@ -90,5 +90,21 @@ Make sure you have MongoDB started. To load some sample data, run
 (load-dataset "county_taxes")
 (load-dataset "census") ; Takes quite a while to run; can skip.
 (mongo/disconnect!)
+```
+
+### Testing
+
+We use [Midje](https://github.com/marick/Midje) to test this project,
+so to execute the tests, run:
+
+```sh
+lein midje
+```
+
+If you want the tests to automatically run whenever you change the
+code, eliminating the JVM startup time and generally being great, run:
+
+```sh
+lein midje :autotest
 ```
 

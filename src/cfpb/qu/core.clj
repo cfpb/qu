@@ -5,10 +5,17 @@
     [handler :as handler]
     [route :as route]]
    [clojure.java.io :as io]
-   [monger.core :as mongo]
+   [ring.middleware
+    [nested-params :refer [wrap-nested-params]]
+    [params :refer [wrap-params]]
+    [logger :as logger]]
+   [cfpb.qu.middleware
+    [keyword-params :refer [wrap-keyword-params]]]
    [ring.adapter.jetty :refer [run-jetty]]
-   [cfpb.qu.resources :as resources]
-   [com.ebaxt.enlive-partials :refer [handle-partials]]))
+   [noir.validation :as valid]
+   [monger.core :as mongo]
+   [com.ebaxt.enlive-partials :refer [handle-partials]]   
+   [cfpb.qu.resources :as resources]))
 
 (defroutes app-routes
   "Create the app routes. Provides GET-only access to the list of
@@ -28,7 +35,7 @@ connection per web request may not be the best option here, but it is
 easy for now."
   [handler]
   (fn [request]
-    (when (not (bound? (var mongo/*mongodb-connection*)))
+    (when-not (bound? (var mongo/*mongodb-connection*))
       (mongo/connect!))
     (let [response (handler request)]
       response)))
@@ -59,7 +66,12 @@ media-type preference."
   MongoDB connection for the request before handing off the request to
   Compojure."}
   app
-  (-> (handler/api app-routes)
+  (-> app-routes
+      wrap-keyword-params
+      wrap-nested-params
+      wrap-params
+      logger/wrap-with-logger
+      valid/wrap-noir-validation
       wrap-mongo-connection
       (wrap-convert-suffix-to-accept-header
        {".html" "text/html"
@@ -74,3 +86,4 @@ media-type preference."
 
 (defn -main [& args]
   (boot 8080))
+

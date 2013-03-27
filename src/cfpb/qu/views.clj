@@ -8,6 +8,7 @@
    [compojure
     [route :as route]
     [response :refer [render]]]
+   [noir.validation :as valid]
    [clojure-csv.core :refer [write-csv]]
    [cheshire.core :as json]
    [monger
@@ -20,6 +21,16 @@
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
    [cfpb.qu.data :as data]))
+
+(def http-status
+  {:bad-request 400
+   :not-found 404})
+
+(defn json-error
+  ([status] (json-error status {}))
+  ([status body]
+     (let [body (merge body {:status status})]
+       (json/generate-string body))))
 
 (deftemplate layout-html "templates/layout.html"
   [content]
@@ -74,11 +85,26 @@
 
 (defn- fill-in-input-value [params]
   (fn [node]
-    ((html/set-attr :value (params (get-in node [:attrs :name])))
-     node)))
+    (let [field (keyword (get-in node [:attrs :data-clause]))]
+      (html/at node
+               [:input]
+               (html/set-attr :value (params field))))))
+
+(defn- highlight-errors [params]
+  (fn [node]
+    (let [field (keyword (get-in node [:attrs :data-clause]))]
+      (if (valid/errors? field)
+        ((html/do->
+          (html/add-class "error")
+          (html/append (map (fn [error] {:tag :span
+                                         :attrs {:class "help-inline"}
+                                         :content error})
+                            (valid/get-errors field))))
+         node)
+        node))))
 
 (defsnippet slice-html "templates/slice.html" [:#content]
-  [params action dataset metadata slice-name slice-def columns data]
+  [params action dataset metadata slice-def columns data]
 
   [:form#query-form]
   (html/do->
@@ -112,9 +138,11 @@
                    (html/set-attr :value (or (params (keyword dimension))
                                              (params dimension)))))
 
-  [:.clause-field :input]
-  (fill-in-input-value params)
-
+  [:.clause-fields :.control-group]
+  (html/do->
+   (fill-in-input-value params)
+   (highlight-errors params))
+  
   [:#query-results :thead :tr]
   (html/content (html/html
                  (for [column columns]
@@ -140,7 +168,6 @@
                                         action
                                         dataset
                                         metadata
-                                        slice-name
                                         slice-def
                                         columns
                                         data)))))

@@ -3,6 +3,7 @@
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [clojure.string :as str]
+            [cfpb.qu.where :as where]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -73,6 +74,12 @@ stored in a Mongo database called 'metadata'."
          flatten
          (apply sorted-map))))
 
+
+(defn- get-and-parse-where [where]
+  (if where
+    (where/mongo-eval (where/parse where))
+    {}))
+
 (defn get-data
   "Given the definition of a slice (from the dataset's metadata) and a
   map with the queried dimensions and other clauses for the request,
@@ -90,12 +97,14 @@ stored in a Mongo database called 'metadata'."
         offset (Integer/parseInt (:$offset clauses "0"))
         sort (or (order-by-sort (:$orderBy clauses))
                  {})
-        ; add $where
+        where (->> (:$where clauses)
+                   get-and-parse-where
+                   (merge dimensions))
         ; add $group
         ]
     (map #(dissoc % :_id)
          (q/with-collection table
-           (q/find dimensions)
+           (q/find where)
            (q/fields fields)
            (q/limit limit)
            (q/skip offset)
