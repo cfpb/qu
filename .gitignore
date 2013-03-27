@@ -15,3 +15,4 @@ pom.xml
 /node_modules/
 /resources/components/
 .lein-repl-history
+/sandbox
