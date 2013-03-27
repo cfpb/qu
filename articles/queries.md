@@ -199,3 +199,4 @@ Without parentheses, boolean operators are evaluated left-to-right with NOT bind
 
 ## Data formats
 
+We support HTML, CSV, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
