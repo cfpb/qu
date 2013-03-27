@@ -12,6 +12,7 @@ functions to return the resource that will be presented later."
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
    [noir.validation :as valid]
+   [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
@@ -23,8 +24,10 @@ functions to return the resource that will be presented later."
     (data/get-datasets))))
 
 (defn not-found [msg]
-  (views/layout-html
-   (views/not-found-html msg)))
+  (status
+   404
+   (views/layout-html
+    (views/not-found-html msg))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
