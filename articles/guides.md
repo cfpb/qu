@@ -10,7 +10,7 @@ Qu documentation is organized as a number of guides, covering all kinds of topic
 We recommend that you read these guides, if possible, in this order:
 
 
-###  [Getting started](/qu/articles/getting_started.html)
+### [Getting Started](/qu/articles/getting_started.html)
 
 How to set up Qu.
 
@@ -18,11 +18,11 @@ How to set up Qu.
 
 This guide covers:
 
- * This thing
- * That thing
- * This other thing
+ * REST endpoints
+ * Writing queries
+ * Data retrieval formats
 
-### [Loading data into Qu](/qu/articles/loading_data.html)
+### [Publishing Data with Qu](/qu/articles/data_publishing.html)
 
 This guide covers:
 
