@@ -89,6 +89,10 @@ Most queries will involve more than simple equality queries. For these, we have 
 <td><code>$perPage</code></td>
 <td><strong>TODO</strong>: How many results to return per page. This is a synonym for <code>$limit</code>.</td>
 </tr>
+<tr>
+<td><code>$callback</code></td>
+<td><strong>TODO</strong>: The name of the callback function used in a JSONP query. Only used with JSONP.</td>
+</tr>
 </tbody>
 </table>
 
@@ -200,3 +204,5 @@ Without parentheses, boolean operators are evaluated left-to-right with NOT bind
 ## Data formats
 
 We support HTML, CSV, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
+
+**TODO**: We also support the JSONP data format. To receive JSONP, use the `.jsonp` file extension and the `$callback` clause.
