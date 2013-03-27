@@ -45,21 +45,157 @@ To perform an equality query on a dimension, use the dimension name as a GET par
 
 Most queries will involve more than simple equality queries. For these, we have a set of _clauses_ you can use.
 
-| Clause     | Description |
-| ---------- | ----------- |
-| `$select`  | Which columns to return. If not specified, all columns will be returned. |
-| `$where`   | Filter the results. This uses the [WHERE query syntax][]. If not specified, the results will not be filtered. |
-| `$orderBy` | Order to return the results. If not specified, the order will be consistent, but unspecified. |
-| `$group`   | **TODO**: Column to group results on. |
-| `$limit`   | Maximum number of results to return. If not specified, this defaults to 1000. **TODO**: This has a hard limit of 1000. |
-| `$offset`  | Offset into the results to start at. If not specified, this defaults to 0. |
-| `$q`       | **TODO**: This will do a full-text search for a value within the row's dimensions. |
-| `$page`    | **TODO**: The page of results to return. If not specified, this defaults to 1. |
-| `$perPage` | **TODO**: How many results to return per page. This is a synonym for `$limit`. |
+<table class="table table-bordered table-striped">
+<thead>
+<tr>
+<th>Clause</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>$select</code></td>
+<td>Which columns to return. If not specified, all columns will be returned.</td>
+</tr>
+<tr>
+<td><code>$where</code></td>
+<td>Filter the results. This uses the <a href="#where_in_detail">WHERE query syntax</a>. If not specified, the results will not be filtered.</td>
+</tr>
+<tr>
+<td><code>$orderBy</code></td>
+<td>Order to return the results. If not specified, the order will be consistent, but unspecified.</td>
+</tr>
+<tr>
+<td><code>$group</code></td>
+<td><strong>TODO</strong>: Column to group results on.</td>
+</tr>
+<tr>
+<td><code>$limit</code></td>
+<td>Maximum number of results to return. If not specified, this defaults to 1000. <strong>TODO</strong>: This has a hard limit of 1000.</td>
+</tr>
+<tr>
+<td><code>$offset</code></td>
+<td>Offset into the results to start at. If not specified, this defaults to 0.</td>
+</tr>
+<tr>
+<td><code>$q</code></td>
+<td><strong>TODO</strong>: This will do a full-text search for a value within the row's dimensions.</td>
+</tr>
+<tr>
+<td><code>$page</code></td>
+<td><strong>TODO</strong>: The page of results to return. If not specified, this defaults to 1.</td>
+</tr>
+<tr>
+<td><code>$perPage</code></td>
+<td><strong>TODO</strong>: How many results to return per page. This is a synonym for <code>$limit</code>.</td>
+</tr>
+</tbody>
+</table>
 
-[WHERE query syntax]: #where_in_detail
+### <tt>$where</tt> in detail
 
-### $where in detail
+The `$where` clause supports a mini-language for writing queries. This language is a subset of SQL WHERE clauses, with the addition of function support.
+
+A `$where` clauses is made up of one or more _comparisons_, joined by _boolean operators_.
+
+#### Comparisons
+
+A comparison is _always_ between a column and a value. You cannot compare two columns.
+
+<table class="table table-bordered table-striped"><thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>=</code></td>
+<td>equality</td>
+<td><code>name="Phillip"</code></td>
+</tr>
+<tr>
+<td><code>!=</code></td>
+<td>inequality</td>
+<td><code>state != "Alaska"</code></td>
+</tr>
+<tr>
+<td><code>&gt;</code></td>
+<td>greater than</td>
+<td><code>age &gt; 18</code></td>
+</tr>
+<tr>
+<td><code>&gt;=</code></td>
+<td>greater than or equal</td>
+<td><code>square_miles &gt;= 1000</code></td>
+</tr>
+<tr>
+<td><code>&lt;</code></td>
+<td>less than</td>
+<td><code>age &lt; 18</code></td>
+</tr>
+<tr>
+<td><code>&lt;=</code></td>
+<td>less than or equal</td>
+<td><code>square_miles &lt;= 1000</code></td>
+</tr>
+<tr>
+<td><code>LIKE</code></td>
+<td><strong>TODO</strong> string matching</td>
+<td><code>name LIKE "Pete%"</code> (would match "Pete", "Peter", or anything that starts with "Pete")</td>
+</tr>
+<tr>
+<td><code>ILIKE</code></td>
+<td><strong>TODO</strong> case-insensitive string matching</td>
+<td><code>name ILIKE "%rick"</code> (would match "Rick" as well as "Yorick", "Harrick", or anything else with "rick" in it)</td>
+</tr>
+<tr>
+<td><code>IS NULL</code></td>
+<td>existence of a value</td>
+<td><code>city IS NULL</code></td>
+</tr>
+<tr>
+<td><code>IS NOT NULL</code></td>
+<td>non-existence of a value</td>
+<td><code>city IS NOT NULL</code></td>
+</tr>
+</tbody></table>
+
+For string matching, `%` matches zero-or-more characters, while `_` matches exactly one character. These are _wildcards_, so any character matches them.
+
+#### Boolean operators
+
+<table class="table table-bordered table-striped"><thead>
+<tr>
+<th>Operator</th>
+<th>Description</th>
+<th>Example</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>AND</code></td>
+<td>logical AND of two comparisons</td>
+<td><code>state = "Alaska" AND age &gt; 18</code></td>
+</tr>
+<tr>
+<td><code>OR</code></td>
+<td>logical OR of two comparisons</td>
+<td><code>state = "Alaska" OR state = "Hawaii"</code></td>
+</tr>
+<tr>
+<td><code>NOT</code></td>
+<td>negation of a comparison</td>
+<td><code>NOT (state = "Alaska" OR state = "Hawaii")</code></td>
+</tr>
+<tr>
+<td><code>()</code></td>
+<td>grouping for order of operations</td>
+<td><code>(state = "Alaska" OR state = "Hawaii") AND age &gt; 18</code></td>
+</tr>
+</tbody></table>
+
+Without parentheses, boolean operators are evaluated left-to-right with NOT binding only to the next comparison.
+
 
 ## Data formats
 
