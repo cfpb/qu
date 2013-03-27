@@ -7,8 +7,8 @@ layout: article
 
 ## Prerequisites
 
-In order to work on _qu_, you need the following languages and tools
-installed:
+In order to install and use _qu_, you need the following languages and
+tools installed:
 
 * [Java][]
 * [Node.js][]
@@ -66,3 +66,5 @@ Make sure you have MongoDB started. To load some sample data, run
 (mongo/disconnect!)
 ```
 
+You can find out more about loading your own data in the
+[loading data](loading_data.html) section.
