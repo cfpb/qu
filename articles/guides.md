@@ -21,6 +21,10 @@ This guide covers:
  * REST endpoints
  * Writing queries
  * Data retrieval formats
+ 
+### [Data Formats](/qu/articles/data_formats.html)
+
+This guide covers the available data formats, as well as how data is self-describing in Qu.
 
 ### [Publishing Data with Qu](/qu/articles/data_publishing.html)
 

@@ -83,7 +83,7 @@ Most queries will involve more than simple equality queries. For these, we have 
 </tr>
 <tr>
 <td><code>$page</code></td>
-<td><strong>TODO</strong>: The page of results to return. If not specified, this defaults to 1.</td>
+<td><strong>TODO</strong>: The page of results to return. If not specified, this defaults to 1. If <code>$offset</code> is given, <code>$page</code> is ignored.</td>
 </tr>
 <tr>
 <td><code>$perPage</code></td>
@@ -145,12 +145,12 @@ A comparison is _always_ between a column and a value. You cannot compare two co
 </tr>
 <tr>
 <td><code>LIKE</code></td>
-<td><strong>TODO</strong> string matching</td>
+<td><strong>TODO:</strong> string matching</td>
 <td><code>name LIKE "Pete%"</code> (would match "Pete", "Peter", or anything that starts with "Pete")</td>
 </tr>
 <tr>
 <td><code>ILIKE</code></td>
-<td><strong>TODO</strong> case-insensitive string matching</td>
+<td><strong>TODO:</strong> case-insensitive string matching</td>
 <td><code>name ILIKE "%rick"</code> (would match "Rick" as well as "Yorick", "Harrick", or anything else with "rick" in it)</td>
 </tr>
 <tr>
@@ -200,9 +200,14 @@ For string matching, `%` matches zero-or-more characters, while `_` matches exac
 
 Without parentheses, boolean operators are evaluated left-to-right with NOT binding only to the next comparison.
 
+### <tt>$orderBy</tt>
 
-## Data formats
+The `$orderBy` clause determines the order of the results returned. This takes a list of columns, separated by commas, with an optional suffix of `desc` to indicate that you want the data in descending order.
 
-We support HTML, CSV, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
+Examples:
 
-**TODO**: We also support the JSONP data format. To receive JSONP, use the `.jsonp` file extension and the `$callback` clause.
+```
+$orderBy=age
+$orderBy=state, square_miles
+$orderBy=age desc, gender
+```
