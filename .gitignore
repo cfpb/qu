@@ -17,3 +17,4 @@ pom.xml
 /resources/components/
 .lein-repl-history
 /sandbox
+*.iml
