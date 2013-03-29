@@ -12,7 +12,7 @@ serve their public data sets."
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [com.ebaxt.enlive-partials "0.1.1"]
-                 [com.novemberain/monger "1.4.2"]
+                 [com.novemberain/monger "1.5.0"]
                  [com.taoensso/timbre "1.5.2"]
                  [compojure "1.1.3"]
                  [enlive "1.1.1"]
