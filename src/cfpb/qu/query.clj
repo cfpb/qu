@@ -8,16 +8,14 @@
 (def default-limit 100)
 (def default-offset 0)
 
-(declare select-fields order-by-sort)
+(declare select-fields order-by-sort parse-params)
 
 (defn params->Query
-  "Convert a parsed set of params (already run through
-  resources/parse-params) into a Query record.
-
-  TODO: Move parse-params into this. Beware of a circular require on
-  data."
-  [{:keys [dimensions clauses]}]
-  (let [select (select-fields (:$select clauses))
+  "Convert params from a web request plus a slice definition into a
+  Query record."
+  [params slice]
+  (let [{:keys [dimensions clauses]} (parse-params params slice)
+        select (select-fields (:$select clauses))
         limit (Integer/parseInt (:$limit clauses
                                          (str default-limit)))
         offset (Integer/parseInt (:$offset clauses
@@ -84,3 +82,38 @@
          flatten
          (apply sorted-map))))
 
+
+(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
+
+(defn- cast-value [value type]
+    (case type
+      "integer" (Integer/parseInt value)
+      value))
+
+(defn- cast-dimensions
+  "Given a slice definition and a set of dimensions from the request,
+cast the requested dimensions into the right type for comparison when
+querying the database."
+  [slice-def dimensions]
+  (into {}
+        (for [[dimension value] dimensions]
+          (vector dimension (cast-value
+                             value
+                             (get-in slice-def [:types dimension]))))))
+
+(defn parse-params
+  "Given a slice definition and the request parameters, convert those
+parameters into something we can use. Specifically, pull out the
+dimensions and clauses and cast the dimension values into something we
+can query with."
+  [params slice]
+  (let [dimensions (set (:dimensions slice))]
+    {:dimensions (->> (into {} (filter (fn [[key value]]
+                                         (and
+                                          (not= value "")
+                                          (dimensions (name key)))) params))
+                      (cast-dimensions slice))
+     :clauses (into {} (filter (fn [[key value]]
+                                 (and
+                                  (not= value "")
+                                  (allowed-clauses key))) params))}))

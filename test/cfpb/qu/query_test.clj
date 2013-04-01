@@ -2,25 +2,26 @@
   (:require [midje.sweet :refer :all]
             [cfpb.qu.query :refer :all]))
 
+(fact "parse-params returns string clauses"
+      (let [params {:$select "age,race"}]
+        (:clauses (parse-params params {})) => {:$select "age,race"}))
+
 (facts "about params->Query"
        (fact "it transforms a comma-separated select into a vector"
-             (params->Query {:dimensions {}
-                                      :clauses {:$select "name,state"}})
+             (params->Query {:$select "name,state"} {})
              => (contains {:select ["name" "state"]}))
 
        (fact "it transforms a comma-separated order into a sorted map"
-             (params->Query {:dimensions {}
-                                      :clauses {:$orderBy "name,state"}})
+             (params->Query {:$orderBy "name,state"} {})
              => (contains {:order (sorted-map "name" 1 "state" 1)}))
 
        (fact "it turns DESC in orderBy into a -1 for order"
-             (params->Query {:dimensions {}
-                                      :clauses {:$orderBy "name desc, state"}})
+             (params->Query {:$orderBy "name desc, state"} {})
              => (contains {:order (sorted-map "name" -1 "state" 1)}))
 
        (fact "it stores dimensions in the query"
-             (params->Query {:dimensions {:state_abbr "AL"}
-                                      :clauses {}})
+             (params->Query {:state_abbr "AL"}
+                            {:dimensions ["state_abbr" "county"]})
              => (contains {:dimensions {:state_abbr "AL"}})))
 
 (facts "about Query->mongo"
