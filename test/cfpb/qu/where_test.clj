@@ -1,4 +1,4 @@
-(ns cfpb.qu.test.where
+(ns cfpb.qu.where-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
             [cfpb.qu.where :refer [parse mongo-eval mongo-fn]]))

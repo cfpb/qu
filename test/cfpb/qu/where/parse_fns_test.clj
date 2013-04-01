@@ -1,4 +1,4 @@
-(ns cfpb.qu.test.where.parse-fns
+(ns cfpb.qu.where.parse-fns-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
             [cfpb.qu.where.parse-fns
