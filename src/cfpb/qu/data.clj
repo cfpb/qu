@@ -4,7 +4,7 @@ MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [taoensso.timbre :as log]
             [environ.core :refer [env]]
-            [cfpb.qu.query :refer [make-query-from-params query->mongo]]
+            [cfpb.qu.query :refer [params->Query Query->mongo]]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -62,10 +62,10 @@ stored in a Mongo database called 'metadata'."
   their presence will cause no errors."
   [slice parsed-params]
   (let [table (:table slice)
-        query (make-query-from-params parsed-params)]
+        query (params->Query parsed-params)]
     (map #(dissoc % :_id)
          (q/with-collection table
-           (merge (query->mongo query))))))
+           (merge (Query->mongo query))))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

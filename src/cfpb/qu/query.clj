@@ -8,13 +8,49 @@
 (def default-limit 100)
 (def default-offset 0)
 
-(defn make-query [& rest]
-  (let [args (apply hash-map rest)]
-    (->Query (:select args)
-             (:where args)
-             (:order args)
-             (:limit args default-limit)
-             (:offset args default-offset))))
+(declare select-fields order-by-sort)
+
+(defn params->Query
+  "Convert a parsed set of params (already run through
+  resources/parse-params) into a Query record.
+
+  TODO: Move parse-params into this. Beware of a circular require on
+  data."
+  [{:keys [dimensions clauses]}]
+  (let [select (select-fields (:$select clauses))
+        limit (Integer/parseInt (:$limit clauses
+                                         (str default-limit)))
+        offset (Integer/parseInt (:$offset clauses
+                                           (str default-offset)))
+        order (or (order-by-sort (:$orderBy clauses))
+                  {})
+        where (:$where clauses)]
+    (map->Query {:select select
+                 :where where
+                 :limit limit
+                 :offset offset
+                 :order order
+                 :dimensions dimensions})))
+
+(defn- where->mongo [where]
+  (if where
+    (where/mongo-eval (where/parse where))
+    {}))
+
+(defn Query->mongo
+  "Transform a Query record into a Mongo query map."
+  [query]
+  (let [where (->> (:where query)
+                   where->mongo
+                   (merge (:dimensions query {})))
+        mongo (q/partial-query
+               (q/find where)
+               (q/limit (:limit query))
+               (q/skip (:offset query))
+               (q/sort (:order query)))]
+    (if-let [select (:select query)]
+      (merge mongo {:fields select})
+      mongo)))
 
 ;; TODO move this to a better location
 (defn select-fields
@@ -48,36 +84,3 @@
          flatten
          (apply sorted-map))))
 
-(defn- where->mongo [where]
-  (if where
-    (where/mongo-eval (where/parse where))
-    {}))
-
-(defn make-query-from-params [{:keys [dimensions clauses]}]
-  (let [select (select-fields (:$select clauses))
-        limit (Integer/parseInt (:$limit clauses
-                                         (str default-limit)))
-        offset (Integer/parseInt (:$offset clauses
-                                           (str default-offset)))
-        order (or (order-by-sort (:$orderBy clauses))
-                  {})
-        where (:$where clauses)]
-    (map->Query {:select select
-                 :where where
-                 :limit limit
-                 :offset offset
-                 :order order
-                 :dimensions dimensions})))
-
-(defn query->mongo [query]
-  (let [where (->> (:where query)
-                   where->mongo
-                   (merge (:dimensions query {})))
-        mongo (q/partial-query
-               (q/find where)
-               (q/limit (:limit query))
-               (q/skip (:offset query))
-               (q/sort (:order query)))]
-    (if-let [select (:select query)]
-      (merge mongo {:fields select})
-      mongo)))
