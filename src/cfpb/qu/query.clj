@@ -1,14 +1,15 @@
 (ns cfpb.qu.query
   (:require [clojure.string :as str]
             [monger.query :as q]
-            [cfpb.qu.where :as where]))
-
-(defrecord Query [select where order limit offset])
+            [cfpb.qu.where :as where]
+            [lonocloud.synthread :as ->]))
 
 (def default-limit 100)
 (def default-offset 0)
 
 (declare select-fields order-by-sort parse-params)
+
+(defrecord Query [select group where order limit offset])
 
 (defn params->Query
   "Convert params from a web request plus a slice definition into a
@@ -16,31 +17,48 @@
   [params slice]
   (let [{:keys [dimensions clauses]} (parse-params params slice)
         select (select-fields (:$select clauses))
+        group (:$group clauses)
+        order (or (order-by-sort (:$orderBy clauses))
+                  {})
+        where (:$where clauses)
         limit (Integer/parseInt (:$limit clauses
                                          (str default-limit)))
         offset (Integer/parseInt (:$offset clauses
-                                           (str default-offset)))
-        order (or (order-by-sort (:$orderBy clauses))
-                  {})
-        where (:$where clauses)]
+                                           (str default-offset)))]
     (map->Query {:select select
+                 :group group
                  :where where
                  :limit limit
                  :offset offset
                  :order order
                  :dimensions dimensions})))
 
+(defn is-aggregation? [query]
+  (:group query false))
+
 (defn- where->mongo [where]
   (if where
     (where/mongo-eval (where/parse where))
     {}))
 
+(defn- Query->mongo-where [query]
+  (-> (:where query)
+      (where->mongo)
+      (merge (:dimensions query {}))))
+
+(defn Query->aggregation [query]
+  (-> []
+      (->/when (:select query)
+        (conj {"$project" (into {} (map #(vector % 1) (:select query)))}))
+      (conj {"$match" (Query->mongo-where query)})
+      (conj {"$group" {"_id" (str "$" (:group query))}})
+      (conj {"$skip" (:offset query)})
+      (conj {"$limit" (:limit query)})))
+
 (defn Query->mongo
   "Transform a Query record into a Mongo query map."
   [query]
-  (let [where (->> (:where query)
-                   where->mongo
-                   (merge (:dimensions query {})))
+  (let [where (Query->mongo-where query)
         mongo (q/partial-query
                (q/find where)
                (q/limit (:limit query))
@@ -81,7 +99,6 @@
                     (vector (first order) 1)))))
          flatten
          (apply sorted-map))))
-
 
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 

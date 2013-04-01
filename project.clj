@@ -22,7 +22,12 @@ serve their public data sets."
                  [parse-ez "0.3.4"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
-                 [ring.middleware.mime-extensions "0.2.0"]]
+                 [ring.middleware.mime-extensions "0.2.0"]
+
+                 ;; provisional
+                 [lonocloud/synthread "1.0.4"]
+                 [slingshot "0.10.3"]
+                 ]
   :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init

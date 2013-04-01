@@ -6,6 +6,9 @@
       (let [params {:$select "age,race"}]
         (:clauses (parse-params params {})) => {:$select "age,race"}))
 
+(fact "is-aggregation? returns true if we have a group key"
+      (map->Query {:group "state_abbr"}) => is-aggregation?)
+
 (facts "about params->Query"
        (fact "it transforms a comma-separated select into a vector"
              (params->Query {:$select "name,state"} {})
@@ -40,4 +43,18 @@
 
              (Query->mongo (map->Query {:limit 100 :offset 0 :order {} :where ""}))
              =not=> #(contains? % :fields)))
-       
+
+(facts "about Query->aggregation"
+       (fact "it creates a chain of filters for Mongo"
+             (let [query (map->Query {:select ["name" "state"]
+                                      :limit 100
+                                      :offset 0
+                                      :order {}
+                                      :where "population > 10000000"
+                                      :group "state"})]               
+               (Query->aggregation query) =>
+               [{"$project" {"name" 1, "state" 1}}
+                {"$match" {:population {"$gt" 10000000}}}
+                {"$group" {"_id" "$state"}}
+                {"$skip" 0}
+                {"$limit" 100}])))
