@@ -7,7 +7,8 @@
             any attempt multi* series
             number dq-str sq-str chr
             parens sep-by
-            word-in string-in
+            word word-in
+            string string-in
             regex starts-with?]]))
 
 (defn- ci-string
@@ -153,3 +154,34 @@ turn it into a tree built in proper precedence order."
       (build-boolean-tree
        (into [left] (apply concat rhs)))
       left)))
+
+(defn- simple-select
+  []
+  (let [column (identifier)]
+    {column 1}))
+
+(defn- select-as
+  []
+  (let [[column _ name] (series identifier
+                                #(ci-string "AS")
+                                identifier)]
+    {name (str "$" column)}))
+
+(defn- select
+  []
+  (any select-as simple-select))
+
+(defn select-expr
+  "The parse function for valid SELECT expressions.
+
+   - state
+   - state, county
+   - state AS us_state, county
+   - state, SUM(population) ; uses a default column name
+   - state, SUM(population) AS population"
+  []
+  (let [fst (select)
+        comma #(chr \,)
+        rst (multi* #(series comma select))
+        rst (if rst (map second rst))]
+    (apply merge fst rst)))

@@ -2,6 +2,7 @@
   (:require [clojure.string :as str]
             [monger.query :as q]
             [cfpb.qu.query.where :as where]
+            [cfpb.qu.query.select :as select]
             [lonocloud.synthread :as ->]
             [clojure.walk :as walk]))
 
@@ -17,7 +18,7 @@
   Query record."
   [params slice]
   (let [{:keys [dimensions clauses]} (parse-params params slice)
-        select (select-fields (:$select clauses))
+        select (:$select clauses)
         group (:$group clauses)
         order (or (order-by-sort (:$orderBy clauses))
                   {})
@@ -63,6 +64,7 @@
   ;; handle SUM, MIN, MAX, COUNT
   (let [match (Query->mongo-where query)
         select (:select query)
+        select (if select (select/parse select))
         project-cols (concat 
                        (or select []) 
                        (match-columns match))
@@ -88,7 +90,7 @@
                (q/skip (:offset query))
                (q/sort (:order query)))]
     (if-let [select (:select query)]
-      (merge mongo {:fields (into {} (map #(vector % 1) select))})
+      (merge mongo {:fields (select/parse select)})
       mongo)))
 
 ;; TODO move this to a better location
