@@ -1,10 +1,10 @@
-(ns cfpb.qu.where
+(ns cfpb.qu.query.where
   "This namespace parses WHERE clauses into an AST and turns that AST
 into a Monger query."
   (:require
    [clojure.string :as str]
    [protoflex.parse :as p]
-   [cfpb.qu.where.parse-fns :refer [where-expr]])
+   [cfpb.qu.query.parser :refer [where-expr]])
   (:import (java.util.regex Pattern)))
 
 (defn parse

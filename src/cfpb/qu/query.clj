@@ -1,8 +1,9 @@
 (ns cfpb.qu.query
   (:require [clojure.string :as str]
             [monger.query :as q]
-            [cfpb.qu.where :as where]
-            [lonocloud.synthread :as ->]))
+            [cfpb.qu.query.where :as where]
+            [lonocloud.synthread :as ->]
+            [clojure.walk :as walk]))
 
 (def default-limit 100)
 (def default-offset 0)
@@ -46,19 +47,36 @@
       (where->mongo)
       (merge (:dimensions query {}))))
 
+(defn- match-columns [match]
+  (->> match
+       (walk/prewalk (fn [element]
+                       (if (map? element)
+                         (into [] element)
+                         element)))     
+       flatten
+       (filter keyword?)))
+
 (defn Query->aggregation [query]
-  (-> []
-      (->/if-let [select (:select query)]
-        (conj {"$project" (into {} (map #(vector % 1) select))})
-        identity)
-      (conj {"$match" (Query->mongo-where query)})
-      (conj {"$group" {"_id" (str "$" (:group query))}})
-      (->/if-let [skip (:offset query)]
-        (conj {"$skip" skip})
-        identity)
-      (->/if-let [limit (:limit query)]
-        (conj {"$limit" limit})
-        identity)))
+  ;; TODO
+  ;; handle grouping on more than one thing
+  ;; put groupings into $project
+  ;; handle SUM, MIN, MAX, COUNT
+  (let [match (Query->mongo-where query)
+        select (:select query)
+        project-cols (concat 
+                       (or select []) 
+                       (match-columns match))
+        skip (:offset query)
+        limit (:limit query)]
+    (-> []
+        (->/when select
+          (conj {"$project" (into {} (map #(vector (keyword %) 1) project-cols))}))
+        (conj {"$match" match})
+        (conj {"$group" {"_id" (str "$" (:group query))}})
+        (->/when skip
+          (conj {"$skip" skip}))
+        (->/when limit
+          (conj {"$limit" limit})))))
 
 (defn Query->mongo
   "Transform a Query record into a Mongo query map."
@@ -70,7 +88,7 @@
                (q/skip (:offset query))
                (q/sort (:order query)))]
     (if-let [select (:select query)]
-      (merge mongo {:fields select})
+      (merge mongo {:fields (into {} (map #(vector % 1) select))})
       mongo)))
 
 ;; TODO move this to a better location

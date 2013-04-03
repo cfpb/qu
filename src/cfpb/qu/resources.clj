@@ -16,7 +16,7 @@ functions to return the resource that will be presented later."
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
-   [cfpb.qu.where.parse-fns :refer [where-expr]]))
+   [cfpb.qu.query.parser :refer [where-expr]]))
 
 (defn index [_]
   (views/layout-html

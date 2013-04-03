@@ -39,7 +39,7 @@
              (Query->mongo (map->Query {:select ["name" "state"]
                                         :limit 100 :offset 0 :order {} :where ""
                                         }))
-             => (contains {:fields ["name" "state"]})
+             => (contains {:fields {"name" 1 "state" 1}})
 
              (Query->mongo (map->Query {:limit 100 :offset 0 :order {} :where ""}))
              =not=> #(contains? % :fields)))
@@ -53,7 +53,7 @@
                                       :where "population > 10000000"
                                       :group "state"})]               
                (Query->aggregation query) =>
-               [{"$project" {"name" 1, "state" 1}}
+               [{"$project" {:name 1, :state 1, :population 1}}
                 {"$match" {:population {"$gt" 10000000}}}
                 {"$group" {"_id" "$state"}}
                 {"$skip" 0}

@@ -1,5 +1,5 @@
-(ns cfpb.qu.where.parse-fns
-  "Parse functions for WHERE queries."
+(ns cfpb.qu.query.parser
+  "Parse functions for queries."
   (:require
    [clojure.string :as str]
    [protoflex.parse :as p

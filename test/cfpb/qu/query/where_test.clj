@@ -1,7 +1,7 @@
-(ns cfpb.qu.where-test
+(ns cfpb.qu.query.where-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where :refer [parse mongo-eval mongo-fn]])
+            [cfpb.qu.query.where :refer [parse mongo-eval mongo-fn]])
   (:import (java.util.regex Pattern)))
 
 (defn has-ex-data [& data]

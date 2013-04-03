@@ -1,7 +1,7 @@
-(ns cfpb.qu.where.parse-fns-test
+(ns cfpb.qu.query.parser-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where.parse-fns
+            [cfpb.qu.query.parser
              :refer [value identifier function comparison predicate where-expr]]))
 
 (facts "about value"
