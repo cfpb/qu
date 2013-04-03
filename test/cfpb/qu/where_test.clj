@@ -1,7 +1,8 @@
 (ns cfpb.qu.where-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where :refer [parse mongo-eval mongo-fn]]))
+            [cfpb.qu.where :refer [parse mongo-eval mongo-fn]])
+  (:import (java.util.regex Pattern)))
 
 (defn has-ex-data [& data]
   (let [data (apply hash-map data)]
@@ -60,6 +61,30 @@
        (fact "handles non-equality comparisons"
              (mongo-eval (parse "length < 3")) => {:length {"$lt" 3}}
              (mongo-eval (parse "length >= 3")) => {:length {"$gte" 3}})
+
+       (fact "handles LIKE comparisons"
+             "Marc" => (-> (mongo-eval (parse "name LIKE 'Mar%'"))
+                           :name)
+             "Markus" => (-> (mongo-eval (parse "name LIKE 'Mar%'"))
+                             :name)
+             "Mar" => (-> (mongo-eval (parse "name LIKE 'Mar%'"))
+                           :name)
+             "CMark" =not=> (-> (mongo-eval (parse "name LIKE 'Mar%'"))
+                                :name)
+             "Clinton and Marc" => (-> (mongo-eval (parse "name LIKE '%Mar%'"))
+                                :name)
+
+             "Mick" => (-> (mongo-eval (parse "name LIKE 'M__k'"))
+                           :name)
+             "Mark" => (-> (mongo-eval (parse "name LIKE 'M__k'"))
+                           :name)
+             "Mak" =not=> (-> (mongo-eval (parse "name LIKE 'M__k'"))
+                           :name)
+
+             ".M" => (-> (mongo-eval (parse "name LIKE '._'"))
+                         :name)
+             "CM" =not=> (-> (mongo-eval (parse "name LIKE '._'"))
+                             :name))
 
        (fact "handles complex comparisons"
              (mongo-eval (parse "length > 3 AND height = 4.5")) =>

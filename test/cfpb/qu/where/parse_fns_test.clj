@@ -60,6 +60,13 @@
 
              (p/parse comparison "length IS NOT NULL") =>
              {:comparison [:length :!= nil]})
+       
+       (fact "LIKE and ILIKE comparisons can be parsed"
+             (p/parse comparison "name LIKE 'Mar%'") =>
+             {:comparison [:name :LIKE "Mar%"]}
+             
+             (p/parse comparison "name ILIKE 'mar%'") =>
+             {:comparison [:name :ILIKE "mar%"]})
 
        (fact "spaces are irrelevant"
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))

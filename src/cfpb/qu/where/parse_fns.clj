@@ -46,7 +46,7 @@ numeric expressions, strings, and booleans."
   (any numeric string-literal boolean-literal))
 
 (defn- comparison-operator []
-  (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]
+  (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]
     (keyword op)))
 
 (defn identifier
