@@ -62,10 +62,12 @@ stored in a Mongo database called 'metadata'."
   their presence will cause no errors."
   [slice params]
   (let [table (:table slice)
-        query (params->Query params slice)]
+        query (params->Query params slice)
+        mongo-query (Query->mongo query)
+        _ (log/info (str "Query: " mongo-query))]
     (map #(dissoc % :_id)
          (q/with-collection table
-           (merge (Query->mongo query))))))
+           (merge mongo-query)))))
 
 (defn get-aggregation-data
   [slice params]
