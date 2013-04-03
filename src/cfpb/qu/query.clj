@@ -48,12 +48,17 @@
 
 (defn Query->aggregation [query]
   (-> []
-      (->/when (:select query)
-        (conj {"$project" (into {} (map #(vector % 1) (:select query)))}))
+      (->/if-let [select (:select query)]
+        (conj {"$project" (into {} (map #(vector % 1) select))})
+        identity)
       (conj {"$match" (Query->mongo-where query)})
       (conj {"$group" {"_id" (str "$" (:group query))}})
-      (conj {"$skip" (:offset query)})
-      (conj {"$limit" (:limit query)})))
+      (->/if-let [skip (:offset query)]
+        (conj {"$skip" skip})
+        identity)
+      (->/if-let [limit (:limit query)]
+        (conj {"$limit" limit})
+        identity)))
 
 (defn Query->mongo
   "Transform a Query record into a Mongo query map."

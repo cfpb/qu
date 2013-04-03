@@ -4,7 +4,7 @@ MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [taoensso.timbre :as log]
             [environ.core :refer [env]]
-            [cfpb.qu.query :refer [params->Query Query->mongo]]
+            [cfpb.qu.query :refer [params->Query Query->mongo Query->aggregation]]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -66,6 +66,13 @@ stored in a Mongo database called 'metadata'."
     (map #(dissoc % :_id)
          (q/with-collection table
            (merge (Query->mongo query))))))
+
+(defn get-aggregation-data
+  [slice params]
+  (let [table (:table slice)
+        query (params->Query params slice)
+        aggregation (Query->aggregation query)]
+    (coll/aggregate table aggregation)))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from
