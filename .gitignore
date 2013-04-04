@@ -12,7 +12,9 @@ pom.xml
 .lein-failures
 .lein-plugins
 .lein-env
+*.iml
 /out
 /node_modules/
 /resources/components/
 .lein-repl-history
+sandbox/
