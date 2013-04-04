@@ -20,8 +20,7 @@
   (let [{:keys [dimensions clauses]} (parse-params params slice)
         select (:$select clauses)
         group (:$group clauses)
-        order (or (order-by-sort (:$orderBy clauses))
-                  {})
+        order (:$orderBy clauses)
         where (:$where clauses)
         limit (Integer/parseInt (:$limit clauses
                                          (str default-limit)))
@@ -38,7 +37,7 @@
 (defn is-aggregation? [query]
   (or
    (:group query false)
-   (re-find #"(?i)\bAS\b" (:select query ""))))
+   (re-find #"(?i)\bAS\b" (or (:select query) ""))))
 
 (defn- where->mongo [where]
   (if where
@@ -90,8 +89,10 @@
         order (order->mongo (:order query))
         mongo (q/partial-query
                (q/find where)
-               (q/limit (:limit query))
-               (q/skip (:offset query))
+               (q/limit (or (:limit query)
+                            default-limit))
+               (q/skip (or (:offset query)
+                           default-offset))
                (q/sort order))]
     (if fields
       (merge mongo {:fields fields})
@@ -133,7 +134,7 @@
   from that string."
   [select]
   (if select
-    (str/split select #",\s*")))
+    (keys (select/parse select))))
 
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 

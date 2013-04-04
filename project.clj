@@ -2,6 +2,7 @@
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :url "https://github.com/cfpb/qu"
+  :min-lein-version "2.0.0"
   :source-paths ["src"]
   :plugins [[codox "0.6.4"]
             [lein-cloverage "1.0.2"]

@@ -162,10 +162,10 @@ turn it into a tree built in proper precedence order."
 
 (defn- select-as
   []
-  (let [[column _ name] (series identifier
+  (let [[column _ alias] (series identifier
                                 #(ci-string "AS")
                                 identifier)]
-    {name (str "$" column)}))
+    {(name alias) (str "$" (name column))}))
 
 (defn- select
   []
