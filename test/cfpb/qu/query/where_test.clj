@@ -86,6 +86,25 @@
              "CM" =not=> (-> (mongo-eval (parse "name LIKE '._'"))
                              :name))
 
+       (fact "handles ILIKE comparisons"
+
+             "Blob fish" => (-> (mongo-eval (parse "name ILIKE 'blob%'"))
+                         :name)
+             "AYE AYE" => (-> (mongo-eval (parse "name ILIKE 'aye%ay%'"))
+                         :name)
+             "jerboa ears" => (-> (mongo-eval (parse "name ILIKE 'JERB%'"))
+                         :name)
+             "greater pangolin is great" => (-> (mongo-eval (parse "name ILIKE '%P_ng_lin%'"))
+                         :name)
+
+             "goeduck clam" =not=> ( -> (mongo-eval (parse "name ILIKE 'GEODUCK clam'"))
+                          :name)
+             "geoduck clam" =not=> ( -> (mongo-eval (parse "name ILIKE 'G._DUCK clam'"))
+                           :name)
+             "D. melanogaster" => ( -> (mongo-eval (parse "name ILIKE 'D.%Melan%'"))
+                           :name))
+
+
        (fact "handles complex comparisons"
              (mongo-eval (parse "length > 3 AND height = 4.5")) =>
              {"$and" [ {:length {"$gt" 3}} {:height 4.5}]}
