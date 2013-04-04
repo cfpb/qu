@@ -2,6 +2,7 @@
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :url "https://github.com/cfpb/qu"
+  :min-lein-version "2.0.0"
   :source-paths ["src"]
   :plugins [[codox "0.6.4"]
             [lein-cloverage "1.0.2"]
@@ -12,7 +13,7 @@ serve their public data sets."
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [com.ebaxt.enlive-partials "0.1.1"]
-                 [com.novemberain/monger "1.4.2"]
+                 [com.novemberain/monger "1.5.0"]
                  [com.taoensso/timbre "1.5.2"]
                  [compojure "1.1.3"]
                  [enlive "1.1.1"]
@@ -22,7 +23,12 @@ serve their public data sets."
                  [parse-ez "0.3.4"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
-                 [ring.middleware.mime-extensions "0.2.0"]]
+                 [ring.middleware.mime-extensions "0.2.0"]
+
+                 ;; provisional
+                 [lonocloud/synthread "1.0.4"]
+                 [slingshot "0.10.3"]
+                 ]
   :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init

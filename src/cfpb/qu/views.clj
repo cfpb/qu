@@ -21,7 +21,8 @@
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
    [noir.response :as response]
-   [cfpb.qu.data :as data]))
+   [cfpb.qu.data :as data]
+   [cfpb.qu.query :as query]))
 
 (defn json-error
   ([status] (json-error status {}))
@@ -78,7 +79,7 @@
   (let [select (:$select params)]
     (if (and select
              (not= select ""))
-      (data/select-fields select)
+      (query/select-fields select)
       (data/slice-columns slice-def))))
 
 (defn- fill-in-input-value [params]

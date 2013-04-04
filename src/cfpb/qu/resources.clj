@@ -16,7 +16,7 @@ functions to return the resource that will be presented later."
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
-   [cfpb.qu.where.parse-fns :refer [where-expr]]))
+   [cfpb.qu.query.parser :refer [where-expr]]))
 
 (defn index [_]
   (views/layout-html
@@ -51,40 +51,6 @@ functions to return the resource that will be presented later."
                        (views/dataset-html dataset metadata))))
   :available-media-types ["text/html" "text/plain;q=0.8"])
 
-(defn- cast-value [value type]
-    (case type
-      "integer" (Integer/parseInt value)
-      value))
-
-(defn- cast-dimensions
-  "Given a slice definition and a set of dimensions from the request,
-cast the requested dimensions into the right type for comparison when
-querying the database."
-  [slice-def dimensions]
-  (into {}
-        (for [[dimension value] dimensions]
-          (vector dimension (cast-value
-                             value
-                             (get-in slice-def [:types dimension]))))))
-
-(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
-
-(defn parse-params
-  "Given a slice definition and the request parameters, convert those
-parameters into something we can use. Specifically, pull out the
-dimensions and clauses and cast the dimension values into something we
-can query with."
-  [slice-def params]
-  (let [dimensions (set (:dimensions slice-def))]
-    {:dimensions (->> (into {} (filter (fn [[key value]]
-                                         (and
-                                          (not= value "")
-                                          (dimensions (name key)))) params))
-                      (cast-dimensions slice-def))
-     :clauses (into {} (filter (fn [[key value]]
-                                 (and
-                                  (not= value "")
-                                  (allowed-clauses key))) params))}))
 
 (defn where-parses? [where]
   (try
@@ -136,8 +102,7 @@ can query with."
                                :params params
                                :headers headers}]
                  (mongo/with-db (mongo/get-db dataset)
-                   (let [parsed-params (parse-params slice-def params)
-                         data (data/get-data slice-def parsed-params)]
+                   (let [data (data/get-data slice-def params)]
                      (views/slice (:media-type representation)
                                   data
                                   view-map))))))

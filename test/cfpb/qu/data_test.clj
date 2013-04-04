@@ -1,4 +1,4 @@
-(ns cfpb.qu.test.data
+(ns cfpb.qu.data-test
   (:require [midje.sweet :refer :all]
             [cfpb.qu.data :refer :all]))
 

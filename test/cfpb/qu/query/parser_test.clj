@@ -1,7 +1,7 @@
-(ns cfpb.qu.test.where.parse-fns
+(ns cfpb.qu.query.parser-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where.parse-fns
+            [cfpb.qu.query.parser
              :refer [value identifier function comparison predicate where-expr]]))
 
 (facts "about value"
@@ -60,6 +60,13 @@
 
              (p/parse comparison "length IS NOT NULL") =>
              {:comparison [:length :!= nil]})
+       
+       (fact "LIKE and ILIKE comparisons can be parsed"
+             (p/parse comparison "name LIKE 'Mar%'") =>
+             {:comparison [:name :LIKE "Mar%"]}
+             
+             (p/parse comparison "name ILIKE 'mar%'") =>
+             {:comparison [:name :ILIKE "mar%"]})
 
        (fact "spaces are irrelevant"
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))
