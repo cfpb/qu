@@ -66,7 +66,7 @@ for use in constructing Mongo queries."
 (declare mongo-eval-not)
 
 (defn sql-pattern-to-regex-str
-  "Converts a SQL search string, such as 'foo%', onto a regular expression string"
+  "Converts a SQL search string, such as 'foo%', into a regular expression string"
   [value]
   (str "^"
     (str/replace value
