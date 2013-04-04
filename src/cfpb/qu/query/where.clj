@@ -65,26 +65,30 @@ for use in constructing Mongo queries."
 
 (declare mongo-eval-not)
 
+(defn sql-pattern-to-regex-str
+  "Converts a SQL search string, such as 'foo%', into a regular expression string"
+  [value]
+  (str "^"
+    (str/replace value
+      #"[%_]|[^%_]+"
+      (fn [match]
+        (case match
+          "%" ".*"
+          "_" "."
+          (Pattern/quote match))))
+    "$"))
+
 (defn like-to-regex
   "Converts a SQL LIKE value into a regular expression."
   [like]
-  (re-pattern
-    (str "^"
-         (str/replace like
-                      #"[%_]|[^%_]+"
-                      (fn [match]
-                        (case match
-                          "%" ".*"
-                          "_" "."
-                          (Pattern/quote match))))
-         "$")))
+  (re-pattern (sql-pattern-to-regex-str like)))
 
 (defn ilike-to-regex
   "Converts a SQL ILIKE value into a regular expression."
   [ilike]
   (re-pattern
     (str "(?i)"
-      (.pattern (like-to-regex ilike)))))
+      (sql-pattern-to-regex-str ilike))))
 
 
 (defn mongo-eval
