@@ -53,7 +53,7 @@
   and -1/1 for values depending on whether the sort is descending or
   ascending for that column."
   [order-by]
-  (if order-by
+  (if-not (str/blank? order-by)
     (->> (str/split order-by #",\s*")
          (map (fn [order]
                 (let [order (str/split order #"\s+")]
@@ -87,7 +87,7 @@
   (let [where (Query->mongo-where query)
         fields (if-let [select (:select query)]
                  (select/parse select))
-        order (order->mongo (:order query ""))
+        order (order->mongo (:order query))
         mongo (q/partial-query
                (q/find where)
                (q/limit (:limit query))
@@ -108,7 +108,7 @@
         projection (merge
                     (or select {})
                     (into {} (map #(vector % 1) (match-columns match))))
-        _ (println projection)
+        sort (order->mongo (:order query))
         group (:group query)
         skip (:offset query)
         limit (:limit query)]
@@ -118,6 +118,8 @@
         (conj {"$match" match})
         (->/when group
           (conj {"$group" {"_id" (str "$" (:group query))}}))
+        (->/when sort
+          (conj {"$sort" sort}))
         (->/when skip
           (conj {"$skip" skip}))
         (->/when limit

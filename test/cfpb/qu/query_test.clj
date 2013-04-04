@@ -44,11 +44,11 @@
 
        (fact "it adds fields iff :select exists"
              (Query->mongo (map->Query {:select "name, state"
-                                        :limit 100 :offset 0 :where ""
+                                        :limit 100 :offset 0
                                         }))
              => (contains {:fields {:name 1 :state 1}})
 
-             (Query->mongo (map->Query {:limit 100 :offset 0 :where ""}))
+             (Query->mongo (map->Query {:limit 100 :offset 0}))
              =not=> #(contains? % :fields)))
 
 (facts "about Query->aggregation"
@@ -56,12 +56,13 @@
              (let [query (map->Query {:select "name, state"
                                       :limit 100
                                       :offset 0
-                                      :order {}
                                       :where "population > 10000000"
+                                      :order "name"
                                       :group "state"})]
                (Query->aggregation query) =>
                [{"$project" {:name 1, :state 1, :population 1}}
                 {"$match" {:population {"$gt" 10000000}}}
                 {"$group" {"_id" "$state"}}
+                {"$sort" {"name" 1}}
                 {"$skip" 0}
                 {"$limit" 100}])))
