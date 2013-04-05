@@ -22,7 +22,8 @@
    ring.middleware.content-type
    [noir.response :as response]
    [cfpb.qu.data :as data]
-   [cfpb.qu.query :as query]))
+   [cfpb.qu.query :as query]
+   [cfpb.qu.query.select :as select]))
 
 (defn json-error
   ([status] (json-error status {}))
@@ -75,11 +76,21 @@
   [:pre.definition]
   (html/content (with-out-str (pprint metadata))))
 
+(defn select-fields
+  "In API requests, the user can select the columns they want
+  returned. If they choose to do this, the columns will be in a
+  comma-separated string. This function returns a seq of column names
+  from that string."
+  [select]
+  (if select
+    (->> (select/parse select)
+         (map :select))))
+
 (defn- columns-for-view [slice-def params]
   (let [select (:$select params)]
     (if (and select
              (not= select ""))
-      (query/select-fields select)
+      (select-fields select)
       (data/slice-columns slice-def))))
 
 (defn- fill-in-input-value [params]
@@ -145,7 +156,7 @@
   [:#query-results :thead :tr]
   (html/content (html/html
                  (for [column columns]
-                   [:th (data/concept-description metadata column)])))
+                   [:th (name (data/concept-description metadata column))])))
 
   [:#query-results :tbody :tr]
   (html/clone-for [row data]

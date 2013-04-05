@@ -1,17 +1,15 @@
 (ns cfpb.qu.query
   (:require [clojure.string :as str]
             [monger.query :as q]
-            [cfpb.qu.query.where :as where]
-            [cfpb.qu.query.select :as select]
-            [lonocloud.synthread :as ->]
-            [clojure.walk :as walk]))
+            [cfpb.qu.query.mongo :as mongo]
+            [lonocloud.synthread :as ->]))
 
 (def default-limit 100)
 (def default-offset 0)
 
-(declare select-fields parse-params)
+(declare parse-params)
 
-(defrecord Query [select group where order limit offset])
+(defrecord Query [select group where order limit offset mongo errors])
 
 (defn params->Query
   "Convert params from a web request plus a slice definition into a
@@ -35,67 +33,21 @@
                  :dimensions dimensions})))
 
 (defn is-aggregation? [query]
-  (or
-   (:group query false)
-   (re-find #"(?i)\bAS\b" (or (:select query) ""))))
-
-(defn- where->mongo [where]
-  (if where
-    (where/mongo-eval (where/parse where))
-    {}))
-
-(defn order->mongo
-  "In API requests, the user can select the order of data returned. If
-  they do this, the order will be specified as a comma-separated
-  string like so: 'column [desc], column, ...'. This function takes
-  that string and returns a sorted map consisting of columns as keys
-  and -1/1 for values depending on whether the sort is descending or
-  ascending for that column."
-  [order-by]
-  (if-not (str/blank? order-by)
-    (->> (str/split order-by #",\s*")
-         (map (fn [order]
-                (let [order (str/split order #"\s+")]
-                  ;; TODO refactor
-                  (if (= (count order) 2)
-                    (vector (first order)
-                            (if (= "desc" (str/lower-case (second order)))
-                              -1
-                              1))
-                    (vector (first order) 1)))))
-         flatten
-         (apply sorted-map))))
-
-(defn- Query->mongo-where [query]
-  (-> (:where query)
-      (where->mongo)
-      (merge (:dimensions query {}))))
-
-(defn- match-columns [match]
-  (->> match
-       (walk/prewalk (fn [element]
-                       (if (map? element)
-                         (into [] element)
-                         element)))
-       flatten
-       (filter keyword?)))
+  (:group query false))
 
 (defn Query->mongo
   "Transform a Query record into a Mongo query map."
   [query]
-  (let [where (Query->mongo-where query)
-        fields (if-let [select (:select query)]
-                 (select/parse select))
-        order (order->mongo (:order query))
+  (let [query (mongo/process query)
         mongo (q/partial-query
-               (q/find where)
+               (q/find (get-in query [:mongo :match]))
                (q/limit (or (:limit query)
                             default-limit))
                (q/skip (or (:offset query)
                            default-offset))
-               (q/sort order))]
-    (if fields
-      (merge mongo {:fields fields})
+               (q/sort (get-in query [:mongo :sort])))]
+    (if-let [project (get-in query [:mongo :project])]
+      (merge mongo {:fields project})
       mongo)))
 
 (defn Query->aggregation [query]
@@ -103,38 +55,25 @@
   ;; handle grouping on more than one thing
   ;; put groupings into $project
   ;; handle SUM, MIN, MAX, COUNT
-  (let [match (Query->mongo-where query)
-        select (:select query)
-        select (if select (select/parse select))
-        projection (merge
-                    (or select {})
-                    (into {} (map #(vector % 1) (match-columns match))))
-        sort (order->mongo (:order query))
-        group (:group query)
+  (let [query (mongo/process query)
+        match (get-in query [:mongo :match])
+        project (get-in query [:mongo :project])
+        group (get-in query [:mongo :group])
+        sort (get-in query [:mongo :sort])        
         skip (:offset query)
         limit (:limit query)]
     (-> []
-        (->/when select
-          (conj {"$project" projection}))
-        (conj {"$match" match})
+        (->/when match
+          (conj {"$match" match}))
         (->/when group
-          (conj {"$group" {"_id" (str "$" (:group query))}}))
+          (conj {"$group" group}))        
+        (conj {"$project" project})
         (->/when sort
-          (conj {"$sort" sort}))
+          (conj {"$sort" sort}))        
         (->/when skip
           (conj {"$skip" skip}))
         (->/when limit
           (conj {"$limit" limit})))))
-
-;; TODO move this to a better location
-(defn select-fields
-  "In API requests, the user can select the columns they want
-  returned. If they choose to do this, the columns will be in a
-  comma-separated string. This function returns a seq of column names
-  from that string."
-  [select]
-  (if select
-    (keys (select/parse select))))
 
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 
