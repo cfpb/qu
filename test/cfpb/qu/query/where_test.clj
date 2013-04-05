@@ -37,20 +37,6 @@
                       :op :OR
                       :right {:comparison [:name := "Pete"]}}}))
 
-(facts "about mongo-fn"
-       (fact "handles the starts_with function"
-             (-> (mongo-fn :starts_with [:name, "Ambrose"])
-                 :name
-                 str) => "^\\QAmbrose\\E")
-
-       (fact "handles the contains function"
-             (-> (mongo-fn :contains [:name, "Ambrose"])
-                 :name
-                 str) => "\\QAmbrose\\E")      
-
-       (fact "handles no other functions"
-             (mongo-fn :hello [:world]) => (has-ex-data :function :hello :args [:world])))
-
 (facts "about mongo-eval"
        (fact "handles equality correctly"
              (mongo-eval (parse "length = 3")) => {:length 3})
@@ -145,25 +131,6 @@
              (mongo-eval (parse "NOT (length > 3 AND NOT (height > 4.5 AND name = \"Pete\"))")) =>
              {"$or" [{:length {"$not" {"$gt" 3}}}
                      {"$and" [{:height {"$gt" 4.5}}
-                              {:name "Pete"}]}]})
-
-       (fact "handles the starts_with function"
-             (-> (mongo-eval (parse "starts_with(name, 'Ambrose')"))
-                 :name
-                 str) => "^\\QAmbrose\\E")
-
-       (fact "handles the contains function"
-             (-> (mongo-eval (parse "contains(name, 'Ambrose')"))
-                 :name
-                 str) => "\\QAmbrose\\E")
-
-       (fact "handles no other functions"
-             (mongo-eval (parse "hello(world)")) =>
-             (has-ex-data :function :hello :args [:world]))
-
-       (fact "handles NOT and a function"
-             (-> (mongo-eval (parse "NOT starts_with(name, 'Ambrose')"))
-                 (get-in [:name "$not"])
-                 str) => "^\\QAmbrose\\E"))
+                              {:name "Pete"}]}]}))
 
 

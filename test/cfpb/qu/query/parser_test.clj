@@ -28,25 +28,6 @@
        (fact "identifiers must start with a letter"
              (p/parse identifier "3times") => (throws Exception #"^Parse Error")))
 
-(facts "about functions"
-       (fact "can be parsed"
-             (p/parse function "hello(world)") =>
-             {:function {:name :hello :args [:world]}})
-
-       (fact "can have values or identifiers as arguments"
-             (p/parse function "hello(world, 2)") =>
-             {:function {:name :hello :args [:world 2]}}
-
-             (p/parse function "hello(2+1)") =>
-             {:function {:name :hello :args [3]}})
-
-       (fact "spaces in the arglist are irrelevant"
-             (p/parse function "hello(world,2)") =>
-             {:function {:name :hello :args [:world 2]}}
-
-             (p/parse function "hello(   world,        2    )") =>
-             {:function {:name :hello :args [:world 2]}}))
-
 (facts "about comparisons"
        (fact "simple comparisons can be parsed"
              (p/parse comparison "length > 3") => {:comparison [:length :> 3]}

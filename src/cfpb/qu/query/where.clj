@@ -22,26 +22,6 @@ for use in constructing Mongo queries."
    :>= "$gte"
    :!= "$ne"})
 
-(defmulti mongo-fn
-  (fn [name _]
-    name))
-
-;; TODO Make sure the strings coming into these are escaped so that
-;; they do not allow other regex characters
-
-(defmethod mongo-fn :starts_with [_ [ident string]]
-  (let [string (Pattern/quote string)]
-    {ident (re-pattern (str "^" string))}))
-
-(defmethod mongo-fn :contains [_ [ident string]]
-  (let [string (Pattern/quote string)]
-    {ident (re-pattern string)}))
-
-(defmethod mongo-fn :default [name args]
-  (throw (ex-info "Function not found" {:error "func-not-found"
-                                        :function name
-                                        :args args})))
-
 (defn mongo-not [comparison]
   (let [ident (first (keys comparison))
         operation (first (vals comparison))]
@@ -112,11 +92,6 @@ a valid Monger query."
    (get ast :bool)
    (:bool ast)
 
-   (get ast :function)
-   (let [fnname (get-in ast [:function :name])
-         args (get-in ast [:function :args])]
-     (mongo-fn fnname args))
-
    (get ast :error)
    {:_id false}
    
@@ -135,9 +110,6 @@ a valid Monger query."
        :AND {"$or" [(mongo-eval-not left) (mongo-eval-not right)]}))
 
    (get ast :comparison)
-   (mongo-not (mongo-eval ast))
-
-   (get ast :function)
    (mongo-not (mongo-eval ast))
 
    (get ast :bool)

@@ -38,8 +38,6 @@ false will make the parser think it's failed to match."
                  #(ci-string "false"))]
     {:bool (= (str/lower-case lit) "true")}))
 
-(declare function)
-
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
 numeric expressions, strings, and booleans."
@@ -82,13 +80,6 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
        comparison-null
        comparison-not-null))
 
-(defn predicate
-  "Expression that returns true or false to be combined with boolean
-operators in WHERE queries. Predicates can be comparisons or functions."
-  []
-  (any comparison
-       function))
-
 (defn- and-or-operator []
   (let [op (any #(ci-string "AND")
                 #(ci-string "OR"))]
@@ -97,23 +88,6 @@ operators in WHERE queries. Predicates can be comparisons or functions."
 (defn- not-operator []
   (let [op (ci-string "NOT")]
     (keyword (str/upper-case op))))
-
-(defn- arg []
-  (any value identifier))
-
-(defn- arglist []
-  (let [first (arg)
-        rest (multi* #(series (fn [] (chr \,)) arg))]
-    (if rest
-      (vec (conj (map second rest) first))
-      [first])))
-
-(defn function []
-  ; identifier + ( + identifier or value separated by commas + )
-  (let [fnname (identifier)
-        args (parens arglist)]
-    {:function {:name fnname
-                :args args}}))
 
 (declare where-expr)
 
@@ -127,7 +101,7 @@ operators in WHERE queries. Predicates can be comparisons or functions."
   (let [not-operator (attempt not-operator)
         factor (if (starts-with? "(")
                  (paren-where-expr)
-                 (predicate))]
+                 (comparison))]
     (if not-operator
       {:not factor}
       factor)))
