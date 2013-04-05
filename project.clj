@@ -40,4 +40,4 @@ serve their public data sets."
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
               :dependencies [[ring-mock "0.1.3"]
-                             [midje "1.5.0"]]}})
+                             [midje "1.6-SNAPSHOT"]]}})

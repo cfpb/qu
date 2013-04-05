@@ -11,10 +11,7 @@ into a Monger query."
   "Parse a valid WHERE expression and return an abstract syntax tree
 for use in constructing Mongo queries."
   [clause]
-  (try
-    (p/parse where-expr clause)
-    (catch Exception e
-      {:error true})))
+  (p/parse where-expr clause))
 
 (def mongo-operators
   {:AND "$and"

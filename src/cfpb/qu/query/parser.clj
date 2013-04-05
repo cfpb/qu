@@ -155,33 +155,49 @@ turn it into a tree built in proper precedence order."
        (into [left] (apply concat rhs)))
       left)))
 
+(defn- comma []
+  (chr \,))
+
 (defn- simple-select
   []
   (let [column (identifier)]
-    {column 1}))
+    {:select column}))
 
-(defn- select-as
+(defn- aggregation []
+  (let [agg (string-in ["SUM" "COUNT" "MAX" "MIN" "FIRST" "LAST"])]
+    (keyword agg)))
+
+(defn- aggregation-select
   []
-  (let [[column _ alias] (series identifier
-                                #(ci-string "AS")
-                                identifier)]
-    {(name alias) (str "$" (name column))}))
+  (let [aggregation (aggregation)
+        column (parens identifier)]
+    {:aggregation [aggregation column]
+     :select (keyword (str (str/lower-case (name aggregation))
+                           "_"
+                           (name column)))}))
 
 (defn- select
   []
-  (any select-as simple-select))
+  (any aggregation-select
+       simple-select))
 
 (defn select-expr
   "The parse function for valid SELECT expressions.
 
    - state
    - state, county
-   - state AS us_state, county
-   - state, SUM(population) ; uses a default column name
-   - state, SUM(population) AS population"
+   - state, SUM(population)
+   - state, SUM(population)"
   []
-  (let [fst (select)
-        comma #(chr \,)
-        rst (multi* #(series comma select))
-        rst (if rst (map second rst))]
-    (apply merge fst rst)))
+  (if-let [fst (attempt select)]
+    (if-let [rst (multi* #(series comma select))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
+
+(defn group-expr
+  "The parse function for valid GROUP expressions."
+  []
+  (if-let [fst (attempt identifier)]
+    (if-let [rst (multi* #(series comma identifier))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))

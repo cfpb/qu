@@ -1,0 +1,33 @@
+(ns cfpb.qu.query.mongo-test
+  (:refer-clojure :exclude [sort])
+  (:require [midje.sweet :refer :all]
+            [cfpb.qu.query.mongo :refer :all]))
+
+(facts "about sort"
+       (fact "it transforms :order into a sorted-map"
+             (:mongo (sort {:order "name"})) =>
+             (contains {:sort (sorted-map "name" 1)})
+
+             (:mongo (sort {:order "state, name"})) =>
+             (contains {:sort (sorted-map "state" 1 "name" 1)})
+
+             (:mongo (sort {:order "state DESC, name"})) =>
+             (contains {:sort (sorted-map "state" -1 "name" 1)})))
+
+(facts "about match"
+       (fact "it adds errors if it cannot parse"
+             (:errors (match {:where "bad where"})) =>
+             (contains {:where anything}))
+
+       (fact "it transforms :where into :match"
+             (:mongo (match {:where "a > 2"})) =>
+             (contains {:match {:a {"$gt" 2}}})))
+
+(facts "about project"
+       (fact "it adds errors if it cannot parse"
+             (:errors (project {:select "bad select"})) =>
+             (contains {:select anything}))
+       
+       (fact "it transforms :select into :project"
+             (:mongo (project {:select "name, city"})) =>
+             (contains {:project {:name 1, :city 1}})))

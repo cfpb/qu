@@ -76,11 +76,11 @@ stored in a Mongo database called 'metadata'."
   [slice params]
   (let [table (:table slice)
         query (params->Query params slice)
-        _ (log/info (str "Raw query: " (into {} query)))]
-    (map #(dissoc % :_id)
-         (if (is-aggregation? query)
-           (get-data-mongo-aggregation table query)
-           (get-data-mongo-find table query)))))
+        _ (log/info (str "Raw query: " (into {} query)))
+        data (if (is-aggregation? query)
+               (get-data-mongo-aggregation table query)
+               (get-data-mongo-find table query))]
+    (map #(dissoc % :_id) data)))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

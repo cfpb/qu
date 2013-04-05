@@ -1,8 +1,7 @@
 (ns cfpb.qu.query.parser-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.query.parser
-             :refer [value identifier function comparison predicate where-expr]]))
+            [cfpb.qu.query.parser :refer :all]))
 
 (facts "about value"
        (fact "can parse numbers"
@@ -116,3 +115,30 @@
               :right {:left {:comparison [:height :< 4.5]}
                       :op :OR
                       :right {:comparison [:name := "Pete"]}}}))
+
+(facts "about select expressions"
+       (fact "can have one column"
+             (p/parse select-expr "length") => [{:select :length}])
+       
+       (fact "can have multiple columns"
+             (p/parse select-expr "length, height") =>
+             [{:select :length}
+              {:select :height}])
+
+       (fact "can have aggregations"
+             (p/parse select-expr "state, SUM(population)") =>
+             [{:select :state}
+              {:aggregation [:SUM :population]
+               :select :sum_population}])
+
+       (fact "invalid aggregations do not work"
+             (p/parse select-expr "state, TOTAL(population)") =>
+             (throws Exception #"^Parse Error")))
+
+(facts "about select expressions"
+       (fact "can have one column"
+             (p/parse group-expr "state") => [:state])
+       
+       (fact "can have multiple columns"
+             (p/parse group-expr "state, county") =>
+             [:state :county]))
