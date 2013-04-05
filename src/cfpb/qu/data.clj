@@ -3,9 +3,8 @@
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [taoensso.timbre :as log]
-            [clojure.string :as str]
             [environ.core :refer [env]]
-            [cfpb.qu.where :as where]
+            [cfpb.qu.query :refer [is-aggregation? params->Query Query->mongo Query->aggregation]]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -54,43 +53,6 @@ stored in a Mongo database called 'metadata'."
   [slice-def]
   (concat (:dimensions slice-def) (:metrics slice-def)))
 
-(defn select-fields
-  "In API requests, the user can select the columns they want
-  returned. If they choose to do this, the columns will be in a
-  comma-separated string. This function returns a seq of column names
-  from that string."
-  [select]
-  (if select
-    (str/split select #",\s*")))
-
-(defn order-by-sort
-  "In API requests, the user can select the order of data returned. If
-  they do this, the order will be specified as a comma-separated
-  string like so: 'column [desc], column, ...'. This function takes
-  that string and returns a sorted map consisting of columns as keys
-  and -1/1 for values depending on whether the sort is descending or
-  ascending for that column."
-  [order-by]
-  (if order-by
-    (->> (str/split order-by #",\s*")
-         (map (fn [order]
-                (let [order (str/split order #"\s+")]
-                  ;; TODO refactor
-                  (if (= (count order) 2)
-                    (vector (first order)
-                            (if (= "desc" (str/lower-case (second order)))
-                              -1
-                              1))
-                    (vector (first order) 1)))))
-         flatten
-         (apply sorted-map))))
-
-
-(defn- get-and-parse-where [where]
-  (if where
-    (where/mongo-eval (where/parse where))
-    {}))
-
 (defn get-data
   "Given the definition of a slice (from the dataset's metadata) and a
   map with the queried dimensions and other clauses for the request,
@@ -98,28 +60,37 @@ stored in a Mongo database called 'metadata'."
 
   $where and $group are currently not supported clauses, although
   their presence will cause no errors."
-  [slice {:keys [dimensions clauses]}]
+  [slice params]
   (let [table (:table slice)
-        columns (slice-columns :table)
-        fields (or (select-fields (:$select clauses))
-                   (slice-columns :table))
-        ;; only call Integer/parseInt if giving a string
-        limit (Integer/parseInt (:$limit clauses "100"))
-        offset (Integer/parseInt (:$offset clauses "0"))
-        sort (or (order-by-sort (:$orderBy clauses))
-                 {})
-        where (->> (:$where clauses)
-                   get-and-parse-where
-                   (merge dimensions))
-        ; add $group
-        ]
+        query (params->Query params slice)
+        mongo-query (Query->mongo query)
+        _ (log/info (str "Query: " mongo-query))]
     (map #(dissoc % :_id)
          (q/with-collection table
-           (q/find where)
-           (q/fields fields)
-           (q/limit limit)
-           (q/skip offset)
-           (q/sort sort)))))
+           (merge mongo-query)))))
+
+(defn- get-data-mongo-find
+  [collection query]
+  (let [mongo-query (Query->mongo query)
+        _ (log/info (str "Mongo query: " mongo-query))]
+    (q/with-collection collection
+      (merge mongo-query))))
+
+(defn- get-data-mongo-aggregation
+  [collection query]
+  (let [aggregation (Query->aggregation query)
+        _ (log/info (str "Mongo aggregation: " aggregation))]
+    (coll/aggregate collection aggregation)))
+
+(defn get-data
+  [slice params]
+  (let [table (:table slice)
+        query (params->Query params slice)
+        _ (log/info (str "Raw query: " query))]
+    (map #(dissoc % :_id)
+         (if (is-aggregation? query)
+           (get-data-mongo-aggregation table query)
+           (get-data-mongo-find table query)))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from
