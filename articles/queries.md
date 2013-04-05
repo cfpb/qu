@@ -67,7 +67,7 @@ Most queries will involve more than simple equality queries. For these, we have 
 </tr>
 <tr>
 <td><code>$group</code></td>
-<td><strong>TODO</strong>: Column to group results on.</td>
+<td>Column to group results on.</td>
 </tr>
 <tr>
 <td><code>$limit</code></td>
@@ -145,12 +145,12 @@ A comparison is _always_ between a column and a value. You cannot compare two co
 </tr>
 <tr>
 <td><code>LIKE</code></td>
-<td><strong>TODO:</strong> string matching</td>
+<td>string matching</td>
 <td><code>name LIKE "Pete%"</code> (would match "Pete", "Peter", or anything that starts with "Pete")</td>
 </tr>
 <tr>
 <td><code>ILIKE</code></td>
-<td><strong>TODO:</strong> case-insensitive string matching</td>
+<td>case-insensitive string matching</td>
 <td><code>name ILIKE "%rick"</code> (would match "Rick" as well as "Yorick", "Harrick", or anything else with "rick" in it)</td>
 </tr>
 <tr>
