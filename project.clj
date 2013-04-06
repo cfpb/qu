@@ -8,7 +8,8 @@ serve their public data sets."
             [lein-cloverage "1.0.2"]
             [lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
-            [lein-ring "0.8.2"]]
+            [lein-ring "0.8.2"]
+            [lein-embongo "0.2.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
@@ -39,4 +40,4 @@ serve their public data sets."
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
               :dependencies [[ring-mock "0.1.3"]
-                             [midje "1.5.0"]]}})
+                             [midje "1.6-SNAPSHOT"]]}})

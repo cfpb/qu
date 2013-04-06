@@ -38,8 +38,6 @@ false will make the parser think it's failed to match."
                  #(ci-string "false"))]
     {:bool (= (str/lower-case lit) "true")}))
 
-(declare function)
-
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
 numeric expressions, strings, and booleans."
@@ -82,13 +80,6 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
        comparison-null
        comparison-not-null))
 
-(defn predicate
-  "Expression that returns true or false to be combined with boolean
-operators in WHERE queries. Predicates can be comparisons or functions."
-  []
-  (any comparison
-       function))
-
 (defn- and-or-operator []
   (let [op (any #(ci-string "AND")
                 #(ci-string "OR"))]
@@ -97,23 +88,6 @@ operators in WHERE queries. Predicates can be comparisons or functions."
 (defn- not-operator []
   (let [op (ci-string "NOT")]
     (keyword (str/upper-case op))))
-
-(defn- arg []
-  (any value identifier))
-
-(defn- arglist []
-  (let [first (arg)
-        rest (multi* #(series (fn [] (chr \,)) arg))]
-    (if rest
-      (vec (conj (map second rest) first))
-      [first])))
-
-(defn function []
-  ; identifier + ( + identifier or value separated by commas + )
-  (let [fnname (identifier)
-        args (parens arglist)]
-    {:function {:name fnname
-                :args args}}))
 
 (declare where-expr)
 
@@ -127,7 +101,7 @@ operators in WHERE queries. Predicates can be comparisons or functions."
   (let [not-operator (attempt not-operator)
         factor (if (starts-with? "(")
                  (paren-where-expr)
-                 (predicate))]
+                 (comparison))]
     (if not-operator
       {:not factor}
       factor)))
@@ -155,33 +129,49 @@ turn it into a tree built in proper precedence order."
        (into [left] (apply concat rhs)))
       left)))
 
+(defn- comma []
+  (chr \,))
+
 (defn- simple-select
   []
   (let [column (identifier)]
-    {column 1}))
+    {:select column}))
 
-(defn- select-as
+(defn- aggregation []
+  (let [agg (string-in ["SUM" "COUNT" "MAX" "MIN" "FIRST" "LAST"])]
+    (keyword agg)))
+
+(defn- aggregation-select
   []
-  (let [[column _ alias] (series identifier
-                                #(ci-string "AS")
-                                identifier)]
-    {(name alias) (str "$" (name column))}))
+  (let [aggregation (aggregation)
+        column (parens identifier)]
+    {:aggregation [aggregation column]
+     :select (keyword (str (str/lower-case (name aggregation))
+                           "_"
+                           (name column)))}))
 
 (defn- select
   []
-  (any select-as simple-select))
+  (any aggregation-select
+       simple-select))
 
 (defn select-expr
   "The parse function for valid SELECT expressions.
 
    - state
    - state, county
-   - state AS us_state, county
-   - state, SUM(population) ; uses a default column name
-   - state, SUM(population) AS population"
+   - state, SUM(population)
+   - state, SUM(population)"
   []
-  (let [fst (select)
-        comma #(chr \,)
-        rst (multi* #(series comma select))
-        rst (if rst (map second rst))]
-    (apply merge fst rst)))
+  (if-let [fst (attempt select)]
+    (if-let [rst (multi* #(series comma select))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
+
+(defn group-expr
+  "The parse function for valid GROUP expressions."
+  []
+  (if-let [fst (attempt identifier)]
+    (if-let [rst (multi* #(series comma identifier))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))

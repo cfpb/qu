@@ -53,22 +53,6 @@ stored in a Mongo database called 'metadata'."
   [slice-def]
   (concat (:dimensions slice-def) (:metrics slice-def)))
 
-(defn get-data
-  "Given the definition of a slice (from the dataset's metadata) and a
-  map with the queried dimensions and other clauses for the request,
-  return the queried data from the slice.
-
-  $where and $group are currently not supported clauses, although
-  their presence will cause no errors."
-  [slice params]
-  (let [table (:table slice)
-        query (params->Query params slice)
-        mongo-query (Query->mongo query)
-        _ (log/info (str "Query: " mongo-query))]
-    (map #(dissoc % :_id)
-         (q/with-collection table
-           (merge mongo-query)))))
-
 (defn- get-data-mongo-find
   [collection query]
   (let [mongo-query (Query->mongo query)
@@ -83,14 +67,20 @@ stored in a Mongo database called 'metadata'."
     (coll/aggregate collection aggregation)))
 
 (defn get-data
+  "Given the definition of a slice (from the dataset's metadata) and a
+  map with the queried dimensions and other clauses for the request,
+  return the queried data from the slice.
+
+  $group is currently not a supported clause, although its presence
+  will cause no errors."
   [slice params]
   (let [table (:table slice)
         query (params->Query params slice)
-        _ (log/info (str "Raw query: " query))]
-    (map #(dissoc % :_id)
-         (if (is-aggregation? query)
-           (get-data-mongo-aggregation table query)
-           (get-data-mongo-find table query)))))
+        _ (log/info (str "Raw query: " (into {} query)))
+        data (if (is-aggregation? query)
+               (get-data-mongo-aggregation table query)
+               (get-data-mongo-find table query))]
+    (map #(dissoc % :_id) data)))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

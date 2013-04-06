@@ -8,17 +8,7 @@
 
 (facts "about is-aggregation?"
        (fact "returns true if we have a group key"
-             {:group "state_abbr"} => is-aggregation?)
-
-       (fact "returns true if we have an AS in :select"
-             {:select "state_abbr AS state"} => is-aggregation?
-             {:select "bass"} =not=> is-aggregation?))
-
-(facts "about order->mongo"
-       (fact "it transforms :order into a sorted-map"
-             (order->mongo "name") => (sorted-map "name" 1)
-             (order->mongo "state, name") => (sorted-map "state" 1 "name" 1)
-             (order->mongo "state DESC, name") => (sorted-map "state" -1 "name" 1)))
+             {:group "state_abbr"} => is-aggregation?))
 
 (facts "about params->Query"
        (fact "it stores dimensions in the query"
@@ -50,16 +40,16 @@
 
 (facts "about Query->aggregation"
        (fact "it creates a chain of filters for Mongo"
-             (let [query {:select "name, state"
+             (let [query {:select "state, SUM(population)"
                           :limit 100
                           :offset 0
-                          :where "population > 10000000"
-                          :order "name"
+                          :where "land_area > 1000000"
+                          :order "state"
                           :group "state"}]
                (Query->aggregation query) =>
-               [{"$project" {:name 1, :state 1, :population 1}}
-                {"$match" {:population {"$gt" 10000000}}}
-                {"$group" {"_id" "$state"}}
-                {"$sort" {"name" 1}}
+               [{"$match" {:land_area {"$gt" 1000000}}}
+                {"$group" {:_id {:state "$state"} :sum_population {"$sum" "$population"}}}
+                {"$project" {"state" "$_id.state", "sum_population" "$sum_population"}}
+                {"$sort" {"state" 1}}
                 {"$skip" 0}
                 {"$limit" 100}])))
