@@ -31,3 +31,9 @@
        (fact "it transforms :select into :project"
              (:mongo (project {:select "name, city"})) =>
              (contains {:project {:name 1, :city 1}})))
+
+(facts "about group"
+       (fact "it transforms COUNT selects into $sum: 1"
+             (:mongo (group {:select "state, COUNT(county)" :group "state"})) =>
+             (contains {:group {:_id {:state "$state"}
+                                :count_county {"$sum" 1}}})))

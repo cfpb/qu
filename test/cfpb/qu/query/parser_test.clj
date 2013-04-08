@@ -52,13 +52,6 @@
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))
 
 
-(facts "about predicates"
-       (fact "can be comparisons or functions"
-             (p/parse predicate "length > 3") => {:comparison [:length :> 3]}
-             (p/parse predicate "starts_with(name, 'Pete')") =>
-             {:function {:name :starts_with
-                         :args [:name "Pete"]}}))
-
 (facts "about where expressions"
        (fact "can be comparisons"
              (p/parse where-expr "length > 3") => {:comparison [:length :> 3]}
