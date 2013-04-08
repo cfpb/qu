@@ -49,6 +49,17 @@
         (assoc-in query [:errors :select] "could not parse")))
     query))
 
+(defn- select-to-agg
+  "Convert a select/aggregation map into the Mongo equivalent for the
+  $group filter of the aggregation framework. Used in the group
+  function. Non-public."  
+  [{alias :select [agg column] :aggregation}]
+  (if (= agg :COUNT)
+    {alias {"$sum" 1}}
+    {alias
+     {(str "$" (str/lower-case (name agg)))
+      (str "$" (name column))}}))
+
 (defn group [query]
   (if-let [group (:group query)]
     ;; Ensure this works even if project hasn't been called yet.
@@ -60,12 +71,7 @@
               id (into {} (map #(vector % (str "$" (name %))) columns))
               aggregations (->> (select/parse (:select query))
                                 (filter :aggregation)
-                                (map
-                                 (fn [{alias :select
-                                       [agg column] :aggregation}]
-                                   {alias
-                                    {(str "$" (str/lower-case (name agg)))
-                                     (str "$" (name column))}})))
+                                (map select-to-agg))
               group (apply merge {:_id id} aggregations)]
           (assoc-in query [:mongo :group] group))
         (catch Exception e
