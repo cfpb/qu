@@ -200,6 +200,55 @@ For string matching, `%` matches zero-or-more characters, while `_` matches exac
 
 Without parentheses, boolean operators are evaluated left-to-right with NOT binding only to the next comparison.
 
+### <tt>$select</tt> and <tt>$group</tt>
+
+`$select` is a simple clause: in the normal case, it takes a list of fields you wish returned, separated by commas. Unlike the SQL version of `SELECT`, it does not allow for `AS` aliasing:
+
+* _Right_: `state_abbr, county`
+* __Wrong__: `state_abbr AS state, county`
+
+`$group` lists fields you wish to group results by. For example, if you wanted to see the total number of tax returns by state in the included county taxes dataset, you would set `$group` equal to state_abbr.
+
+`$group` requires a `$select` clause. In this `$select` clause, you will want to put the fields you are grouping on, as well as any aggregations you want. Aggregations are functions run on fields of the grouped data in order to reduce them to an associated value.
+
+<table class="table table-bordered table-striped"><thead>
+<tr>
+<th>Aggregation function</th>
+<th>Result</th>
+</tr>
+</thead><tbody>
+<tr>
+<td><code>SUM</code></td>
+<td>Totals the values.</td>
+</tr>
+<tr>
+<td><code>MIN</code></td>
+<td>Returns the minimum value in the set.</td>
+</tr>
+<tr>
+<td><code>MAX</code></td>
+<td>Returns the maximum value in the set.</td>
+</tr>
+<tr>
+<td><code>COUNT</code></td>
+<td>Returns the number of rows in the set. <code>COUNT</code> can be called with any field and will return the same thing.</td>
+</tr>
+</tbody></table>
+
+All aggregation functions are called with the name of the field to aggregate in parentheses. If you wanted to know the total number of tax returns per state in the included county taxes dataset, you would set these clauses:
+
+* `$select`: `state_abbr, SUM(tax_returns)`
+* `$group`: `state_abbr`
+
+You could use the same dataset to get the number of counties per state by using `COUNT`:
+
+* `$select`: `state_abbr, COUNT(county)`
+* `$group`: `state_abbr`
+
+When aggregating, it may be important to know the order the clauses are applied in, as well as the names of the aggregated fields. The `$where` clause is applied first, in order to reduce the amount of data being aggregated. The data is then aggregated using the `$group` and `$select` clauses. `$orderBy` is then applied to sort the data and lastly, `$limit` and `$offset` (or `$page` and `$perPage` are applied.
+
+In order to use the aggregated fields for sorting, you will need to know their names. They will be named using the aggregation function in lower-case, an underscore, and the field name. For example, `SUM(tax_returns)` will be called `sum_tax_returns`.
+
 ### <tt>$orderBy</tt>
 
 The `$orderBy` clause determines the order of the results returned. This takes a list of columns, separated by commas, with an optional suffix of `desc` to indicate that you want the data in descending order.
@@ -211,3 +260,4 @@ $orderBy=age
 $orderBy=state, square_miles
 $orderBy=age desc, gender
 ```
+
