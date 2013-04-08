@@ -35,7 +35,8 @@ serve their public data sets."
          :init cfpb.qu.handler/init
          :destroy cfpb.qu.handler/destroy}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
-          :src-linenum-anchor-prefix "L"}
+          :src-linenum-anchor-prefix "L"
+          :output-dir "doc/codox"}
   :profiles {:dev             
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
