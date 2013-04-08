@@ -66,8 +66,9 @@
         (->/when match
           (conj {"$match" match}))
         (->/when group
-          (conj {"$group" group}))        
-        (conj {"$project" project})
+          (conj {"$group" group}))
+        (->/when project
+          (conj {"$project" project}))
         (->/when sort
           (conj {"$sort" sort}))        
         (->/when skip
