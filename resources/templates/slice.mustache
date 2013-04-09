@@ -59,13 +59,16 @@
       <legend>Clauses</legend>
 
       {{#clauses}}
-      <div class="control-group">
+      <div class="control-group {{#errors}}error{{/errors}}">
         <label class="control-label" for="field-{{key}}">{{label}}</label>
         <input id="field-{{key}}"
                name="${{key}}"
                type="text"
                placeholder="{{placeholder}}"
                value="{{value}}" />
+        {{#errors}}
+        <span class="help-inline">{{.}}</span>
+        {{/errors}}
       </div>
       {{/clauses}}
     </fieldset>

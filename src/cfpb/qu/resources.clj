@@ -11,11 +11,11 @@ functions to return the resource that will be presented later."
    [clojure.tools.logging :refer [info error]]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
-   [noir.validation :as valid]
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
+   [cfpb.qu.query :as query :refer [params->Query]]
    [cfpb.qu.query.parser :refer [where-expr]]))
 
 (defn index [_]
@@ -51,38 +51,16 @@ functions to return the resource that will be presented later."
                        (views/dataset-html dataset metadata))))
   :available-media-types ["text/html" "text/plain;q=0.8"])
 
-
-(defn where-parses? [where]
-  (try
-    (or (str/blank? where)
-        (parse where-expr where))
-    (catch Exception e
-      false)))
-
-(defn valid-params? [{where :$where}]
-  (valid/rule (where-parses? where)
-               [:$where "The WHERE clause does not parse correctly."])
-  (not (valid/errors? :$where)))
-
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
   :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
-  :malformed? (fn [{:keys [request]}]
-                (let [media-type (get-in request [:headers "accept"])]
-                  (not (or (valid-params? (:params request))
-                           (= media-type "text/html")))))
-  :handle-malformed (fn [{:keys [request representation]}]
-                      (let [media-type (get-in request [:headers "accept"])]
-                        (case media-type
-                          "application/json" (views/json-error 400 {:errors @valid/*errors*})
-                          {:status 400 :body (valid/get-errors)})))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
                    slice (get-in request [:params :slice])]
-               (if-let [slice-def (get-in metadata [:slices (keyword slice)])]
+               (if-let [slicedef (get-in metadata [:slices (keyword slice)])]
                  {:dataset dataset
                   :metadata metadata
                   :slice (keyword slice)})))
@@ -96,13 +74,14 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [params (:params request)
                      headers (:headers request)
-                     slice-def (get-in metadata [:slices slice])
+                     slicedef (get-in metadata [:slices slice])
+                     query (params->Query params slicedef)
                      view-map {:dataset dataset
-                               :slice-def slice-def
+                               :slicedef slicedef
                                :params params
-                               :headers headers}]
-                 (mongo/with-db (mongo/get-db dataset)
-                   (let [data (data/get-data slice-def params)]
-                     (views/slice (:media-type representation)
-                                  data
-                                  view-map))))))
+                               :headers headers}
+                     query (mongo/with-db (mongo/get-db dataset)
+                            (query/execute (:table slicedef) query))]
+                 (views/slice (:media-type representation)
+                              query
+                              view-map))))

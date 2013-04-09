@@ -4,14 +4,14 @@
             [cfpb.qu.query.mongo :refer :all]))
 
 (facts "about sort"
-       (fact "it transforms :order into a sorted-map"
-             (:mongo (sort {:order "name"})) =>
+       (fact "it transforms :orderBy into a sorted-map"
+             (:mongo (sort {:orderBy "name"})) =>
              (contains {:sort (sorted-map "name" 1)})
 
-             (:mongo (sort {:order "state, name"})) =>
+             (:mongo (sort {:orderBy "state, name"})) =>
              (contains {:sort (sorted-map "state" 1 "name" 1)})
 
-             (:mongo (sort {:order "state DESC, name"})) =>
+             (:mongo (sort {:orderBy "state DESC, name"})) =>
              (contains {:sort (sorted-map "state" -1 "name" 1)})))
 
 (facts "about match"

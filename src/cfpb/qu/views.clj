@@ -1,24 +1,18 @@
 (ns cfpb.qu.views
   "Functions to display resource data in HTML, CSV, and JSON formats."
   (:require
-   [clojure.java.io :as io]
-   [clojure.tools.logging :refer [info error]]
+   [taoensso.timbre :as log]
    [clojure
     [string :as str]
     [pprint :refer [pprint]]]
    [compojure
-    [route :as route]
     [response :refer [render]]]
-   [noir.validation :as valid]
-   [clojure-csv.core :refer [write-csv]]
-   [monger
-    [core :as mongo :refer [get-db with-db]]
-    [collection :as coll]
-    json]
    [stencil.core :refer [render-file]]
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
-   [noir.response :as response]
+   [noir.response :as response]   
+   [clojure-csv.core :refer [write-csv]]
+   monger.json
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
    [cfpb.qu.query.select :as select]))
@@ -54,70 +48,71 @@
   from that string."
   [select]
   (if select
-    (->> (select/parse select)
-         (map :select))))
+    (map :select (select/parse select))))
 
-(defn- columns-for-view [slice-def params]
+(defn- columns-for-view [slicedef params]
   (let [select (:$select params)]
     (if (and select
              (not= select ""))
       (select-fields select)
-      (data/slice-columns slice-def))))
-
-(def clauses
-  [{:key "select" :label "Select (fields to return)" :placeholder "state,age,population_2010"}
-   {:key "group" :label "Group By"}
-   {:key "where" :label "Where" :placeholder "age > 18"}
-   {:key "orderBy" :label "Order By" :placeholder "age desc, population_2010"}
-   {:key "limit" :label "Limit (default is 100)" :placeholder 100}
-   {:key "offset" :label "Offset (default is 0)" :placeholder 0}])
+      (data/slice-columns slicedef))))
 
 (defn slice-html
-  [slice params action dataset metadata slice-def columns data]
-  
-  (render-file "templates/slice"
-               {:action action
-                :dataset dataset
-                :slice slice
-                :metadata {:dimensions
-                           (str/join ", " (:dimensions slice-def))
-                           :metrics
-                           (str/join ", " (:metrics slice-def))}
-                :dimensions (map #(hash-map :key %
-                                            :name (data/concept-description metadata %)
-                                            :value (params (keyword %)))
-                                 (:dimensions slice-def))
-                ;; TODO errors
-                :clauses (map #(assoc-in % [:value] (params (keyword (str "$" (:key %)))))
-                              clauses)
-                :columns (map #(name (data/concept-description metadata %)) columns)
-                :data data}))
+  [view-map]
+  (render-file "templates/slice" view-map))
+
+(def clauses
+  [{:key "select"  :label "Select (fields to return)" :placeholder "state,age,population_2010"}
+   {:key "group"   :label "Group By"}
+   {:key "where"   :label "Where"                     :placeholder "age > 18"}
+   {:key "orderBy" :label "Order By"                  :placeholder "age desc, population_2010"}
+   {:key "limit"   :label "Limit (default is 100)"    :placeholder 100}
+   {:key "offset"  :label "Offset (default is 0)"     :placeholder 0}])
+
+(defn concept-description
+  "Each dataset has a list of concepts. A concept is a definition of a
+  type of data in the dataset. This function retrieves the description
+  of the concept."
+  [metadata concept]
+  (get-in metadata [:concepts (keyword concept) :description] (name concept)))
 
 (defmulti slice (fn [format _ _]
                   format))
 
-(defmethod slice "text/html" [_ data {:keys [dataset slice-def params headers]}]
-  (let [metadata (data/get-metadata dataset)
-        slice-name (:slice params)
-        action (str "http://" (headers "host") "/data/" dataset "/" slice-name)
-        columns (columns-for-view slice-def params)
-        data (data/get-data-table data columns)]
+(defmethod slice "text/html" [_ query {:keys [dataset slicedef params headers]}]
+  (let [desc (partial concept-description (data/get-metadata dataset))
+        slicename (:slice params)
+        action (str "http://" (headers "host") "/data/" dataset "/" slicename)
+        data (:result query)        
+        columns (columns-for-view slicedef params)
+        data (data/get-data-table data columns)
+        columns (map desc columns)
+        slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
+                        :metrics (str/join ", " (:metrics slicedef))}
+        dimensions (map #(hash-map :key %
+                                   :name (desc %)
+                                   :value (get-in query [:dimensions (keyword %)]))
+                        (:dimensions slicedef))
+        clauses (->> clauses
+                     (map #(assoc-in % [:value] (get-in query [(keyword (:key %))])))
+                     (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))]
+    (apply str (layout-html (slice-html
+                             {:action action
+                              :dataset dataset
+                              :slice slicename
+                              :metadata slice-metadata
+                              :dimensions dimensions
+                              :clauses clauses
+                              :columns columns
+                              :data data})))))
 
-    (apply str (layout-html (slice-html slice-name
-                                        params
-                                        action
-                                        dataset
-                                        metadata
-                                        slice-def
-                                        columns
-                                        data)))))
+(defmethod slice "application/json" [_ query _]
+  (response/json (:result query)))
 
-(defmethod slice "application/json" [_ data _]
-  (response/json data))
-
-(defmethod slice "text/csv" [_ data {:keys [slice-def params]}]
-  (let [table (:table slice-def)
-        columns (columns-for-view slice-def params)
+(defmethod slice "text/csv" [_ query {:keys [slicedef params]}]
+  (let [table (:table slicedef)
+        data (:result query)
+        columns (columns-for-view slicedef params)
         rows (data/get-data-table data columns)]
     (response/content-type
      "text/csv; charset=utf-8"

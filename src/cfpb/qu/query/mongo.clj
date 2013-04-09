@@ -54,8 +54,7 @@ this namespace."
   [query]
   (if-let [select (:select query)]
     (try
-      (let [project (-> (select/parse select)
-                        select/mongo-eval)]
+      (let [project (select/mongo-eval (select/parse select))]
         (assoc-in query [:mongo :project] project))
       (catch Exception e
         (assoc-in query [:errors :select] "could not parse")))
@@ -92,7 +91,7 @@ and :group provisions of the original query."
 (defn sort
   "Add the :sort provision of the Mongo query."
   [query]
-  (let [order (:order query)]
+  (let [order (:orderBy query)]
     (if-not (str/blank? order)
       (let [sort (->> (str/split order #",\s*")
                       (map (fn [order]
