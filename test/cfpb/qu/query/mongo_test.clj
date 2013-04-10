@@ -96,4 +96,12 @@
 
          (fact "it errors if it cannot parse WHERE"
                (errors {:where "what what" :slicedef slicedef})
-               => (contains {:where anything}))))
+               => (contains {:where anything}))
+
+         (fact "it errors if limit is not an integer string"
+               (errors {:limit "ten" :slicedef slicedef})
+               => (contains {:limit anything}))
+
+         (fact "it errors if offset is not an integer string"
+               (errors {:offset "ten" :slicedef slicedef})
+               => (contains {:offset anything}))))

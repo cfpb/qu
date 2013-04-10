@@ -204,10 +204,26 @@ and :group provisions of the original query."
 (defn- validate-where
   [query]
   (try
-    (let [where (where/parse (:where query))]
+    (let [_ (where/parse (:where query))]
       query)
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
+
+(defn- validate-number
+  [query clause]
+  (try
+    (let [_ (Integer/parseInt (clause query))]
+      query)
+    (catch NumberFormatException e
+      (add-error query clause "Please use an integer."))))
+
+(defn- validate-limit
+  [query]
+  (validate-number query :limit))
+
+(defn- validate-offset
+  [query]
+  (validate-number query :offset))
 
 (defn validate
   "Check the query for any errors."
@@ -223,4 +239,6 @@ and :group provisions of the original query."
           (assoc :errors {})
           (validate-select column-set)
           (validate-group column-set dimensions)
-          validate-where))))
+          validate-where
+          validate-limit
+          validate-offset))))
