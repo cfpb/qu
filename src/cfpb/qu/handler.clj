@@ -6,7 +6,6 @@
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [mime-extensions :refer [wrap-convert-extension-to-accept-header]]]
-   [noir.validation :refer [wrap-noir-validation]]
    [environ.core :refer [env]]   
    [taoensso.timbre :as log]
    [cfpb.qu
@@ -38,7 +37,6 @@
       wrap-nested-params
       wrap-params
       wrap-with-logging
-      wrap-noir-validation
       wrap-convert-extension-to-accept-header))
 
 (defn boot

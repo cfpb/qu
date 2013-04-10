@@ -13,11 +13,11 @@ serve their public data sets."
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.0.2"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
-                 [com.ebaxt.enlive-partials "0.1.1"]
                  [com.novemberain/monger "1.5.0"]
+                 [com.novemberain/validateur "1.4.0"]
                  [com.taoensso/timbre "1.5.2"]
                  [compojure "1.1.3"]
-                 [stencil "0.3.2"]                 
+                 [stencil "0.3.2"]
                  [environ "0.4.0"]
                  [lib-noir "0.4.9"]
                  [liberator "0.8.0"]
@@ -37,7 +37,7 @@ serve their public data sets."
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
-  :profiles {:dev             
+  :profiles {:dev
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
               :dependencies [[ring-mock "0.1.3"]

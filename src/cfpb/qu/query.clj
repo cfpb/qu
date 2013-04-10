@@ -1,80 +1,56 @@
 (ns cfpb.qu.query
   (:require [clojure.string :as str]
             [monger.query :as q]
+            [monger.collection :as coll]
+            [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
-            [lonocloud.synthread :as ->]))
+            [lonocloud.synthread :as ->]
+            [taoensso.timbre :as log]))
 
 (def default-limit 100)
 (def default-offset 0)
 
-(declare parse-params)
+(declare parse-params mongo-find mongo-aggregation)
 
-(defrecord Query [select group where order limit offset mongo errors])
+(defrecord Query [select group where orderBy limit offset mongo errors slicedef])
 
 (defn params->Query
-  "Convert params from a web request plus a slice definition into a
-  Query record."
-  [params slice]
-  (let [{:keys [dimensions clauses]} (parse-params params slice)
+  "Convert params from a web request plus a slice definition into a Query record."
+  [params slicedef]
+  (let [{:keys [dimensions clauses]} (parse-params params slicedef)
         select (:$select clauses)
         group (:$group clauses)
-        order (:$orderBy clauses)
+        orderBy (:$orderBy clauses)
         where (:$where clauses)
-        limit (Integer/parseInt (:$limit clauses
-                                         (str default-limit)))
-        offset (Integer/parseInt (:$offset clauses
-                                           (str default-offset)))]
+        limit (:$limit clauses default-limit)
+        offset (:$offset clauses default-offset)]
     (map->Query {:select select
                  :group group
                  :where where
                  :limit limit
                  :offset offset
-                 :order order
-                 :dimensions dimensions})))
+                 :orderBy orderBy
+                 :dimensions dimensions
+                 :slicedef slicedef})))
 
 (defn is-aggregation? [query]
   (:group query false))
 
-(defn Query->mongo
-  "Transform a Query record into a Mongo query map."
-  [query]
-  (let [query (mongo/process query)
-        mongo (q/partial-query
-               (q/find (get-in query [:mongo :match]))
-               (q/limit (or (:limit query)
-                            default-limit))
-               (q/skip (or (:offset query)
-                           default-offset))
-               (q/sort (get-in query [:mongo :sort])))]
-    (if-let [project (get-in query [:mongo :project])]
-      (merge mongo {:fields project})
-      mongo)))
+(defn execute
+  "Execute the query against the provided collection."
+  [collection query]
+  (let [_ (log/info (str "Raw query: " (into {} query)))
+        query (mongo/process query)
+        _ (log/info (str "Query errors: " (:errors query)))]
+    (assoc query :result
+           (cond
+            (:errors query) []
 
-(defn Query->aggregation [query]
-  ;; TODO
-  ;; handle grouping on more than one thing
-  ;; put groupings into $project
-  ;; handle SUM, MIN, MAX, COUNT
-  (let [query (mongo/process query)
-        match (get-in query [:mongo :match])
-        project (get-in query [:mongo :project])
-        group (get-in query [:mongo :group])
-        sort (get-in query [:mongo :sort])        
-        skip (:offset query)
-        limit (:limit query)]
-    (-> []
-        (->/when match
-          (conj {"$match" match}))
-        (->/when group
-          (conj {"$group" group}))
-        (->/when project
-          (conj {"$project" project}))
-        (->/when sort
-          (conj {"$sort" sort}))        
-        (->/when skip
-          (conj {"$skip" skip}))
-        (->/when limit
-          (conj {"$limit" limit})))))
+            (is-aggregation? query)
+            (data/get-aggregation collection (mongo-aggregation query))
+
+            :default
+            (data/get-find collection (mongo-find query))))))
 
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 
@@ -110,3 +86,47 @@ can query with."
                                  (and
                                   (not= value "")
                                   (allowed-clauses key))) params))}))
+
+(defn- ->int [val]
+  (cond
+   (integer? val) val
+   (nil? val) 0
+   :default (Integer/parseInt val)))
+
+(defn mongo-find
+  "Create a Mongo find map from the query."
+  [query]
+  (let [mongo (q/partial-query
+               (q/find (get-in query [:mongo :match]))
+               (q/limit (or (->int (:limit query))
+                            default-limit))
+               (q/skip (or (->int (:offset query))
+                           default-offset))
+               (q/sort (get-in query [:mongo :sort])))]
+    (if-let [project (get-in query [:mongo :project])]
+      (merge mongo {:fields project})
+      mongo)))
+
+(defn mongo-aggregation
+  "Add a Mongo aggregation map to the query."
+  [query]
+  (let [match (get-in query [:mongo :match])
+        project (get-in query [:mongo :project])
+        group (get-in query [:mongo :group])
+        sort (get-in query [:mongo :sort])
+        skip (->int (:offset query))
+        limit (->int (:limit query))]
+    (-> []
+        (->/when match
+          (conj {"$match" match}))
+        (->/when group
+          (conj {"$group" group}))
+        (->/when project
+          (conj {"$project" project}))
+        (->/when sort
+          (conj {"$sort" sort}))
+        (->/when skip
+          (conj {"$skip" skip}))
+        (->/when limit
+          (conj {"$limit" limit})))))
+
