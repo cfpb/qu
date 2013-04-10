@@ -12,12 +12,15 @@
   * If not, they populate :mongo on that Query."
   (:refer-clojure :exclude [sort])
   (:require [clojure.string :as str]
+            [clojure.set :as set]
+            [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
+            [taoensso.timbre :as log]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
 
-(declare match project group sort)
+(declare match project group sort validate)
 
 (defn process
   "Process the original query through the various filters used to
@@ -28,7 +31,8 @@ this namespace."
       match
       project
       group
-      sort))
+      sort
+      validate))
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
@@ -63,7 +67,7 @@ this namespace."
 (defn- select-to-agg
   "Convert a select/aggregation map into the Mongo equivalent for the
   $group filter of the aggregation framework. Used in the group
-  function. Non-public."  
+  function. Non-public."
   [{alias :select [agg column] :aggregation}]
   (if (= agg :COUNT)
     {alias {"$sum" 1}}
@@ -106,4 +110,74 @@ and :group provisions of the original query."
                       flatten
                       (apply sorted-map))]
         (assoc-in query [:mongo :sort] sort))
+      query)))
+
+(defn- match-columns [match]
+  (->> match
+       (walk/prewalk (fn [element]
+                       (if (map? element)
+                         (into [] element)
+                         element)))
+       flatten
+       (filter keyword?)))
+
+(defn- add-error
+  [query field message]
+  (update-in query [:errors field]
+             (fnil #(conj % message) (vector))))
+
+(defn- validate-field
+  [query column-set field]
+  (if (not (contains? column-set field))
+    (add-error query :select (str "\"" field "\" is not a valid field."))
+    query))
+
+(defn- validate-fields
+  [query column-set select]
+  (let [fields (map (comp name #(if (:aggregation %)
+                                  (second (:aggregation %))
+                                  (:select %))) select)]
+    (reduce #(validate-field %1 column-set %2) query fields)))
+
+(defn- validate-no-aggregations-without-group
+  [query select]
+  (if (:group query)
+    query
+    (if (some :aggregation select)
+      (add-error query :select
+                 (str "You cannot use aggregation operators "
+                      "without specifying a group clause."))
+      query)))
+
+(defn- validate-no-non-aggregated-fields
+  [query select]
+  (if (:group query)
+    (let [group-fields (set (parse parser/group-expr (:group query)))
+          non-aggregated-fields (set (map :select (remove :aggregation select)))
+          invalid-fields (set/difference non-aggregated-fields group-fields)]
+      (reduce #(add-error %1 :select
+                          (str "\"" (name %2)
+                               "\" must either be aggregated or be in the group clause."))
+              query invalid-fields))
+    query))
+
+(defn- validate-select
+  [query column-set]
+  (let [select (select/parse (:select query))]
+    (-> query
+        (validate-fields column-set select)
+        (validate-no-aggregations-without-group select)
+        (validate-no-non-aggregated-fields select))))
+
+(defn validate
+  "Check the query for any errors."
+  [query]
+  (if (:errors query)
+    query
+    (if-let [slicedef (:slicedef query)]
+      (let [dimensions (:dimensions slicedef)
+            metrics (:metrics slicedef)
+            column-set (set (concat dimensions metrics))]
+        (-> query
+            (validate-select column-set)))
       query)))

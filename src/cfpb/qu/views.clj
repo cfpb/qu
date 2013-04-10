@@ -10,7 +10,7 @@
    [stencil.core :refer [render-file]]
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
-   [noir.response :as response]   
+   [noir.response :as response]
    [clojure-csv.core :refer [write-csv]]
    monger.json
    [cfpb.qu.data :as data]
@@ -50,12 +50,12 @@
   (if select
     (map :select (select/parse select))))
 
-(defn- columns-for-view [slicedef params]
+(defn- columns-for-view [query slicedef params]
   (let [select (:$select params)]
-    (if (and select
-             (not= select ""))
-      (select-fields select)
-      (data/slice-columns slicedef))))
+    (if (or (str/blank? select)
+            (:errors query))
+      (data/slice-columns slicedef)
+      (select-fields select))))
 
 (defn slice-html
   [view-map]
@@ -83,10 +83,6 @@
   (let [desc (partial concept-description (data/get-metadata dataset))
         slicename (:slice params)
         action (str "http://" (headers "host") "/data/" dataset "/" slicename)
-        data (:result query)        
-        columns (columns-for-view slicedef params)
-        data (data/get-data-table data columns)
-        columns (map desc columns)
         slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
                         :metrics (str/join ", " (:metrics slicedef))}
         dimensions (map #(hash-map :key %
@@ -95,7 +91,11 @@
                         (:dimensions slicedef))
         clauses (->> clauses
                      (map #(assoc-in % [:value] (get-in query [(keyword (:key %))])))
-                     (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))]
+                     (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))
+        data (:result query)
+        columns (columns-for-view query slicedef params)
+        data (data/get-data-table data columns)
+        columns (map desc columns)]
     (apply str (layout-html (slice-html
                              {:action action
                               :dataset dataset
