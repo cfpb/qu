@@ -98,10 +98,23 @@
                (errors {:where "what what" :slicedef slicedef})
                => (contains {:where anything}))
 
+         (fact "it errors if it cannot parse ORDER BY"
+               (errors {:orderBy "what what" :slicedef slicedef})
+               => (contains {:orderBy anything})
+
+               (errors {:orderBy "state_abbr DESC" :slicedef slicedef})
+               =not=> (contains {:orderBy anything}))
+
          (fact "it errors if limit is not an integer string"
                (errors {:limit "ten" :slicedef slicedef})
-               => (contains {:limit anything}))
+               => (contains {:limit anything})
 
+               (errors {:limit "10" :slicedef slicedef})
+               =not=> (contains {:limit anything}))
+         
          (fact "it errors if offset is not an integer string"
                (errors {:offset "ten" :slicedef slicedef})
-               => (contains {:offset anything}))))
+               => (contains {:offset anything})
+
+               (errors {:offset "10" :slicedef slicedef})
+               =not=> (contains {:offset anything}))))

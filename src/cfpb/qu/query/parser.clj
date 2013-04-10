@@ -175,3 +175,26 @@ turn it into a tree built in proper precedence order."
     (if-let [rst (multi* #(series comma identifier))]
       (concat (vector fst) (map second rst))
       (vector fst))))
+
+(defn- order
+  []
+  (let [mod-expr #(regex #"(?i)ASC|DESC")
+        column (identifier)
+        modifier (attempt mod-expr)]
+    [column (keyword (str/upper-case (or modifier "ASC")))]))
+
+(defn order-expr
+  "The parse function for valid ORDER BY expressions.
+
+  - state,
+  - state, county
+  - state ASC
+  - state DESC
+  - state DESC, county
+
+  ASC is the default."
+  []
+  (if-let [fst (attempt order)]
+    (if-let [rst (multi* #(series comma order))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))

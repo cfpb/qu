@@ -209,21 +209,32 @@ and :group provisions of the original query."
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
 
-(defn- validate-number
-  [query clause]
+(defn- validate-order-by
+  [query]
   (try
-    (let [_ (Integer/parseInt (clause query))]
+    (let [_ (parse parser/order-expr (:orderBy query ""))]
       query)
-    (catch NumberFormatException e
-      (add-error query clause "Please use an integer."))))
+    (catch Exception e
+      (add-error query :orderBy "Could not parse this clause."))))
+
+(defn- validate-integer
+  [query clause]
+  (let [val (clause query)]
+    (if (integer? val)
+      query
+      (try
+        (let [_ (Integer/parseInt val)]
+          query)
+        (catch NumberFormatException e
+          (add-error query clause "Please use an integer."))))))
 
 (defn- validate-limit
   [query]
-  (validate-number query :limit))
+  (validate-integer query :limit))
 
 (defn- validate-offset
   [query]
-  (validate-number query :offset))
+  (validate-integer query :offset))
 
 (defn validate
   "Check the query for any errors."
@@ -240,5 +251,6 @@ and :group provisions of the original query."
           (validate-select column-set)
           (validate-group column-set dimensions)
           validate-where
+          validate-order-by
           validate-limit
           validate-offset))))

@@ -22,10 +22,8 @@
         group (:$group clauses)
         orderBy (:$orderBy clauses)
         where (:$where clauses)
-        limit (Integer/parseInt (:$limit clauses
-                                         (str default-limit)))
-        offset (Integer/parseInt (:$offset clauses
-                                           (str default-offset)))]
+        limit (:$limit clauses default-limit)
+        offset (:$offset clauses default-offset)]
     (map->Query {:select select
                  :group group
                  :where where
@@ -89,14 +87,20 @@ can query with."
                                   (not= value "")
                                   (allowed-clauses key))) params))}))
 
+(defn- ->int [val]
+  (cond
+   (integer? val) val
+   (nil? val) 0
+   :default (Integer/parseInt val)))
+
 (defn mongo-find
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
                (q/find (get-in query [:mongo :match]))
-               (q/limit (or (:limit query)
+               (q/limit (or (->int (:limit query))
                             default-limit))
-               (q/skip (or (:offset query)
+               (q/skip (or (->int (:offset query))
                            default-offset))
                (q/sort (get-in query [:mongo :sort])))]
     (if-let [project (get-in query [:mongo :project])]
@@ -110,8 +114,8 @@ can query with."
         project (get-in query [:mongo :project])
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
-        skip (:offset query)
-        limit (:limit query)]
+        skip (->int (:offset query))
+        limit (->int (:limit query))]
     (-> []
         (->/when match
           (conj {"$match" match}))
