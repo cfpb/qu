@@ -22,17 +22,27 @@
 
 (declare match project group sort validate)
 
+(defn- valid? [query]
+  (= 0 (reduce + (vals (:errors query)))))
+
 (defn process
   "Process the original query through the various filters used to
 create the Mongo representation of the query. Main entry point into
 this namespace."
   [query]
-  (-> query
-      match
-      project
-      group
-      sort
-      validate))
+  (let [query (validate query)]
+    (if (valid? query)
+      (-> query
+          match
+          project
+          group
+          sort)
+      query)))
+
+(defn- add-error
+  [query field message]
+  (update-in query [:errors field]
+             (fnil #(conj % message) (vector))))
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
@@ -40,16 +50,13 @@ this namespace."
   [query]
   (if (or (:where query)
           (:dimensions query))
-    (try
-      (let [parse #(if %
-                     (where/mongo-eval (where/parse %))
-                     {})
-            match (-> (:where query)
-                      parse
-                      (merge (:dimensions query {})))]
-        (assoc-in query [:mongo :match] match))
-      (catch Exception e
-        (assoc-in query [:errors :where] "could not parse")))
+    (let [parse #(if %
+                   (where/mongo-eval (where/parse %))
+                   {})
+          match (-> (:where query)
+                    parse
+                    (merge (:dimensions query {})))]
+      (assoc-in query [:mongo :match] match))
     query))
 
 (defn project
@@ -57,11 +64,8 @@ this namespace."
   the origin query."
   [query]
   (if-let [select (:select query)]
-    (try
-      (let [project (select/mongo-eval (select/parse select))]
-        (assoc-in query [:mongo :project] project))
-      (catch Exception e
-        (assoc-in query [:errors :select] "could not parse")))
+    (let [project (select/mongo-eval (select/parse select))]
+      (assoc-in query [:mongo :project] project))
     query))
 
 (defn- select-to-agg
@@ -80,16 +84,13 @@ this namespace."
 and :group provisions of the original query."
   [query]
   (if-let [group (:group query)]
-    (try
-      (let [columns (parse parser/group-expr group)
-            id (into {} (map #(vector % (str "$" (name %))) columns))
-            aggregations (->> (select/parse (:select query))
-                              (filter :aggregation)
-                              (map select-to-agg))
-            group (apply merge {:_id id} aggregations)]
-        (assoc-in query [:mongo :group] group))
-      (catch Exception e
-        (assoc-in query [:errors :group] "could not parse")))
+    (let [columns (parse parser/group-expr group)
+          id (into {} (map #(vector % (str "$" (name %))) columns))
+          aggregations (->> (select/parse (:select query))
+                            (filter :aggregation)
+                            (map select-to-agg))
+          group (apply merge {:_id id} aggregations)]
+      (assoc-in query [:mongo :group] group))
     query))
 
 (defn sort
@@ -121,25 +122,21 @@ and :group provisions of the original query."
        flatten
        (filter keyword?)))
 
-(defn- add-error
-  [query field message]
-  (update-in query [:errors field]
-             (fnil #(conj % message) (vector))))
-
 (defn- validate-field
-  [query column-set field]
-  (if (not (contains? column-set field))
-    (add-error query :select (str "\"" field "\" is not a valid field."))
-    query))
+  [query clause column-set field]
+  (let [field (name field)]
+    (if (not (contains? column-set field))
+      (add-error query clause (str "\"" field "\" is not a valid field."))
+      query)))
 
-(defn- validate-fields
+(defn- validate-select-fields
   [query column-set select]
   (let [fields (map (comp name #(if (:aggregation %)
                                   (second (:aggregation %))
                                   (:select %))) select)]
-    (reduce #(validate-field %1 column-set %2) query fields)))
+    (reduce #(validate-field %1 :select column-set %2) query fields)))
 
-(defn- validate-no-aggregations-without-group
+(defn- validate-select-no-aggregations-without-group
   [query select]
   (if (:group query)
     query
@@ -149,7 +146,7 @@ and :group provisions of the original query."
                       "without specifying a group clause."))
       query)))
 
-(defn- validate-no-non-aggregated-fields
+(defn- validate-select-no-non-aggregated-fields
   [query select]
   (if (:group query)
     (let [group-fields (set (parse parser/group-expr (:group query)))
@@ -163,21 +160,67 @@ and :group provisions of the original query."
 
 (defn- validate-select
   [query column-set]
-  (let [select (select/parse (:select query))]
-    (-> query
-        (validate-fields column-set select)
-        (validate-no-aggregations-without-group select)
-        (validate-no-non-aggregated-fields select))))
+  (try
+    (let [select (select/parse (:select query ""))]
+      (-> query
+          (validate-select-fields column-set select)
+          (validate-select-no-aggregations-without-group select)
+          (validate-select-no-non-aggregated-fields select)))
+    (catch Exception e
+      (add-error query :select "Could not parse this clause."))))
+
+(defn- validate-group-requires-select
+  [query]
+  (if (:select query)
+    query
+    (add-error query :group "You must have a select clause to use grouping.")))
+
+(defn- validate-group-fields
+  [query group column-set]
+  (reduce #(validate-field %1 :group column-set %2) query group))
+
+(defn- validate-group-only-group-dimensions
+  [query group dimensions]
+  (let [dimensions (set dimensions)]
+    (reduce
+     (fn [query field]
+       (let [field (name field)]
+         (if (not (contains? dimensions field))
+           (add-error query :group (str "\"" field "\" is not a dimension."))
+           query)))
+     query group)))
+
+(defn- validate-group
+  [query column-set dimensions]
+  (try
+    (let [group (parse parser/group-expr (:group query ""))]
+      (-> query
+          validate-group-requires-select
+          (validate-group-fields group column-set)
+          (validate-group-only-group-dimensions group dimensions)))
+    (catch Exception e
+      (add-error query :group "Could not parse this clause."))))
+
+(defn- validate-where
+  [query]
+  (try
+    (let [where (where/parse (:where query))]
+      query)
+    (catch Exception e
+      (add-error query :where "Could not parse this clause."))))
 
 (defn validate
   "Check the query for any errors."
   [query]
-  (if (:errors query)
+  (if (or (:errors query)
+          (not (:slicedef query)))
     query
-    (if-let [slicedef (:slicedef query)]
-      (let [dimensions (:dimensions slicedef)
-            metrics (:metrics slicedef)
-            column-set (set (concat dimensions metrics))]
-        (-> query
-            (validate-select column-set)))
-      query)))
+    (let [slicedef (:slicedef query)
+          dimensions (:dimensions slicedef)
+          metrics (:metrics slicedef)
+          column-set (set (concat dimensions metrics))]
+      (-> query
+          (assoc :errors {})
+          (validate-select column-set)
+          (validate-group column-set dimensions)
+          validate-where))))
