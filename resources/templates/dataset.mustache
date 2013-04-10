@@ -1,0 +1,14 @@
+<h1>Dataset:
+  <a class="index" href="/data">/data</a>/{{dataset}}
+</h1>
+<h2>Slices</h2>
+<ul id="slices">
+  {{#slices}}
+  <li>
+    <a href="/data/{{dataset}}/{{.}}">{{.}}</a>
+  </li>
+  {{/slices}}
+</ul>
+<h2>Dataset definition</h2>
+<pre class="definition">{{metadata}}</pre>
+

@@ -17,7 +17,7 @@ serve their public data sets."
                  [com.novemberain/monger "1.5.0"]
                  [com.taoensso/timbre "1.5.2"]
                  [compojure "1.1.3"]
-                 [enlive "1.1.1"]
+                 [stencil "0.3.2"]                 
                  [environ "0.4.0"]
                  [lib-noir "0.4.9"]
                  [liberator "0.8.0"]
@@ -35,7 +35,8 @@ serve their public data sets."
          :init cfpb.qu.handler/init
          :destroy cfpb.qu.handler/destroy}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
-          :src-linenum-anchor-prefix "L"}
+          :src-linenum-anchor-prefix "L"
+          :output-dir "doc/codox"}
   :profiles {:dev             
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}

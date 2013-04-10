@@ -15,9 +15,7 @@
     [core :as mongo :refer [get-db with-db]]
     [collection :as coll]
     json]
-   [net.cgrand.enlive-html
-    :as html
-    :refer [deftemplate defsnippet]]
+   [stencil.core :refer [render-file]]
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
    [noir.response :as response]
@@ -32,49 +30,22 @@
       status
       (response/json body))))
 
-(deftemplate layout-html "templates/layout.html"
-  [content]
+(defn layout-html [content]
+  (render-file "templates/layout"
+               {:content content}))
 
-  [:div#content]
-  (html/content content))
+(defn index-html [datasets]
+  (render-file "templates/index" {:datasets datasets}))
 
-(defsnippet index-html "templates/index.html" [:#content]
-  [datasets]
+(defn not-found-html [message]
+  (render-file "templates/404" {:message message}))
 
-  [:ul#dataset-list :li]
-  (html/clone-for [dataset datasets]
-                  [:a]
-                  (html/do->
-                   (html/content (str (get-in dataset [:info :name])))
-                   (html/set-attr :href (str "/data/" (:name dataset))))
-
-                  [:small]
-                  (html/content (get-in dataset [:info :description]))))
-
-(defsnippet not-found-html "templates/404.html" [:#content]
-  [msg]
-
-  [:.message]
-  (html/content msg))
-
-(defsnippet dataset-html "templates/dataset.html" [:#content]
-  [dataset metadata]
-
-  [:h1 html/any-node]
-  (html/replace-vars {:dataset dataset})
-
-  [:h1 :a.index]
-  (html/set-attr :href "/data")
-
-  [:ul#slices :li]
-  (html/clone-for [slice (map name (keys (:slices metadata)))]
-                  [:a]
-                  (html/do->
-                   (html/content slice)
-                   (html/set-attr :href (str "/data/" dataset "/" slice))))
-
-  [:pre.definition]
-  (html/content (with-out-str (pprint metadata))))
+(defn dataset-html [dataset metadata]
+  (let [slices (map name (keys (:slices metadata)))]
+    (render-file "templates/dataset"
+                 {:dataset dataset
+                  :slices slices
+                  :metadata (with-out-str (pprint metadata))})))
 
 (defn select-fields
   "In API requests, the user can select the columns they want
@@ -93,76 +64,34 @@
       (select-fields select)
       (data/slice-columns slice-def))))
 
-(defn- fill-in-input-value [params]
-  (fn [node]
-    (let [field (keyword (get-in node [:attrs :data-clause]))]
-      (html/at node
-               [:input]
-               (html/set-attr :value (params field))))))
+(def clauses
+  [{:key "select" :label "Select (fields to return)" :placeholder "state,age,population_2010"}
+   {:key "group" :label "Group By"}
+   {:key "where" :label "Where" :placeholder "age > 18"}
+   {:key "orderBy" :label "Order By" :placeholder "age desc, population_2010"}
+   {:key "limit" :label "Limit (default is 100)" :placeholder 100}
+   {:key "offset" :label "Offset (default is 0)" :placeholder 0}])
 
-(defn- highlight-errors []
-  (fn [node]
-    (let [field (keyword (get-in node [:attrs :data-clause]))]
-      (if (valid/errors? field)
-        ((html/do->
-          (html/add-class "error")
-          (html/append (map (fn [error] {:tag :span
-                                         :attrs {:class "help-inline"}
-                                         :content error})
-                            (valid/get-errors field))))
-         node)
-        node))))
-
-(defsnippet slice-html "templates/slice.html" [:#content]
-  [params action dataset metadata slice-def columns data]
-
-  [:form#query-form]
-  (html/do->
-   (html/set-attr :action action)
-   (html/set-attr :data-href action))
-
-  [:h1 html/any-node]
-  (html/replace-vars {:dataset dataset})
-
-  [:h1 :a.index]
-  (html/set-attr :href "/data")
-
-  [:h1 :a.dataset]
-  (html/set-attr :href (str "/data/" dataset))
-
-  [:.metadata html/any-node]
-  (html/replace-vars {:dimensions (str/join ", " (:dimensions slice-def))
-                      :metrics (str/join ", " (:metrics slice-def))})
-
-  [:.dimension-fields :.dimension-field]
-  (html/clone-for [dimension (:dimensions slice-def)]
-                  [:label]
-                  (html/do->
-                   (html/content (data/concept-description metadata dimension))
-                   (html/set-attr :for (str "field-" dimension)))
-
-                  [:input]
-                  (html/do->
-                   (html/set-attr :name dimension)
-                   (html/set-attr :id (str "field-" dimension))
-                   (html/set-attr :value (or (params (keyword dimension))
-                                             (params dimension)))))
-
-  [:.clause-fields :.control-group]
-  (html/do->
-   (fill-in-input-value params)
-   (highlight-errors))
+(defn slice-html
+  [slice params action dataset metadata slice-def columns data]
   
-  [:#query-results :thead :tr]
-  (html/content (html/html
-                 (for [column columns]
-                   [:th (name (data/concept-description metadata column))])))
-
-  [:#query-results :tbody :tr]
-  (html/clone-for [row data]
-                  (html/content (html/html
-                                 (for [value row]
-                                   [:td value])))))
+  (render-file "templates/slice"
+               {:action action
+                :dataset dataset
+                :slice slice
+                :metadata {:dimensions
+                           (str/join ", " (:dimensions slice-def))
+                           :metrics
+                           (str/join ", " (:metrics slice-def))}
+                :dimensions (map #(hash-map :key %
+                                            :name (data/concept-description metadata %)
+                                            :value (params (keyword %)))
+                                 (:dimensions slice-def))
+                ;; TODO errors
+                :clauses (map #(assoc-in % [:value] (params (keyword (str "$" (:key %)))))
+                              clauses)
+                :columns (map #(name (data/concept-description metadata %)) columns)
+                :data data}))
 
 (defmulti slice (fn [format _ _]
                   format))
@@ -174,7 +103,8 @@
         columns (columns-for-view slice-def params)
         data (data/get-data-table data columns)]
 
-    (apply str (layout-html (slice-html params
+    (apply str (layout-html (slice-html slice-name
+                                        params
                                         action
                                         dataset
                                         metadata
