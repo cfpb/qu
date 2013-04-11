@@ -20,10 +20,7 @@
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
 
-(declare match project group sort validate)
-
-(defn- valid? [query]
-  (= 0 (reduce + (map count (:errors query)))))
+(declare valid? match project group sort validate post-process-validate)
 
 (defn process
   "Process the original query through the various filters used to
@@ -33,16 +30,36 @@ this namespace."
   (let [query (validate query)]
     (if (valid? query)
       (-> query
-          match
           project
           group
-          sort)
+          match
+          sort
+          post-process-validate)
       query)))
 
-(defn- add-error
-  [query field message]
-  (update-in query [:errors field]
-             (fnil #(conj % message) (vector))))
+(defn- valid? [query]
+  (= 0 (reduce + (map count (:errors query)))))
+
+(declare validate-select validate-group validate-where
+         validate-order-by validate-limit validate-offset)
+
+(defn validate
+  "Check the query for any errors."
+  [query]
+  (if (not (:slicedef query))
+    query
+    (let [slicedef (:slicedef query)
+          dimensions (:dimensions slicedef)
+          metrics (:metrics slicedef)
+          column-set (set (concat dimensions metrics))]
+      (-> query
+          (assoc :errors {})
+          (validate-select column-set)
+          (validate-group column-set dimensions)
+          validate-where
+          validate-order-by
+          validate-limit
+          validate-offset))))
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
@@ -121,6 +138,11 @@ and :group provisions of the original query."
                          element)))
        flatten
        (filter keyword?)))
+
+(defn- add-error
+  [query field message]
+  (update-in query [:errors field]
+             (fnil #(conj % message) (vector))))
 
 (defn- validate-field
   [query clause column-set field]
@@ -236,21 +258,6 @@ and :group provisions of the original query."
   [query]
   (validate-integer query :offset))
 
-(defn validate
-  "Check the query for any errors."
+(defn- post-process-validate
   [query]
-  (if (or (:errors query)
-          (not (:slicedef query)))
-    query
-    (let [slicedef (:slicedef query)
-          dimensions (:dimensions slicedef)
-          metrics (:metrics slicedef)
-          column-set (set (concat dimensions metrics))]
-      (-> query
-          (assoc :errors {})
-          (validate-select column-set)
-          (validate-group column-set dimensions)
-          validate-where
-          validate-order-by
-          validate-limit
-          validate-offset))))
+  query)
