@@ -35,12 +35,7 @@
                        :metrics ["tax_returns"]}
              errors (comp :errors validate)]
 
-         (fact "it does not run if the query already has errors"
-               (let [query {:errors {:select "wat"}
-                            :slicedef slicedef}]
-                 (validate query) => query))
-
-         (fact "it does not run if the query does not have a slicedef"
+         #_(fact "it does not run if the query does not have a slicedef"
                (let [query {}]
                  (validate query) => query))
 
@@ -73,7 +68,7 @@
                         :group "state_abbr"
                         :slicedef slicedef})
                => (contains {:select anything}))
-
+         
          (fact "it errors if it cannot parse GROUP"
                (errors {:select "state_abbr"
                         :group "what what"

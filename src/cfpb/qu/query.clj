@@ -22,8 +22,8 @@
         group (:$group clauses)
         orderBy (:$orderBy clauses)
         where (:$where clauses)
-        limit (:$limit clauses default-limit)
-        offset (:$offset clauses default-offset)]
+        limit (:$limit clauses)
+        offset (:$offset clauses)]
     (map->Query {:select select
                  :group group
                  :where where
@@ -41,10 +41,10 @@
   [collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (mongo/process query)
-        _ (log/info (str "Query errors: " (:errors query)))]
+        _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
            (cond
-            (:errors query) []
+            (not (empty? (:errors query))) []
 
             (is-aggregation? query)
             (data/get-aggregation collection (mongo-aggregation query))
@@ -90,7 +90,6 @@ can query with."
 (defn- ->int [val]
   (cond
    (integer? val) val
-   (nil? val) 0
    :default (Integer/parseInt val)))
 
 (defn mongo-find
@@ -98,10 +97,8 @@ can query with."
   [query]
   (let [mongo (q/partial-query
                (q/find (get-in query [:mongo :match]))
-               (q/limit (or (->int (:limit query))
-                            default-limit))
-               (q/skip (or (->int (:offset query))
-                           default-offset))
+               (q/limit (->int (or (:limit query) default-limit)))
+               (q/skip (->int (or (:offset query) default-offset)))
                (q/sort (get-in query [:mongo :sort])))]
     (if-let [project (get-in query [:mongo :project])]
       (merge mongo {:fields project})
@@ -114,8 +111,8 @@ can query with."
         project (get-in query [:mongo :project])
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
-        skip (->int (:offset query))
-        limit (->int (:limit query))]
+        skip (->int (or (:offset query) default-offset))
+        limit (->int (or (:limit query) default-limit))]
     (-> []
         (->/when match
           (conj {"$match" match}))
@@ -125,8 +122,8 @@ can query with."
           (conj {"$project" project}))
         (->/when sort
           (conj {"$sort" sort}))
-        (->/when skip
+        (->/when (not= skip 0)
           (conj {"$skip" skip}))
-        (->/when limit
+        (->/when (not= limit 0)
           (conj {"$limit" limit})))))
 

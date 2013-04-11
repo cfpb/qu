@@ -3,39 +3,47 @@
             [cfpb.qu.query :refer :all]
             [cfpb.qu.query.mongo :as mongo]))
 
+(defn make-query
+  [q]
+  (merge {:slicedef {:dimensions ["state" "county"]
+                     :metrics ["tax_returns" "population"]}
+          :limit "0" :offset "0"} q))
+
+(def query (make-query {}))
+
 (fact "parse-params puts clauses under :clauses"
       (let [params {:$select "age,race"}]
         (parse-params params {}) => (contains {:clauses {:$select "age,race"}})))
 
 (facts "about is-aggregation?"
        (fact "returns true if we have a group key"
-             {:group "state_abbr"} => is-aggregation?)
+             {:group "state"} => is-aggregation?)
 
        (fact "returns false if we don't have a group key"
              {} =not=> is-aggregation?))
 
 (facts "about params->Query"
        (fact "it stores dimensions in the query"
-             (params->Query {:state_abbr "AL"}
-                            {:dimensions ["state_abbr" "county"]})
-             => (contains {:dimensions {:state_abbr "AL"}})))
+             (params->Query {:state "AL"}
+                            {:dimensions ["state" "county"]})
+             => (contains {:dimensions {:state "AL"}})))
 
 (facts "about mongo-find"
        (fact "it adds fields iff :select exists"
-             (mongo-find (mongo/process {:select "name, state"}))
-             => (contains {:fields {:name 1 :state 1}})
+             (mongo-find (mongo/process (make-query {:select "county, state"})))
+             => (contains {:fields {:county 1 :state 1}})
 
-             (mongo-find {})
+             (mongo-find query)
              =not=> #(contains? % :fields)))
 
 (facts "about mongo-aggregation"
        (fact "it creates a chain of filters for Mongo"
-             (let [query (mongo/process {:select "state, SUM(population)"
-                                         :limit 100
-                                         :offset 0
-                                         :where "land_area > 1000000"
-                                         :orderBy "state"
-                                         :group "state"})]
+             (let [query (mongo/process (make-query {:select "state, SUM(population)"
+                                                     :limit 100
+                                                     :offset 0
+                                                     :where "land_area > 1000000"
+                                                     :orderBy "state"
+                                                     :group "state"}))]
                (mongo-aggregation query) =>
                [{"$match" {:land_area {"$gt" 1000000}}}
                 {"$group" {:_id {:state "$state"} :sum_population {"$sum" "$population"}}}
@@ -46,15 +54,17 @@
 
 (facts "about execute"
        (fact "it calls data/get-find if is-aggregation? is false"
-             (execute ..collection.. {}) => {:result ..get-find..}
+             (execute ..collection.. query) => (contains {:result ..get-find..})
              (provided
-              (is-aggregation? {}) => false
-              (mongo-find {}) => {}
-              (#'cfpb.qu.data/get-find ..collection.. {}) => ..get-find..))
+                (#'cfpb.qu.query.mongo/process query) => query
+                (is-aggregation? query) => false
+                (mongo-find query) => {}
+                (#'cfpb.qu.data/get-find ..collection.. {}) => ..get-find..))
 
        (fact "it calls data/get-aggregation if is-aggregation? is true"
-             (execute ..collection.. {}) => {:result ..get-aggregation..}
+             (execute ..collection.. query) => (contains {:result ..get-aggregation..})
              (provided
-              (is-aggregation? {}) => true
-              (mongo-aggregation {}) => {}
+              (#'cfpb.qu.query.mongo/process query) => query
+              (is-aggregation? query) => true
+              (mongo-aggregation query) => {}
               (#'cfpb.qu.data/get-aggregation ..collection.. {}) => ..get-aggregation..)))

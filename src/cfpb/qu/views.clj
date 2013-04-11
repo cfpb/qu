@@ -50,12 +50,12 @@
   (if select
     (map :select (select/parse select))))
 
-(defn- columns-for-view [query slicedef params]
-  (let [select (:$select params)]
+(defn- columns-for-view [query slicedef]
+  (let [select (:select query)]
     (if (or (str/blank? select)
-            (:errors query))
+            (not (empty? (:errors query))))
       (data/slice-columns slicedef)
-      (select-fields select))))
+      (map name (select-fields select)))))
 
 (defn slice-html
   [view-map]
@@ -93,7 +93,7 @@
                      (map #(assoc-in % [:value] (get-in query [(keyword (:key %))])))
                      (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))
         data (:result query)
-        columns (columns-for-view query slicedef params)
+        columns (columns-for-view query slicedef)
         data (data/get-data-table data columns)
         columns (map desc columns)]
     (apply str (layout-html (slice-html
@@ -109,10 +109,10 @@
 (defmethod slice "application/json" [_ query _]
   (response/json (:result query)))
 
-(defmethod slice "text/csv" [_ query {:keys [slicedef params]}]
+(defmethod slice "text/csv" [_ query {:keys [slicedef]}]
   (let [table (:table slicedef)
         data (:result query)
-        columns (columns-for-view slicedef params)
+        columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)]
     (response/content-type
      "text/csv; charset=utf-8"
