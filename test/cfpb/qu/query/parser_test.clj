@@ -1,8 +1,7 @@
-(ns cfpb.qu.test.where.parse-fns
+(ns cfpb.qu.query.parser-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.where.parse-fns
-             :refer [value identifier function comparison predicate where-expr]]))
+            [cfpb.qu.query.parser :refer :all]))
 
 (facts "about value"
        (fact "can parse numbers"
@@ -29,25 +28,6 @@
        (fact "identifiers must start with a letter"
              (p/parse identifier "3times") => (throws Exception #"^Parse Error")))
 
-(facts "about functions"
-       (fact "can be parsed"
-             (p/parse function "hello(world)") =>
-             {:function {:name :hello :args [:world]}})
-
-       (fact "can have values or identifiers as arguments"
-             (p/parse function "hello(world, 2)") =>
-             {:function {:name :hello :args [:world 2]}}
-
-             (p/parse function "hello(2+1)") =>
-             {:function {:name :hello :args [3]}})
-
-       (fact "spaces in the arglist are irrelevant"
-             (p/parse function "hello(world,2)") =>
-             {:function {:name :hello :args [:world 2]}}
-
-             (p/parse function "hello(   world,        2    )") =>
-             {:function {:name :hello :args [:world 2]}}))
-
 (facts "about comparisons"
        (fact "simple comparisons can be parsed"
              (p/parse comparison "length > 3") => {:comparison [:length :> 3]}
@@ -60,17 +40,17 @@
 
              (p/parse comparison "length IS NOT NULL") =>
              {:comparison [:length :!= nil]})
+       
+       (fact "LIKE and ILIKE comparisons can be parsed"
+             (p/parse comparison "name LIKE 'Mar%'") =>
+             {:comparison [:name :LIKE "Mar%"]}
+             
+             (p/parse comparison "name ILIKE 'mar%'") =>
+             {:comparison [:name :ILIKE "mar%"]})
 
        (fact "spaces are irrelevant"
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))
 
-
-(facts "about predicates"
-       (fact "can be comparisons or functions"
-             (p/parse predicate "length > 3") => {:comparison [:length :> 3]}
-             (p/parse predicate "starts_with(name, 'Pete')") =>
-             {:function {:name :starts_with
-                         :args [:name "Pete"]}}))
 
 (facts "about where expressions"
        (fact "can be comparisons"
@@ -109,3 +89,30 @@
               :right {:left {:comparison [:height :< 4.5]}
                       :op :OR
                       :right {:comparison [:name := "Pete"]}}}))
+
+(facts "about select expressions"
+       (fact "can have one column"
+             (p/parse select-expr "length") => [{:select :length}])
+       
+       (fact "can have multiple columns"
+             (p/parse select-expr "length, height") =>
+             [{:select :length}
+              {:select :height}])
+
+       (fact "can have aggregations"
+             (p/parse select-expr "state, SUM(population)") =>
+             [{:select :state}
+              {:aggregation [:SUM :population]
+               :select :sum_population}])
+
+       (fact "invalid aggregations do not work"
+             (p/parse select-expr "state, TOTAL(population)") =>
+             (throws Exception #"^Parse Error")))
+
+(facts "about select expressions"
+       (fact "can have one column"
+             (p/parse group-expr "state") => [:state])
+       
+       (fact "can have multiple columns"
+             (p/parse group-expr "state, county") =>
+             [:state :county]))

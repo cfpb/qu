@@ -6,8 +6,7 @@
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [mime-extensions :refer [wrap-convert-extension-to-accept-header]]]
-   [noir.validation :refer [wrap-noir-validation]]
-   [com.ebaxt.enlive-partials :refer [handle-partials]]
+   [environ.core :refer [env]]   
    [taoensso.timbre :as log]
    [cfpb.qu
     [data :as data]
@@ -18,6 +17,8 @@
 
 (defn init []
   (data/ensure-mongo-connection)
+  (when (env :debug)
+    (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
   (log/set-config! [:prefix-fn]
                    (fn [{:keys [level timestamp hostname ns]}]
                      (str timestamp " " (-> level name str/upper-case)
@@ -36,9 +37,7 @@
       wrap-nested-params
       wrap-params
       wrap-with-logging
-      wrap-noir-validation
-      wrap-convert-extension-to-accept-header
-      (handle-partials "templates")))
+      wrap-convert-extension-to-accept-header))
 
 (defn boot
   "Start our web API on the specified port."

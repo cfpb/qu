@@ -1,5 +1,5 @@
-(ns cfpb.qu.where.parse-fns
-  "Parse functions for WHERE queries."
+(ns cfpb.qu.query.parser
+  "Parse functions for queries."
   (:require
    [clojure.string :as str]
    [protoflex.parse :as p
@@ -7,7 +7,8 @@
             any attempt multi* series
             number dq-str sq-str chr
             parens sep-by
-            word-in string-in
+            word word-in
+            string string-in
             regex starts-with?]]))
 
 (defn- ci-string
@@ -37,8 +38,6 @@ false will make the parser think it's failed to match."
                  #(ci-string "false"))]
     {:bool (= (str/lower-case lit) "true")}))
 
-(declare function)
-
 (defn value
   "Parse expression for values in WHERE queries. Valid values are numbers,
 numeric expressions, strings, and booleans."
@@ -46,7 +45,7 @@ numeric expressions, strings, and booleans."
   (any numeric string-literal boolean-literal))
 
 (defn- comparison-operator []
-  (let [op (string-in [">" ">=" "=" "!=" "<" "<="])]
+  (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]
     (keyword op)))
 
 (defn identifier
@@ -81,13 +80,6 @@ value or the phrases 'IS NULL' or 'IS NOT NULL'."
        comparison-null
        comparison-not-null))
 
-(defn predicate
-  "Expression that returns true or false to be combined with boolean
-operators in WHERE queries. Predicates can be comparisons or functions."
-  []
-  (any comparison
-       function))
-
 (defn- and-or-operator []
   (let [op (any #(ci-string "AND")
                 #(ci-string "OR"))]
@@ -96,23 +88,6 @@ operators in WHERE queries. Predicates can be comparisons or functions."
 (defn- not-operator []
   (let [op (ci-string "NOT")]
     (keyword (str/upper-case op))))
-
-(defn- arg []
-  (any value identifier))
-
-(defn- arglist []
-  (let [first (arg)
-        rest (multi* #(series (fn [] (chr \,)) arg))]
-    (if rest
-      (vec (conj (map second rest) first))
-      [first])))
-
-(defn function []
-  ; identifier + ( + identifier or value separated by commas + )
-  (let [fnname (identifier)
-        args (parens arglist)]
-    {:function {:name fnname
-                :args args}}))
 
 (declare where-expr)
 
@@ -126,7 +101,7 @@ operators in WHERE queries. Predicates can be comparisons or functions."
   (let [not-operator (attempt not-operator)
         factor (if (starts-with? "(")
                  (paren-where-expr)
-                 (predicate))]
+                 (comparison))]
     (if not-operator
       {:not factor}
       factor)))
@@ -153,3 +128,73 @@ turn it into a tree built in proper precedence order."
       (build-boolean-tree
        (into [left] (apply concat rhs)))
       left)))
+
+(defn- comma []
+  (chr \,))
+
+(defn- simple-select
+  []
+  (let [column (identifier)]
+    {:select column}))
+
+(defn- aggregation []
+  (let [agg (string-in ["SUM" "COUNT" "MAX" "MIN"])]
+    (keyword agg)))
+
+(defn- aggregation-select
+  []
+  (let [aggregation (aggregation)
+        column (parens identifier)]
+    {:aggregation [aggregation column]
+     :select (keyword (str (str/lower-case (name aggregation))
+                           "_"
+                           (name column)))}))
+
+(defn- select
+  []
+  (any aggregation-select
+       simple-select))
+
+(defn select-expr
+  "The parse function for valid SELECT expressions.
+
+   - state
+   - state, county
+   - state, SUM(population)
+   - state, SUM(population)"
+  []
+  (if-let [fst (attempt select)]
+    (if-let [rst (multi* #(series comma select))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
+
+(defn group-expr
+  "The parse function for valid GROUP expressions."
+  []
+  (if-let [fst (attempt identifier)]
+    (if-let [rst (multi* #(series comma identifier))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
+
+(defn- order
+  []
+  (let [mod-expr #(regex #"(?i)ASC|DESC")
+        column (identifier)
+        modifier (attempt mod-expr)]
+    [column (keyword (str/upper-case (or modifier "ASC")))]))
+
+(defn order-expr
+  "The parse function for valid ORDER BY expressions.
+
+  - state,
+  - state, county
+  - state ASC
+  - state DESC
+  - state DESC, county
+
+  ASC is the default."
+  []
+  (if-let [fst (attempt order)]
+    (if-let [rst (multi* #(series comma order))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
