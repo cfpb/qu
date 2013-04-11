@@ -23,7 +23,7 @@
 (declare match project group sort validate)
 
 (defn- valid? [query]
-  (= 0 (reduce + (vals (:errors query)))))
+  (= 0 (reduce + (map count (:errors query)))))
 
 (defn process
   "Process the original query through the various filters used to
@@ -53,7 +53,7 @@ this namespace."
     (let [parse #(if %
                    (where/mongo-eval (where/parse %))
                    {})
-          match (-> (:where query)
+          match (-> (:where query "")
                     parse
                     (merge (:dimensions query {})))]
       (assoc-in query [:mongo :match] match))
@@ -204,7 +204,7 @@ and :group provisions of the original query."
 (defn- validate-where
   [query]
   (try
-    (let [_ (where/parse (:where query))]
+    (let [_ (where/parse (:where query ""))]
       query)
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
