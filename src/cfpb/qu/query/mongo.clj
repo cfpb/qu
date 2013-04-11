@@ -30,15 +30,15 @@ this namespace."
   (let [query (validate query)]
     (if (valid? query)
       (-> query
-          project
-          group
           match
-          sort
-          post-process-validate)
+          project          
+          group          
+          sort)
       query)))
 
 (defn- valid? [query]
-  (= 0 (reduce + (map count (:errors query)))))
+  (or (not (:errors query))
+      (= 0 (reduce + (map count (:errors query))))))
 
 (declare validate-select validate-group validate-where
          validate-order-by validate-limit validate-offset)
@@ -70,7 +70,7 @@ this namespace."
     (let [parse #(if %
                    (where/mongo-eval (where/parse %))
                    {})
-          match (-> (:where query "")
+          match (-> (str (:where query))
                     parse
                     (merge (:dimensions query {})))]
       (assoc-in query [:mongo :match] match))
@@ -80,7 +80,7 @@ this namespace."
   "Add the :project provision of the Mongo query from the :select of
   the origin query."
   [query]
-  (if-let [select (:select query)]
+  (if-let [select (str (:select query))]
     (let [project (select/mongo-eval (select/parse select))]
       (assoc-in query [:mongo :project] project))
     query))
@@ -100,10 +100,10 @@ this namespace."
   "Add the :group provision of the Mongo query, using both the :select
 and :group provisions of the original query."
   [query]
-  (if-let [group (:group query)]
+  (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
           id (into {} (map #(vector % (str "$" (name %))) columns))
-          aggregations (->> (select/parse (:select query))
+          aggregations (->> (select/parse (str (:select query)))
                             (filter :aggregation)
                             (map select-to-agg))
           group (apply merge {:_id id} aggregations)]
@@ -113,7 +113,7 @@ and :group provisions of the original query."
 (defn sort
   "Add the :sort provision of the Mongo query."
   [query]
-  (let [order (:orderBy query)]
+  (let [order (str (:orderBy query))]
     (if-not (str/blank? order)
       (let [sort (->> (str/split order #",\s*")
                       (map (fn [order]
@@ -183,7 +183,7 @@ and :group provisions of the original query."
 (defn- validate-select
   [query column-set]
   (try
-    (let [select (select/parse (:select query ""))]
+    (let [select (select/parse (str (:select query)))]
       (-> query
           (validate-select-fields column-set select)
           (validate-select-no-aggregations-without-group select)
@@ -214,19 +214,20 @@ and :group provisions of the original query."
 
 (defn- validate-group
   [query column-set dimensions]
-  (try
-    (let [group (parse parser/group-expr (:group query ""))]
-      (-> query
-          validate-group-requires-select
-          (validate-group-fields group column-set)
-          (validate-group-only-group-dimensions group dimensions)))
-    (catch Exception e
-      (add-error query :group "Could not parse this clause."))))
+  (if-let [group (:group query)]
+    (try
+      (let [group (parse parser/group-expr (str group))]
+        (-> query
+            validate-group-requires-select
+            (validate-group-fields group column-set)
+            (validate-group-only-group-dimensions group dimensions)))
+      (catch Exception e
+        (add-error query :group "Could not parse this clause.")))))
 
 (defn- validate-where
   [query]
   (try
-    (let [_ (where/parse (:where query ""))]
+    (let [_ (where/parse (str (:where query)))]
       query)
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
@@ -234,7 +235,7 @@ and :group provisions of the original query."
 (defn- validate-order-by
   [query]
   (try
-    (let [_ (parse parser/order-expr (:orderBy query ""))]
+    (let [_ (parse parser/order-expr (str (:orderBy query)))]
       query)
     (catch Exception e
       (add-error query :orderBy "Could not parse this clause."))))
@@ -245,7 +246,10 @@ and :group provisions of the original query."
     (if (integer? val)
       query
       (try
-        (let [_ (Integer/parseInt val)]
+        (let [_ (cond
+                 (integer? val) val
+                 (nil? val) 0
+                 :default (Integer/parseInt val))]
           query)
         (catch NumberFormatException e
           (add-error query clause "Please use an integer."))))))
@@ -257,7 +261,3 @@ and :group provisions of the original query."
 (defn- validate-offset
   [query]
   (validate-integer query :offset))
-
-(defn- post-process-validate
-  [query]
-  query)

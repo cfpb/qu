@@ -22,8 +22,8 @@
         group (:$group clauses)
         orderBy (:$orderBy clauses)
         where (:$where clauses)
-        limit (:$limit clauses default-limit)
-        offset (:$offset clauses default-offset)]
+        limit (:$limit clauses)
+        offset (:$offset clauses)]
     (map->Query {:select select
                  :group group
                  :where where
@@ -41,6 +41,7 @@
   [collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (mongo/process query)
+        _ (log/info (str "Mongo parts: " (:mongo query)))
         _ (log/info (str "Query errors: " (:errors query)))]
     (assoc query :result
            (cond
@@ -89,8 +90,8 @@ can query with."
 
 (defn- ->int [val]
   (cond
-   (integer? val) val
    (nil? val) 0
+   (integer? val) val
    :default (Integer/parseInt val)))
 
 (defn mongo-find
@@ -125,8 +126,8 @@ can query with."
           (conj {"$project" project}))
         (->/when sort
           (conj {"$sort" sort}))
-        (->/when skip
+        (->/when (not= skip 0)
           (conj {"$skip" skip}))
-        (->/when limit
+        (->/when (not= limit 0)
           (conj {"$limit" limit})))))
 
