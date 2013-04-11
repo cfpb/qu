@@ -41,11 +41,10 @@
   [collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (mongo/process query)
-        _ (log/info (str "Mongo parts: " (:mongo query)))
-        _ (log/info (str "Query errors: " (:errors query)))]
+        _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
            (cond
-            (:errors query) []
+            (not (empty? (:errors query))) []
 
             (is-aggregation? query)
             (data/get-aggregation collection (mongo-aggregation query))
@@ -90,7 +89,6 @@ can query with."
 
 (defn- ->int [val]
   (cond
-   (nil? val) 0
    (integer? val) val
    :default (Integer/parseInt val)))
 
@@ -99,10 +97,8 @@ can query with."
   [query]
   (let [mongo (q/partial-query
                (q/find (get-in query [:mongo :match]))
-               (q/limit (or (->int (:limit query))
-                            default-limit))
-               (q/skip (or (->int (:offset query))
-                           default-offset))
+               (q/limit (->int (or (:limit query) default-limit)))
+               (q/skip (->int (or (:offset query) default-offset)))
                (q/sort (get-in query [:mongo :sort])))]
     (if-let [project (get-in query [:mongo :project])]
       (merge mongo {:fields project})
@@ -115,8 +111,8 @@ can query with."
         project (get-in query [:mongo :project])
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
-        skip (->int (:offset query))
-        limit (->int (:limit query))]
+        skip (->int (or (:offset query) default-offset))
+        limit (->int (or (:limit query) default-limit))]
     (-> []
         (->/when match
           (conj {"$match" match}))

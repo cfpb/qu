@@ -16,6 +16,7 @@
             [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
+            [lonocloud.synthread :as ->]            
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
@@ -27,7 +28,8 @@
 create the Mongo representation of the query. Main entry point into
 this namespace."
   [query]
-  (let [query (validate query)]
+  (let [query (validate query)
+        _ (log/info (str "Post-validation query: " (into {} query)))]
     (if (valid? query)
       (-> query
           match
@@ -222,7 +224,8 @@ and :group provisions of the original query."
             (validate-group-fields group column-set)
             (validate-group-only-group-dimensions group dimensions)))
       (catch Exception e
-        (add-error query :group "Could not parse this clause.")))))
+        (add-error query :group "Could not parse this clause.")))
+    query))
 
 (defn- validate-where
   [query]
