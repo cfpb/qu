@@ -16,33 +16,52 @@
             [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
+            [lonocloud.synthread :as ->]            
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
 
-(declare match project group sort validate)
-
-(defn- valid? [query]
-  (= 0 (reduce + (vals (:errors query)))))
+(declare valid? match project group sort validate post-process-validate)
 
 (defn process
   "Process the original query through the various filters used to
 create the Mongo representation of the query. Main entry point into
 this namespace."
   [query]
-  (let [query (validate query)]
+  (let [query (validate query)
+        _ (log/info (str "Post-validation query: " (into {} query)))]
     (if (valid? query)
       (-> query
           match
-          project
-          group
+          project          
+          group          
           sort)
       query)))
 
-(defn- add-error
-  [query field message]
-  (update-in query [:errors field]
-             (fnil #(conj % message) (vector))))
+(defn- valid? [query]
+  (or (not (:errors query))
+      (= 0 (reduce + (map count (:errors query))))))
+
+(declare validate-select validate-group validate-where
+         validate-order-by validate-limit validate-offset)
+
+(defn validate
+  "Check the query for any errors."
+  [query]
+  (if (not (:slicedef query))
+    query
+    (let [slicedef (:slicedef query)
+          dimensions (:dimensions slicedef)
+          metrics (:metrics slicedef)
+          column-set (set (concat dimensions metrics))]
+      (-> query
+          (assoc :errors {})
+          (validate-select column-set)
+          (validate-group column-set dimensions)
+          validate-where
+          validate-order-by
+          validate-limit
+          validate-offset))))
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
@@ -53,7 +72,7 @@ this namespace."
     (let [parse #(if %
                    (where/mongo-eval (where/parse %))
                    {})
-          match (-> (:where query)
+          match (-> (str (:where query))
                     parse
                     (merge (:dimensions query {})))]
       (assoc-in query [:mongo :match] match))
@@ -63,7 +82,7 @@ this namespace."
   "Add the :project provision of the Mongo query from the :select of
   the origin query."
   [query]
-  (if-let [select (:select query)]
+  (if-let [select (str (:select query))]
     (let [project (select/mongo-eval (select/parse select))]
       (assoc-in query [:mongo :project] project))
     query))
@@ -83,10 +102,10 @@ this namespace."
   "Add the :group provision of the Mongo query, using both the :select
 and :group provisions of the original query."
   [query]
-  (if-let [group (:group query)]
+  (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
           id (into {} (map #(vector % (str "$" (name %))) columns))
-          aggregations (->> (select/parse (:select query))
+          aggregations (->> (select/parse (str (:select query)))
                             (filter :aggregation)
                             (map select-to-agg))
           group (apply merge {:_id id} aggregations)]
@@ -96,7 +115,7 @@ and :group provisions of the original query."
 (defn sort
   "Add the :sort provision of the Mongo query."
   [query]
-  (let [order (:orderBy query)]
+  (let [order (str (:orderBy query))]
     (if-not (str/blank? order)
       (let [sort (->> (str/split order #",\s*")
                       (map (fn [order]
@@ -121,6 +140,11 @@ and :group provisions of the original query."
                          element)))
        flatten
        (filter keyword?)))
+
+(defn- add-error
+  [query field message]
+  (update-in query [:errors field]
+             (fnil #(conj % message) (vector))))
 
 (defn- validate-field
   [query clause column-set field]
@@ -161,7 +185,7 @@ and :group provisions of the original query."
 (defn- validate-select
   [query column-set]
   (try
-    (let [select (select/parse (:select query ""))]
+    (let [select (select/parse (str (:select query)))]
       (-> query
           (validate-select-fields column-set select)
           (validate-select-no-aggregations-without-group select)
@@ -192,19 +216,21 @@ and :group provisions of the original query."
 
 (defn- validate-group
   [query column-set dimensions]
-  (try
-    (let [group (parse parser/group-expr (:group query ""))]
-      (-> query
-          validate-group-requires-select
-          (validate-group-fields group column-set)
-          (validate-group-only-group-dimensions group dimensions)))
-    (catch Exception e
-      (add-error query :group "Could not parse this clause."))))
+  (if-let [group (:group query)]
+    (try
+      (let [group (parse parser/group-expr (str group))]
+        (-> query
+            validate-group-requires-select
+            (validate-group-fields group column-set)
+            (validate-group-only-group-dimensions group dimensions)))
+      (catch Exception e
+        (add-error query :group "Could not parse this clause.")))
+    query))
 
 (defn- validate-where
   [query]
   (try
-    (let [_ (where/parse (:where query))]
+    (let [_ (where/parse (str (:where query)))]
       query)
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
@@ -212,7 +238,7 @@ and :group provisions of the original query."
 (defn- validate-order-by
   [query]
   (try
-    (let [_ (parse parser/order-expr (:orderBy query ""))]
+    (let [_ (parse parser/order-expr (str (:orderBy query)))]
       query)
     (catch Exception e
       (add-error query :orderBy "Could not parse this clause."))))
@@ -223,7 +249,10 @@ and :group provisions of the original query."
     (if (integer? val)
       query
       (try
-        (let [_ (Integer/parseInt val)]
+        (let [_ (cond
+                 (integer? val) val
+                 (nil? val) 0
+                 :default (Integer/parseInt val))]
           query)
         (catch NumberFormatException e
           (add-error query clause "Please use an integer."))))))
@@ -235,22 +264,3 @@ and :group provisions of the original query."
 (defn- validate-offset
   [query]
   (validate-integer query :offset))
-
-(defn validate
-  "Check the query for any errors."
-  [query]
-  (if (or (:errors query)
-          (not (:slicedef query)))
-    query
-    (let [slicedef (:slicedef query)
-          dimensions (:dimensions slicedef)
-          metrics (:metrics slicedef)
-          column-set (set (concat dimensions metrics))]
-      (-> query
-          (assoc :errors {})
-          (validate-select column-set)
-          (validate-group column-set dimensions)
-          validate-where
-          validate-order-by
-          validate-limit
-          validate-offset))))
