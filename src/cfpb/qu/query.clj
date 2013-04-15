@@ -122,8 +122,6 @@ can query with."
           (conj {"$project" project}))
         (->/when sort
           (conj {"$sort" sort}))
-        (->/when (not= skip 0)
-          (conj {"$skip" skip}))
-        (->/when (not= limit 0)
-          (conj {"$limit" limit})))))
+        (conj {"$skip" skip})
+        (conj {"$limit" limit}))))
 
