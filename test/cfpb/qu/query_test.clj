@@ -48,7 +48,7 @@
                [{"$match" {:land_area {"$gt" 1000000}}}
                 {"$group" {:_id {:state "$state"} :sum_population {"$sum" "$population"}}}
                 {"$project" {"state" "$_id.state", "sum_population" "$sum_population"}}
-                {"$sort" {"state" 1}}
+                {"$sort" {:state 1}}
                 {"$skip" 0}
                 {"$limit" 100}])))
 
