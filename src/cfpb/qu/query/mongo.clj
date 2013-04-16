@@ -21,7 +21,7 @@
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
 
-(declare valid? match project group sort validate post-process-validate)
+(declare valid? match project group sort validate post-validate)
 
 (defn process
   "Process the original query through the various filters used to
@@ -35,7 +35,8 @@ this namespace."
           match
           project          
           group          
-          sort)
+          sort
+          post-validate)
       query)))
 
 (defn- valid? [query]
@@ -59,7 +60,7 @@ this namespace."
           (validate-select column-set)
           (validate-group column-set dimensions)
           validate-where
-          validate-order-by
+          (validate-order-by column-set)
           validate-limit
           validate-offset))))
 
@@ -117,29 +118,16 @@ and :group provisions of the original query."
   [query]
   (let [order (str (:orderBy query))]
     (if-not (str/blank? order)
-      (let [sort (->> (str/split order #",\s*")
-                      (map (fn [order]
-                             (let [order (str/split order #"\s+")]
-                               ;; TODO refactor
-                               (if (= (count order) 2)
-                                 (vector (first order)
-                                         (if (= "desc" (str/lower-case (second order)))
-                                           -1
-                                           1))
-                                 (vector (first order) 1)))))
+      (let [sort (->> order
+                      (parse parser/order-by-expr)
+                      (map (fn [[field dir]]
+                             (if (= dir :ASC)
+                               [field 1]
+                               [field -1])))
                       flatten
                       (apply sorted-map))]
         (assoc-in query [:mongo :sort] sort))
       query)))
-
-(defn- match-columns [match]
-  (->> match
-       (walk/prewalk (fn [element]
-                       (if (map? element)
-                         (into [] element)
-                         element)))
-       flatten
-       (filter keyword?)))
 
 (defn- add-error
   [query field message]
@@ -152,6 +140,35 @@ and :group provisions of the original query."
     (if (not (contains? column-set field))
       (add-error query clause (str "\"" field "\" is not a valid field."))
       query)))
+
+(defn- match-fields [match]
+  (->> match
+       (walk/prewalk (fn [element]
+                       (if (map? element)
+                         (into [] element)
+                         element)))
+       flatten
+       (filter keyword?)))
+
+(defn- validate-match-fields [query column-set]
+  (let [fields (match-fields (get-in query [:mongo :match]))]
+    (reduce #(validate-field %1 :where column-set %2) query fields)))
+
+(defn- validate-order-fields [query column-set]
+  (let [order-fields (keys (get-in query [:mongo :sort]))
+        group (get-in query [:mongo :group])]
+    (if (str/blank? (:group query))
+      (reduce #(validate-field %1 :orderBy column-set %2) query order-fields)
+      query)))
+
+(defn post-validate [query]
+  (let [slicedef (:slicedef query)
+        dimensions (:dimensions slicedef)
+        metrics (:metrics slicedef)
+        column-set (set (concat dimensions metrics))]
+    (-> query
+        (validate-match-fields column-set)
+        (validate-order-fields column-set))))
 
 (defn- validate-select-fields
   [query column-set select]
@@ -236,9 +253,9 @@ and :group provisions of the original query."
       (add-error query :where "Could not parse this clause."))))
 
 (defn- validate-order-by
-  [query]
+  [query column-set]
   (try
-    (let [_ (parse parser/order-expr (str (:orderBy query)))]
+    (let [_ (parse parser/order-by-expr (str (:orderBy query)))]
       query)
     (catch Exception e
       (add-error query :orderBy "Could not parse this clause."))))
