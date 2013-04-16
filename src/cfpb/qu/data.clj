@@ -1,7 +1,3 @@
-;; TODO: reverse how this works.
-;; data should _only_ talk to the DB with very specific inputs from a query
-;; the query namespace should handle getting the results
-
 (ns cfpb.qu.data
   "This namespace contains all our functions for retrieving data from
 MongoDB, including creating queries and light manipulation of the data
