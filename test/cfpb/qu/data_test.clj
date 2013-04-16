@@ -11,7 +11,3 @@
                         ["Sarah" "34"]
                         ["Shawn" "29"]]]
         (get-data-table raw-data [:name :age]) => data-table))
-
-
-
- 
