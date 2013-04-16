@@ -154,13 +154,21 @@ and :group provisions of the original query."
   (let [fields (match-fields (get-in query [:mongo :match]))]
     (reduce #(validate-field %1 :where column-set %2) query fields)))
 
+(defn- validate-order-fields [query column-set]
+  (let [order-fields (keys (get-in query [:mongo :sort]))
+        group (get-in query [:mongo :group])]
+    (if (str/blank? (:group query))
+      (reduce #(validate-field %1 :orderBy column-set %2) query order-fields)
+      query)))
+
 (defn post-validate [query]
   (let [slicedef (:slicedef query)
         dimensions (:dimensions slicedef)
         metrics (:metrics slicedef)
         column-set (set (concat dimensions metrics))]
     (-> query
-        (validate-match-fields column-set))))
+        (validate-match-fields column-set)
+        (validate-order-fields column-set))))
 
 (defn- validate-select-fields
   [query column-set select]
@@ -244,16 +252,11 @@ and :group provisions of the original query."
     (catch Exception e
       (add-error query :where "Could not parse this clause."))))
 
-(defn- validate-order-by-fields
-  [query fields column-set]
-  (reduce #(validate-field %1 :orderBy column-set %2) query fields))
-
 (defn- validate-order-by
   [query column-set]
   (try
-    (let [parsed (parse parser/order-by-expr (str (:orderBy query)))
-          fields (map first parsed)]
-      (validate-order-by-fields query fields column-set))
+    (let [_ (parse parser/order-by-expr (str (:orderBy query)))]
+      query)
     (catch Exception e
       (add-error query :orderBy "Could not parse this clause."))))
 

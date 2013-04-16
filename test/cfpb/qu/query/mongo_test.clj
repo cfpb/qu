@@ -108,11 +108,7 @@
                => (contains {:offset anything})
 
                (errors {:offset "10" :slicedef slicedef})
-               =not=> (contains {:offset anything}))
-
-         (fact "it errors if you try to ORDER BY a field that does not exist"
-               (errors {:orderBy "foo" :slicedef slicedef})
-               => (contains {:orderBy anything}))))
+               =not=> (contains {:offset anything}))))
 
 (facts "about process"
        (let [slicedef {:dimensions ["state_abbr" "county"]
@@ -121,4 +117,15 @@
          
          (fact "it errors if you use a field in WHERE that does not exist"
                (errors {:where "foo > 0" :slicedef slicedef})
-               => (contains {:where anything}))))
+               => (contains {:where anything}))
+
+         (fact "it errors if you try to ORDER BY a field that does not exist"
+               (errors {:orderBy "foo" :slicedef slicedef})
+               => (contains {:orderBy anything}))
+
+         (fact "it does not error when you ORDER BY an aggregated field"
+               (errors {:group "state_abbr"
+                        :select "state_abbr, COUNT(county)"
+                        :orderBy "count_county"
+                        :slicedef slicedef})
+               =not=> (contains {:orderBy anything}))))
