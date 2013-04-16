@@ -176,14 +176,14 @@ turn it into a tree built in proper precedence order."
       (concat (vector fst) (map second rst))
       (vector fst))))
 
-(defn- order
+(defn- order-by
   []
   (let [mod-expr #(regex #"(?i)ASC|DESC")
         column (identifier)
         modifier (attempt mod-expr)]
     [column (keyword (str/upper-case (or modifier "ASC")))]))
 
-(defn order-expr
+(defn order-by-expr
   "The parse function for valid ORDER BY expressions.
 
   - state,
@@ -194,7 +194,7 @@ turn it into a tree built in proper precedence order."
 
   ASC is the default."
   []
-  (if-let [fst (attempt order)]
-    (if-let [rst (multi* #(series comma order))]
+  (if-let [fst (attempt order-by)]
+    (if-let [rst (multi* #(series comma order-by))]
       (concat (vector fst) (map second rst))
       (vector fst))))

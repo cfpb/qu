@@ -6,13 +6,13 @@
 (facts "about sort"
        (fact "it transforms :orderBy into a sorted-map"
              (:mongo (sort {:orderBy "name"})) =>
-             (contains {:sort (sorted-map "name" 1)})
+             (contains {:sort (sorted-map :name 1)})
 
              (:mongo (sort {:orderBy "state, name"})) =>
-             (contains {:sort (sorted-map "state" 1 "name" 1)})
+             (contains {:sort (sorted-map :state 1 :name 1)})
 
              (:mongo (sort {:orderBy "state DESC, name"})) =>
-             (contains {:sort (sorted-map "state" -1 "name" 1)})))
+             (contains {:sort (sorted-map :state -1 :name 1)})))
 
 (facts "about match"
        (fact "it transforms :where into :match"
@@ -34,10 +34,6 @@
        (let [slicedef {:dimensions ["state_abbr" "county"]
                        :metrics ["tax_returns"]}
              errors (comp :errors validate)]
-
-         #_(fact "it does not run if the query does not have a slicedef"
-               (let [query {}]
-                 (validate query) => query))
 
          (fact "it errors when it cannot parse SELECT"
                (errors {:select "what what" :slicedef slicedef}) =>
@@ -112,4 +108,17 @@
                => (contains {:offset anything})
 
                (errors {:offset "10" :slicedef slicedef})
-               =not=> (contains {:offset anything}))))
+               =not=> (contains {:offset anything}))
+
+         (fact "it errors if you try to ORDER BY a field that does not exist"
+               (errors {:orderBy "foo" :slicedef slicedef})
+               => (contains {:orderBy anything}))))
+
+(facts "about process"
+       (let [slicedef {:dimensions ["state_abbr" "county"]
+                       :metrics ["tax_returns"]}
+             errors (comp :errors process)]
+         
+         (fact "it errors if you use a field in WHERE that does not exist"
+               (errors {:where "foo > 0" :slicedef slicedef})
+               => (contains {:where anything}))))
