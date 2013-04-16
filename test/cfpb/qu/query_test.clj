@@ -29,12 +29,17 @@
              => (contains {:dimensions {:state "AL"}})))
 
 (facts "about mongo-find"
-       (fact "it adds fields iff :select exists"
+       (fact "it populates fields if :select exists"
              (mongo-find (mongo/process (make-query {:select "county, state"})))
              => (contains {:fields {:county 1 :state 1}})
 
+       (fact "it returns empty fields if :select does not exist"
              (mongo-find query)
-             =not=> #(contains? % :fields)))
+             => (contains {:fields {}}))
+
+        (fact "it returns empty sort if :sort does not exist"
+             (mongo-find query)
+             => (contains {:sort {}}))))
 
 (facts "about mongo-aggregation"
        (fact "it creates a chain of filters for Mongo"
