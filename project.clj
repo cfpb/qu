@@ -11,6 +11,7 @@ serve their public data sets."
             [lein-ring "0.8.2"]
             [lein-embongo "0.2.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
+                 [org.clojure/data.xml "0.0.7"]                 
                  [cheshire "5.1.1"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
                  [com.novemberain/monger "1.5.0"]
@@ -25,6 +26,7 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
                  [ring.middleware.mime-extensions "0.2.0"]
+                 [inflections "0.8.1"]
 
                  ;; provisional
                  [lonocloud/synthread "1.0.4"]

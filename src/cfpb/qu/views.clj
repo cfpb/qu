@@ -15,7 +15,8 @@
    monger.json
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
-   [cfpb.qu.query.select :as select]))
+   [cfpb.qu.query.select :as select]
+   [cfpb.qu.hal :as hal]))
 
 (defn json-error
   ([status] (json-error status {}))
@@ -76,6 +77,32 @@
   [metadata concept]
   (get-in metadata [:concepts (keyword concept) :description] (name concept)))
 
+(defn format-not-found [format]
+  (response/status
+   406
+   (response/content-type
+    "text/plain"
+    (str "Format not found: " format "."))))
+
+(defmulti index (fn [format _]
+                  format))
+
+(defmethod index "text/html" [_ datasets]
+  (layout-html
+   (index-html datasets)))
+
+(defmethod index "application/json" [_ datasets]
+  (let [resource (hal/new-resource "/data.json")
+        embedded (map (fn [dataset]
+                        (apply hal/add-properties
+                               (hal/new-resource (str "/data/" (:name dataset)))
+                               (flatten (into [] (:info dataset {}))))) datasets)
+        resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
+    (hal/Resource->representation resource :json)))
+
+(defmethod index :default [format _]
+  (format-not-found format))
+
 (defmulti slice (fn [format _ _]
                   format))
 
@@ -119,9 +146,4 @@
      (str (write-csv (vector columns)) (write-csv rows)))))
 
 (defmethod slice :default [format _ _]
-  (response/status
-   406
-   (response/content-type
-    "text/plain"
-    (str "Format not found: " format
-         ". Valid formats are application/json, text/csv, and text/html."))))
+  (format-not-found format))

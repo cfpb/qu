@@ -18,16 +18,20 @@ functions to return the resource that will be presented later."
    [cfpb.qu.query :as query :refer [params->Query]]
    [cfpb.qu.query.parser :refer [where-expr]]))
 
-(defn index [_]
-  (views/layout-html
-   (views/index-html
-    (data/get-datasets))))
-
 (defn not-found [msg]
   (status
    404
    (views/layout-html
     (views/not-found-html msg))))
+
+(defresource
+  ^{:doc "Resource for the collection of datasets."}
+  index
+  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]  
+  :method-allowed? (request-method-in :get)
+  :handle-ok (fn [{:keys [representation]}]
+               (views/index (:media-type representation)
+                            (data/get-datasets))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
