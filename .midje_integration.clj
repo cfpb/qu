@@ -4,7 +4,7 @@
 (change-defaults :fact-filter
                  (fn [metadata]
                    (let [file (:midje/file metadata)]
-                     (not (re-find #"integration/" file)))))
+                     (re-find #"integration/" file))))
 
 
 
