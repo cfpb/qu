@@ -24,6 +24,7 @@ after retrieval."
 (defn disconnect-mongo []
   (mongo/disconnect!))
 
+
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
 stored in a Mongo database called 'metadata'."
@@ -53,8 +54,10 @@ stored in a Mongo database called 'metadata'."
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
 
+(defrecord QueryResult [total size data])
+
 (defn get-find
-  "Given a collection and a Mongo find map, return a map of the form:
+  "Given a collection and a Mongo find map, return a QueryResult of the form:
    :total - Total number of documents for the input query irrespective of skip or limit
    :size - Number of documents for the input query after skip and limit are applied
    :data - Seq of maps with the IDs stripped out"
@@ -65,14 +68,13 @@ stored in a Mongo database called 'metadata'."
     (.limit (:limit find-map))
     (.skip (:skip find-map))
     (.sort (conv/to-db-object (:sort find-map))))]
-    {
-      :total (.count cursor)
-      :size (.size cursor)
-      :data (strip-id (map (fn [x] (conv/from-db-object x true)) cursor))
-    }))
+    (->QueryResult
+      (.count cursor)
+      (.size cursor)
+      (strip-id (map (fn [x] (conv/from-db-object x true)) cursor)))))
 
 (defn get-aggregation
-  "Given a collection and a Mongo aggregation, return a map of the form:
+  "Given a collection and a Mongo aggregation, return a QueryResult of the form:
    :total - Total number of results returned
    :size - Same as :total
    :data - Seq of maps with the IDs stripped out"
@@ -80,9 +82,7 @@ stored in a Mongo database called 'metadata'."
   (log/info (str "Mongo aggregation: " aggregation))
   (let [data (strip-id (coll/aggregate collection aggregation))
         size (count data)]
-    {:total size
-     :size size
-     :data data}))
+    (->QueryResult size size data)))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from
