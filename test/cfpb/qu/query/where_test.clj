@@ -45,6 +45,9 @@
              (mongo-eval (parse "length < 3")) => {:length {"$lt" 3}}
              (mongo-eval (parse "length >= 3")) => {:length {"$gte" 3}})
 
+       (fact "handles booleans in comparisons"
+             (mongo-eval (parse "exempt = TRUE")) => {:exempt true})
+
        (fact "handles LIKE comparisons"
              "Marc" => (-> (mongo-eval (parse "name LIKE 'Mar%'"))
                            :name)

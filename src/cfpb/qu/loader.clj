@@ -133,9 +133,3 @@ directory containing a definition.json and a set of CSV files."
           (doseq [file sources]
             (load-csv-file table (str dir "/" file) columns)))))))
 
-; (mongo/connect!)
-; (load-dataset "census")
-; (load-dataset "county_taxes")
-; (use 'monger.operators)
-; (coll/aggregate "population_estimates" [{$match {:sex "Total" :origin "Total"}} {$group {:_id "$state" :population {$sum "$population_2010"}}}])
-; (mongo/disconnect!)
