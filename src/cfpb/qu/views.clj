@@ -29,9 +29,6 @@
   (render-file "templates/layout"
                {:content content}))
 
-(defn index-html [datasets]
-  (render-file "templates/index" {:datasets datasets}))
-
 (defn not-found-html [message]
   (render-file "templates/404" {:message message}))
 
@@ -87,18 +84,16 @@
 (defmulti index (fn [format _]
                   format))
 
-(defmethod index "text/html" [_ datasets]
+(defmethod index "text/html" [_ resource]
+  (log/info (:embedded resource))
   (layout-html
-   (index-html datasets)))
+   (render-file "templates/index" {:datasets (map second (:embedded resource))})))
 
-(defmethod index "application/json" [_ datasets]
-  (let [resource (hal/new-resource "/data.json")
-        embedded (map (fn [dataset]
-                        (apply hal/add-properties
-                               (hal/new-resource (str "/data/" (:name dataset)))
-                               (flatten (into [] (:info dataset {}))))) datasets)
-        resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
-    (hal/Resource->representation resource :json)))
+(defmethod index "application/json" [_ resource]
+  (hal/Resource->representation resource :json))
+
+(defmethod index "application/xml" [_ resource]
+  (hal/Resource->representation resource :xml))
 
 (defmethod index :default [format _]
   (format-not-found format))

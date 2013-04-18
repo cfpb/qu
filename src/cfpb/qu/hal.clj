@@ -36,9 +36,27 @@
                          (merge representation {:_embedded embedded}))]
     representation))
 
+(defn- xml-representation [resource]
+  (let [href (:href resource)
+        rel (:rel resource)]
+    [:resource (if rel
+                 {:href href :rel rel}
+                 {:href href})
+     (for [link (:links resource)]
+       [:link link])
+     (for [[property value] (:properties resource)]
+       [property value])
+     (for [[rel resource] (:embedded resource)]
+       (xml-representation (merge resource {:rel rel})))]))
+
 (defmulti Resource->representation (fn [_ representation-type]
                                      representation-type))
 
 (defmethod Resource->representation :json [resource _]
   (let [representation (json-representation resource)]
     (json/generate-string representation)))
+
+(defmethod Resource->representation :xml [resource _]
+  (-> (xml-representation resource)
+      xml/sexp-as-element
+      xml/emit-str))

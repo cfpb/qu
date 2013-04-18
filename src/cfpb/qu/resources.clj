@@ -8,7 +8,7 @@ context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
   (:require
    [clojure.string :as str]
-   [clojure.tools.logging :refer [info error]]
+   [taoensso.timbre :as log]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
    [noir.response :refer [status]]
@@ -16,7 +16,8 @@ functions to return the resource that will be presented later."
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
    [cfpb.qu.query :as query :refer [params->Query]]
-   [cfpb.qu.query.parser :refer [where-expr]]))
+   [cfpb.qu.query.parser :refer [where-expr]]
+   [cfpb.qu.hal :as hal]))
 
 (defn not-found [msg]
   (status
@@ -27,11 +28,18 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for the collection of datasets."}
   index
-  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]  
+  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :handle-ok (fn [{:keys [representation]}]
-               (views/index (:media-type representation)
-                            (data/get-datasets))))
+               (let [datasets (data/get-datasets)
+                     resource (hal/new-resource "/data.json")
+                     embedded (map (fn [dataset]
+                                     (apply hal/add-properties
+                                            (hal/new-resource (str "/data/" (:name dataset)))
+                                            (flatten (into [] (:info dataset {}))))) datasets)
+                     resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
+                 (views/index (:media-type representation)
+                              resource))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
@@ -43,7 +51,7 @@ functions to return the resource that will be presented later."
                (if metadata
                  {:dataset dataset
                   :metadata metadata})))
-  :handle-not-found (fn [{:keys [request representation]}]                      
+  :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
                         (case (:media-type representation)
@@ -85,7 +93,7 @@ functions to return the resource that will be presented later."
                                :params params
                                :headers headers}
                      query (mongo/with-db (mongo/get-db dataset)
-                            (query/execute (:table slicedef) query))]
+                             (query/execute (:table slicedef) query))]
                  (views/slice (:media-type representation)
                               query
                               view-map))))
