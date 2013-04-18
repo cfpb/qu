@@ -92,7 +92,7 @@
         clauses (->> clauses
                      (map #(assoc-in % [:value] (get-in query [(keyword (:key %))])))
                      (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))
-        data (:result query)
+        data (get-in query [:result :data])
         columns (columns-for-view query slicedef)
         data (data/get-data-table data columns)
         columns (map desc columns)]
@@ -111,7 +111,7 @@
 
 (defmethod slice "text/csv" [_ query {:keys [slicedef]}]
   (let [table (:table slicedef)
-        data (:result query)
+        data ( get-in query [:result :data])
         columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)]
     (response/content-type
