@@ -8,6 +8,7 @@
             [taoensso.timbre :as log]))
 
 (def default-limit 100)
+(def default-aggregation-limit 10000)
 (def default-offset 0)
 
 (declare parse-params mongo-find mongo-aggregation)
@@ -111,14 +112,12 @@ can query with."
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
         skip (->int (or (:offset query) default-offset))
-        limit (->int (or (:limit query) default-limit))]
+        limit (->int (or (:limit query) default-aggregation-limit))]
     (-> []
       (->/when match
         (conj {"$match" match}))
-      (->/when group
-        (conj {"$group" group}))
-      (->/when project
-        (conj {"$project" project}))
+      (conj {"$group" group})
+      (conj {"$project" project})
       (->/when sort
         (conj {"$sort" sort}))
       (conj {"$skip" skip})

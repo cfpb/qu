@@ -65,9 +65,9 @@ stored in a Mongo database called 'metadata'."
   (log/info (str "Mongo find: " find-map))
 
   (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
-    (.limit (:limit find-map))
-    (.skip (:skip find-map))
-    (.sort (conv/to-db-object (:sort find-map))))]
+                        (.limit (:limit find-map))
+                        (.skip (:skip find-map))
+                        (.sort (conv/to-db-object (:sort find-map))))]
     (->QueryResult
       (.count cursor)
       (.size cursor)
