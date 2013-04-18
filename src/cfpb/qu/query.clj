@@ -82,7 +82,7 @@ can query with."
                                          (and
                                            (not= value "")
                                            (dimensions (name key)))) params))
-                   (cast-dimensions slice))
+                      (cast-dimensions slice))
      :clauses (into {} (filter (fn [[key value]]
                                  (and
                                    (not= value "")
@@ -97,11 +97,11 @@ can query with."
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
-    (q/find (get-in query [:mongo :match]))
-    (q/limit (->int (or (:limit query) default-limit)))
-    (q/skip (->int (or (:offset query) default-offset)))
-    (q/sort (get-in query [:mongo :sort] {}))
-    (q/fields (or (get-in query [:mongo :project]) {})))]
+                (q/find (get-in query [:mongo :match]))
+                (q/limit (->int (or (:limit query) default-limit)))
+                (q/skip (->int (or (:offset query) default-offset)))
+                (q/sort (get-in query [:mongo :sort] {}))
+                (q/fields (or (get-in query [:mongo :project]) {})))]
     mongo))
 
 (defn mongo-aggregation
