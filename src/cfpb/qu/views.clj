@@ -32,13 +32,6 @@
 (defn not-found-html [message]
   (render-file "templates/404" {:message message}))
 
-(defn dataset-html [dataset metadata]
-  (let [slices (map name (keys (:slices metadata)))]
-    (render-file "templates/dataset"
-                 {:dataset dataset
-                  :slices slices
-                  :metadata (with-out-str (pprint metadata))})))
-
 (defn select-fields
   "In API requests, the user can select the columns they want
   returned. If they choose to do this, the columns will be in a
@@ -97,7 +90,14 @@
 (defmethod index :default [format _]
   (format-not-found format))
 
-(defmulti dataset (fn [format & _] format))
+(defmulti dataset (fn [format _] format))
+
+(defmethod dataset "text/html" [_ resource]
+  (layout-html
+   (render-file "templates/dataset" {:resource resource
+                                     :dataset (get-in resource [:properties :id])
+                                     :slices (map second (:embedded resource))
+                                     :definition (with-out-str (pprint (:properties resource)))})))
 
 (defmethod dataset "application/json" [_ resource]
   (hal/Resource->representation resource :json))

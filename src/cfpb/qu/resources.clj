@@ -60,10 +60,12 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (str "/data/" dataset))
                                   (hal/add-link :rel "up" :href "/data")
+                                  (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata))
                                   (hal/add-property :concepts (:concepts metadata)))
                      embedded (map (fn [[slice info]]
                                      (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
+                                         (hal/add-property :id (name slice))
                                          (hal/add-properties info))) (:slices metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
                  (views/dataset (:media-type representation) resource)
