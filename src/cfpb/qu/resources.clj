@@ -28,22 +28,22 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for the collection of datasets."}
   index
-  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]
+  :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :handle-ok (fn [{:keys [representation]}]
                (let [datasets (data/get-datasets)
-                     resource (hal/new-resource "/data.json")
+                     resource (hal/new-resource "/data")
                      embedded (map (fn [dataset]
-                                     (apply hal/add-properties
-                                            (hal/new-resource (str "/data/" (:name dataset)))
-                                            (flatten (into [] (:info dataset {}))))) datasets)
+                                     (hal/add-properties
+                                      (hal/new-resource (str "/data/" (:name dataset)))
+                                      (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
-                 (views/index (:media-type representation)
-                              resource))))
+                 (views/index (:media-type representation) resource))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
   dataset
+  :available-media-types ["text/html" "application/json" "application/xml"]  
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
@@ -57,11 +57,19 @@ functions to return the resource that will be presented later."
                         (case (:media-type representation)
                           "text/html" (not-found message)
                           message)))
-  :handle-ok (fn [{:keys [dataset metadata]}]
-               (apply str
-                      (views/layout-html
-                       (views/dataset-html dataset metadata))))
-  :available-media-types ["text/html" "text/plain;q=0.8"])
+  :handle-ok (fn [{:keys [dataset metadata representation]}]
+               (let [resource (-> (hal/new-resource (str "/data/" dataset))
+                                  (hal/add-link :rel "up" :href "/data")
+                                  (hal/add-properties (:info metadata))
+                                  (hal/add-property :concepts (:concepts metadata)))
+                     embedded (map (fn [[slice info]]
+                                     (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
+                                         (hal/add-properties info))) (:slices metadata))
+                     resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
+                 (views/dataset (:media-type representation) resource)
+                 #_(apply str
+                        (views/layout-html
+                         (views/dataset-html dataset metadata))))))
 
 (defresource
   ^{:doc "Resource for an individual slice."}

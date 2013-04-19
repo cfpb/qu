@@ -1,5 +1,5 @@
 (ns cfpb.qu.hal
-  (:require [inflections.core :refer [plural]]
+  (:require [inflections.core :refer [plural singular]]
             [cheshire.core :as json]
             [clojure.data.xml :as xml]))
 
@@ -19,7 +19,8 @@
   (let [properties (apply hash-map args)]
     (update-in resource [:properties] #((fnil merge {}) % properties))))
 
-(def add-properties add-property)
+(defn add-properties [resource properties]
+  (update-in resource [:properties] #((fnil merge {}) % properties)))
 
 (defn- json-representation [resource]
   (let [links (-> [{:rel "self" :href (:href resource)}]
@@ -36,6 +37,14 @@
                          (merge representation {:_embedded embedded}))]
     representation))
 
+(defn- xml-property [property value]
+  (cond
+   (map? value) [property (for [[k v] value]
+                            (xml-property k v))]
+   (coll? value) [(plural property) (for [v value]
+                                     (xml-property (singular property) v))]
+   :else [property {} value]))
+
 (defn- xml-representation [resource]
   (let [href (:href resource)
         rel (:rel resource)]
@@ -45,7 +54,7 @@
      (for [link (:links resource)]
        [:link link])
      (for [[property value] (:properties resource)]
-       [property value])
+       (xml-property property value))
      (for [[rel resource] (:embedded resource)]
        (xml-representation (merge resource {:rel rel})))]))
 

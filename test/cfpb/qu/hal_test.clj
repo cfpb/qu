@@ -46,6 +46,10 @@
           :properties)
       => {:size 200 :height 12 :name "Julius"})
 
+(fact "add-properties adds a map of properties"
+      (add-properties resource {:size 200 :height 12})
+      => (contains {:properties {:size 200 :height 12}}))
+
 (facts "about Resource->representation"
        (fact "it transforms a simple resource into JSON"
              (json/parse-string (Resource->representation resource :json))
@@ -96,6 +100,35 @@
                (:content xml-rep)
                => (just [{:tag :size :attrs {} :content ["200"]}
                          {:tag :height :attrs {} :content ["12"]}] :in-any-order)))
+
+       (fact "it transforms a resource with nested properties into XML"
+             (let [resource (-> resource
+                                (add-property :name {:first "Baba" :name "O'Riley"}))
+                   xml-rep (xml/parse-str (Resource->representation resource :xml))
+                   content (:content xml-rep)]
+
+               (-> content first :content)
+               => (contains [{:tag :first
+                                     :attrs {}
+                                     :content ["Baba"]}
+                             {:tag :name
+                              :attrs {}
+                              :content ["O'Riley"]}]
+                            :in-any-order)))
+
+       (fact "it transforms a resource with plural properties into XML"
+             (let [resource (-> resource
+                                (add-property :size ["S" "M" "L"]))
+                   xml-rep (xml/parse-str (Resource->representation resource :xml))
+                   content (:content xml-rep)]
+
+               (-> content first)
+               => (contains {:tag :sizes})
+
+               (-> content first :content)
+               => (just [{:tag :size :attrs {} :content ["S"]}
+                         {:tag :size :attrs {} :content ["M"]}
+                         {:tag :size :attrs {} :content ["L"]}])))
 
        (fact "it transforms a resource with embedded resources into JSON"
              (let [resource (-> resource

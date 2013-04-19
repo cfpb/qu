@@ -85,7 +85,6 @@
                   format))
 
 (defmethod index "text/html" [_ resource]
-  (log/info (:embedded resource))
   (layout-html
    (render-file "templates/index" {:datasets (map second (:embedded resource))})))
 
@@ -96,6 +95,17 @@
   (hal/Resource->representation resource :xml))
 
 (defmethod index :default [format _]
+  (format-not-found format))
+
+(defmulti dataset (fn [format & _] format))
+
+(defmethod dataset "application/json" [_ resource]
+  (hal/Resource->representation resource :json))
+
+(defmethod dataset "application/xml" [_ resource]
+  (hal/Resource->representation resource :xml))
+
+(defmethod dataset :default [format _]
   (format-not-found format))
 
 (defmulti slice (fn [format _ _]
