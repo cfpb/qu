@@ -100,8 +100,12 @@ functions to return the resource that will be presented later."
                      query (params->Query params slicedef)
                      query (mongo/with-db (mongo/get-db dataset)
                              (query/execute (:table slicedef) query))
-                     resource (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
+                     href (str "/data/" dataset "/" (name slice))
+                     resource (-> (hal/new-resource href)
                                   (hal/add-link :rel "up" :href (str "/data/" dataset))
+                                  (hal/add-link :rel "query"
+                                                :href (str href ".{?format}?$where={?where}&$orderBy={?orderBy}&$select={?select}")
+                                                :templated true)
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
                                   (hal/add-properties (-> query
                                                           (dissoc :slicedef :mongo :dimensions)
