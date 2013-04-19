@@ -5,7 +5,7 @@ layout: article
 
 ## Data formats
 
-We support HTML, CSV, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
+We support HTML, CSV, XML, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
 
 **TODO**: We also support the JSONP data format. To receive JSONP, use the `.jsonp` file extension and the `$callback` clause.
 
@@ -26,9 +26,9 @@ The HTML format is used mainly for exploring the API. It not only returns query 
 
 ### JSON
 
-**TODO**: JSON currently just serves up the data found under `data` below.
+**TODO**: Totals and pagination are not currently present.
 
-JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links to related resources. Links are found under the `_links` key and individual datums are found under the `_embedded` key. Here is an example of the format for the URL `/data/county_taxes/incomes.json`.
+JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links to related resources. Links are found under the `_links` key and linked resources are found under the `_embedded` key. Here is an example of the format for the URL `/data/county_taxes/incomes.json`.
 
 ```json
 {
@@ -49,7 +49,7 @@ JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links
   "metadata": {
     // TODO - not yet determined
   },
-  "data": [
+  "results": [
 {"interest_income":12695,"dividend_income":3802,"wages_and_salaries_income":885899,"adjusted_gross_income":1063207,"exceptions":53353,"tax_returns":20563,"county":"Tooele County","state_abbr":"UT"},
 {"interest_income":215544,"dividend_income":82411,"wages_and_salaries_income":6475118,"adjusted_gross_income":8655581,"exceptions":435704,"tax_returns":157947,"county":"Utah County","state_abbr":"UT"},
 {"interest_income":1642,"dividend_income":741,"wages_and_salaries_income":27261,"adjusted_gross_income":41007,"exceptions":2450,"tax_returns":1050,"county":"Wayne County","state_abbr":"UT"},
@@ -66,9 +66,9 @@ CSV is a simple format to receive data, but a more difficult format for sending 
 
 ### XML
 
-**TODO**: We do not currently have support for XML, but will soon. When we do, it will also support [HAL][].
+**TODO**: Totals and pagination are not currently present.
 
-Here is an example of the format for the URL `/data/county_taxes/incomes.xml`.
+XML uses the [Hypertext Application Language (HAL)][HAL] format to convey links to related resources. Links are found under the `_links` key and individual datums are found under the `_embedded` key. Here is an example of the format for the URL `/data/county_taxes/incomes.xml`.
 
 ```xml
 <resource href="/data/county_taxes/incomes.xml">
@@ -86,8 +86,8 @@ Here is an example of the format for the URL `/data/county_taxes/incomes.xml`.
   <metadata>
     <!-- TODO not yet determined -->
   </metadata>
-  <data>
-    <row>
+  <results>
+    <result>
       <interest_income>12695</interest_income>
       <dividend_income>3802</dividend_income>
       <wages_and_salaries_income>885899</wages_and_salaries_income>
@@ -96,9 +96,9 @@ Here is an example of the format for the URL `/data/county_taxes/incomes.xml`.
       <tax_returns>20563</tax_returns>
       <county>Tooele County</county>
       <state_abbr>UT</state_abbr>
-    </row>
-    <!-- more rows -->
-  </data>
+    </result>
+    <!-- more results -->
+  </results>
 </resource>
 ```
 
