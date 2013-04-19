@@ -103,7 +103,10 @@ functions to return the resource that will be presented later."
                      resource (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
                                   (hal/add-link :rel "up" :href (str "/data/" dataset))
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
-                                  (hal/add-properties (dissoc query :slicedef :mongo :dimensions)))
+                                  (hal/add-properties (-> query
+                                                          (dissoc :slicedef :mongo :dimensions)
+                                                          (assoc :results (:result query))
+                                                          (dissoc :result))))
                      view-map {:dataset dataset
                                :slicedef slicedef
                                :params params
