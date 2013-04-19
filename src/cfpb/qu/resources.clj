@@ -76,7 +76,7 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
-  :available-media-types ["text/html" "text/csv" "application/json"]
+  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
@@ -98,12 +98,17 @@ functions to return the resource that will be presented later."
                      headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query params slicedef)
+                     query (mongo/with-db (mongo/get-db dataset)
+                             (query/execute (:table slicedef) query))
+                     resource (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
+                                  (hal/add-link :rel "up" :href (str "/data/" dataset))
+                                  (hal/add-properties {:dataset dataset :slice (name slice)})
+                                  (hal/add-properties (dissoc query :slicedef :mongo :dimensions)))
                      view-map {:dataset dataset
                                :slicedef slicedef
                                :params params
-                               :headers headers}
-                     query (mongo/with-db (mongo/get-db dataset)
-                             (query/execute (:table slicedef) query))]
+                               :headers headers
+                               :resource resource}]
                  (views/slice (:media-type representation)
                               query
                               view-map))))

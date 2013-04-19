@@ -138,9 +138,6 @@
                               :columns columns
                               :data data})))))
 
-(defmethod slice "application/json" [_ query _]
-  (response/json (:result query)))
-
 (defmethod slice "text/csv" [_ query {:keys [slicedef]}]
   (let [table (:table slicedef)
         data (:result query)
@@ -149,6 +146,12 @@
     (response/content-type
      "text/csv; charset=utf-8"
      (str (write-csv (vector columns)) (write-csv rows)))))
+
+(defmethod slice "application/json" [_ _ {:keys [resource]}]
+  (hal/Resource->representation resource :json))
+
+(defmethod slice "application/xml" [_ query {:keys [resource]}]
+  (hal/Resource->representation resource :xml))
 
 (defmethod slice :default [format _ _]
   (format-not-found format))
