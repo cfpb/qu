@@ -8,6 +8,7 @@
             [taoensso.timbre :as log]))
 
 (def default-limit 100)
+(def default-aggregation-limit 10000)
 (def default-offset 0)
 
 (declare parse-params mongo-find mongo-aggregation)
@@ -43,14 +44,14 @@
         query (mongo/process query)
         _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
-           (cond
-            (not (empty? (:errors query))) []
+      (cond
+        (not (empty? (:errors query))) []
 
-            (is-aggregation? query)
-            (data/get-aggregation collection (mongo-aggregation query))
+        (is-aggregation? query)
+        (data/get-aggregation collection (mongo-aggregation query))
 
-            :default
-            (data/get-find collection (mongo-find query))))))
+        :default
+        (data/get-find collection (mongo-find query))))))
 
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 
@@ -65,10 +66,10 @@ cast the requested dimensions into the right type for comparison when
 querying the database."
   [slice-def dimensions]
   (into {}
-        (for [[dimension value] dimensions]
-          (vector dimension (cast-value
-                             value
-                             (get-in slice-def [:types dimension]))))))
+    (for [[dimension value] dimensions]
+      (vector dimension (cast-value
+                          value
+                          (get-in slice-def [:types dimension]))))))
 
 (defn parse-params
   "Given a slice definition and the request parameters, convert those
@@ -79,30 +80,29 @@ can query with."
   (let [dimensions (set (:dimensions slice))]
     {:dimensions (->> (into {} (filter (fn [[key value]]
                                          (and
-                                          (not= value "")
-                                          (dimensions (name key)))) params))
+                                           (not= value "")
+                                           (dimensions (name key)))) params))
                       (cast-dimensions slice))
      :clauses (into {} (filter (fn [[key value]]
                                  (and
-                                  (not= value "")
-                                  (allowed-clauses key))) params))}))
+                                   (not= value "")
+                                   (allowed-clauses key))) params))}))
 
 (defn- ->int [val]
   (cond
-   (integer? val) val
-   :default (Integer/parseInt val)))
+    (integer? val) val
+    :default (Integer/parseInt val)))
 
 (defn mongo-find
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
-               (q/find (get-in query [:mongo :match]))
-               (q/limit (->int (or (:limit query) default-limit)))
-               (q/skip (->int (or (:offset query) default-offset)))
-               (q/sort (get-in query [:mongo :sort])))]
-    (if-let [project (get-in query [:mongo :project])]
-      (merge mongo {:fields project})
-      mongo)))
+                (q/find (get-in query [:mongo :match]))
+                (q/limit (->int (or (:limit query) default-limit)))
+                (q/skip (->int (or (:offset query) default-offset)))
+                (q/sort (get-in query [:mongo :sort] {}))
+                (q/fields (or (get-in query [:mongo :project]) {})))]
+    mongo))
 
 (defn mongo-aggregation
   "Add a Mongo aggregation map to the query."
@@ -112,16 +112,14 @@ can query with."
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
         skip (->int (or (:offset query) default-offset))
-        limit (->int (or (:limit query) default-limit))]
+        limit (->int (or (:limit query) default-aggregation-limit))]
     (-> []
-        (->/when match
-          (conj {"$match" match}))
-        (->/when group
-          (conj {"$group" group}))
-        (->/when project
-          (conj {"$project" project}))
-        (->/when sort
-          (conj {"$sort" sort}))
-        (conj {"$skip" skip})
-        (conj {"$limit" limit}))))
+      (->/when match
+        (conj {"$match" match}))
+      (conj {"$group" group})
+      (conj {"$project" project})
+      (->/when sort
+        (conj {"$sort" sort}))
+      (conj {"$skip" skip})
+      (conj {"$limit" limit}))))
 

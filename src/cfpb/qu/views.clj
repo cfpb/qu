@@ -111,10 +111,13 @@
    {:key "limit"   :label "Limit (default is 100)"    :placeholder 100}
    {:key "offset"  :label "Offset (default is 0)"     :placeholder 0}])
 
-(defmethod slice "text/html" [_ resource {:keys [dataset metadata slicedef headers dimensions]}]
+(defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
   (let [desc (partial concept-description metadata)
-        slicename (get-in resource [:properties :slice])
-        action (str "http://" (headers "host") (:href resource))
+        dataset (get-in resource [:properties :dataset])
+        slice (get-in resource [:properties :slice])
+        action (str "http://" (headers "host")
+                    "/data/" dataset
+                    "/" slice)
         slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
                         :metrics (str/join ", " (:metrics slicedef))}
         dimensions (map #(hash-map :key %
@@ -134,7 +137,7 @@
                  (slice-html
                   {:action action
                    :dataset dataset
-                   :slice slicename
+                   :slice slice
                    :metadata slice-metadata
                    :dimensions dimensions
                    :clauses clauses

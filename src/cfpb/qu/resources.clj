@@ -104,11 +104,9 @@ functions to return the resource that will be presented later."
                                                 :templated true)
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
                                   (hal/add-properties (-> query
-                                                          (dissoc :slicedef :mongo :dimensions)
-                                                          (assoc :results (:result query))
-                                                          (dissoc :result))))
-                     view-map {:dataset dataset
-                               :metadata metadata
+                                                          (dissoc :slicedef :mongo :dimensions :result)
+                                                          (assoc :results (get-in query [:result :data])))))
+                     view-map {:metadata metadata
                                :slicedef slicedef
                                :headers headers
                                :dimensions (:dimensions query)}]
