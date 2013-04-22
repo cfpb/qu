@@ -13,11 +13,11 @@ functions to return the resource that will be presented later."
    [monger.core :as mongo]
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
+   [halresource.resource :as hal]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
    [cfpb.qu.query :as query :refer [params->Query]]
-   [cfpb.qu.query.parser :refer [where-expr]]
-   [cfpb.qu.hal :as hal]))
+   [cfpb.qu.query.parser :refer [where-expr]]))
 
 (defn not-found [msg]
   (status
@@ -30,9 +30,9 @@ functions to return the resource that will be presented later."
   index
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
-  :handle-ok (fn [{:keys [representation]}]
+  :handle-ok (fn [{:keys [request representation]}]
                (let [datasets (data/get-datasets)
-                     resource (hal/new-resource "/data")
+                     resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
                                      (hal/add-properties
                                       (hal/new-resource (str "/data/" (:name dataset)))
@@ -57,8 +57,8 @@ functions to return the resource that will be presented later."
                         (case (:media-type representation)
                           "text/html" (not-found message)
                           message)))
-  :handle-ok (fn [{:keys [dataset metadata representation]}]
-               (let [resource (-> (hal/new-resource (str "/data/" dataset))
+  :handle-ok (fn [{:keys [request dataset metadata representation]}]
+               (let [resource (-> (hal/new-resource (:uri request))
                                   (hal/add-link :rel "up" :href "/data")
                                   (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata))
@@ -68,10 +68,7 @@ functions to return the resource that will be presented later."
                                          (hal/add-property :id (name slice))
                                          (hal/add-properties info))) (:slices metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
-                 (views/dataset (:media-type representation) resource)
-                 #_(apply str
-                        (views/layout-html
-                         (views/dataset-html dataset metadata))))))
+                 (views/dataset (:media-type representation) resource))))
 
 (defresource
   ^{:doc "Resource for an individual slice."}
@@ -94,17 +91,16 @@ functions to return the resource that will be presented later."
                           "text/html" (not-found message)
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
-               (let [params (:params request)
-                     headers (:headers request)
+               (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
-                     query (params->Query params slicedef)
+                     query (params->Query (:params request) slicedef)
                      query (mongo/with-db (mongo/get-db dataset)
                              (query/execute (:table slicedef) query))
-                     href (str "/data/" dataset "/" (name slice))
+                     href (:uri request)
                      resource (-> (hal/new-resource href)
                                   (hal/add-link :rel "up" :href (str "/data/" dataset))
                                   (hal/add-link :rel "query"
-                                                :href (str href ".{?format}?$where={?where}&$orderBy={?orderBy}&$select={?select}")
+                                                :href (str href "?$where={?where}&$orderBy={?orderBy}&$select={?select}&$offset={?offset}&$limit={?limit}")
                                                 :templated true)
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
                                   (hal/add-properties (-> query
@@ -112,10 +108,10 @@ functions to return the resource that will be presented later."
                                                           (assoc :results (:result query))
                                                           (dissoc :result))))
                      view-map {:dataset dataset
+                               :metadata metadata
                                :slicedef slicedef
-                               :params params
                                :headers headers
-                               :resource resource}]
+                               :dimensions (:dimensions query)}]
                  (views/slice (:media-type representation)
-                              query
+                              resource
                               view-map))))
