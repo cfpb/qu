@@ -104,12 +104,13 @@
                   format))
 
 (def clauses
-  [{:key "select"  :label "Select (fields to return)" :placeholder "state,age,population_2010"}
-   {:key "group"   :label "Group By"}
-   {:key "where"   :label "Where"                     :placeholder "age > 18"}
-   {:key "orderBy" :label "Order By"                  :placeholder "age desc, population_2010"}
-   {:key "limit"   :label "Limit (default is 100)"    :placeholder 100}
-   {:key "offset"  :label "Offset (default is 0)"     :placeholder 0}])
+  [{:key "select"   :label "Select (fields to return)" :placeholder "state,age,population_2010"}
+   {:key "group"    :label "Group By"}
+   {:key "where"    :label "Where"                     :placeholder "age > 18"}
+   {:key "orderBy"  :label "Order By"                  :placeholder "age desc, population_2010"}
+   {:key "limit"    :label "Limit (default is 100)"    :placeholder 100}
+   {:key "offset"   :label "Offset (default is 0)"     :placeholder 0}
+   {:key "callback" :label "Callback for JSONP"        :placeholder "callback"}])
 
 (defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
   (let [desc (partial concept-description metadata)
@@ -159,6 +160,13 @@
 
 (defmethod slice "application/json" [_ resource _]
   (hal/resource->representation resource :json))
+
+(defmethod slice "text/javascript" [_ resource _]
+  (let [callback (get-in resource [:properties :callback])
+        callback (if (str/blank? callback) "callback" callback)]
+    (str callback "("
+         (hal/resource->representation resource :json)
+         ");")))
 
 (defmethod slice "application/xml" [_ resource _]
   (hal/resource->representation resource :xml))

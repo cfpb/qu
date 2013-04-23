@@ -73,7 +73,7 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
-  :available-media-types ["text/html" "text/csv" "application/json" "application/xml"]
+  :available-media-types ["text/html" "text/csv" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
