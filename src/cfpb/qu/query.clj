@@ -13,7 +13,8 @@
 
 (declare parse-params mongo-find mongo-aggregation)
 
-(defrecord Query [select group where orderBy limit offset mongo errors slicedef])
+(defrecord Query [select group where orderBy limit offset callback mongo errors slicedef])
+(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset :$callback})
 
 (defn params->Query
   "Convert params from a web request plus a slice definition into a Query record."
@@ -24,13 +25,15 @@
         orderBy (:$orderBy clauses)
         where (:$where clauses)
         limit (:$limit clauses)
-        offset (:$offset clauses)]
+        offset (:$offset clauses)
+        callback (:$callback clauses)]
     (map->Query {:select select
                  :group group
                  :where where
                  :limit limit
                  :offset offset
                  :orderBy orderBy
+                 :callback callback
                  :dimensions dimensions
                  :slicedef slicedef})))
 
@@ -52,8 +55,6 @@
 
         :default
         (data/get-find collection (mongo-find query))))))
-
-(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
 
 (defn- cast-value [value type]
   (case type

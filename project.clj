@@ -25,6 +25,7 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
                  [ring.middleware.mime-extensions "0.2.0"]
+                 [halresource "0.1.0-SNAPSHOT"]
 
                  ;; provisional
                  [lonocloud/synthread "1.0.4"]

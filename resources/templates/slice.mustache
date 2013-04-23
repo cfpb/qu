@@ -5,13 +5,13 @@
 <h2>Slice Metadata</h2>
 
 {{#metadata}}
-<dl class="metadata">
-  <dt>Dimensions</dt>
-  <dd>{{metadata.dimensions}}</dd>
+  <dl class="metadata">
+    <dt>Dimensions</dt>
+    <dd>{{metadata.dimensions}}</dd>
 
-  <dt>Metrics</dt>
-  <dd>{{metrics}}</dd>
-</dl>
+    <dt>Metrics</dt>
+    <dd>{{metrics}}</dd>
+  </dl>
 {{/metadata}}
 
 <h2>Query This Slice</h2>
@@ -28,48 +28,58 @@
   <div class="row">
     <fieldset class="span2">
       <legend>Format</legend>
+      <label class="radio" for="format-html">
+        <input checked="checked" class="radio" id="format-html"
+        name="$format" type="radio" value="html">HTML
+      </label>
+      <label class="radio" for="format-json">
+        <input class="radio" id="format-json" name="$format"
+        type="radio" value="json">JSON
+      </label>
+      <label class="radio" for="format-jsonp">
+        <input class="radio" id="format-jsonp" name="$format"
+        type="radio" value="jsonp">JSONP
+      </label>
+      <label class="radio" for="format-xml">
+        <input class="radio" id="format-xml" name="$format" type="radio" value="xml">
+        XML
+      </label>
       <label class="radio" for="format-csv">
         <input class="radio" id="format-csv" name="$format" type="radio" value="csv">
         CSV
       </label>
-      <label class="radio" for=
-             "format-json"><input class="radio" id="format-json" name="$format" type=
-                                  "radio" value="json">JSON</label>
-      <label class="radio" for=
-             "format-html"><input checked="checked" class="radio" id="format-html"
-                                  name="$format" type="radio" value="html">HTML</label>
     </fieldset>
-    
+
     <fieldset class="span5 dimension-fields">
       <legend>Dimensions</legend>
 
       <p class="text-info">Enter a value for any of these dimensions to filter
         the search, returning only rows that match that value.</p>
 
-      <!-- replicate for each dimension -->
-      {{#dimensions}}
-      <div class="dimension-field">
-        <label for="field-{{key}}">{{name}}</label>
-        <input id="field-{{key}}" name="{{key}}" type="text" value="{{value}}" />
-      </div>
-      {{/dimensions}}
+        <!-- replicate for each dimension -->
+        {{#dimensions}}
+          <div class="dimension-field">
+            <label for="field-{{key}}">{{name}}</label>
+            <input id="field-{{key}}" name="{{key}}" type="text" value="{{value}}" />
+          </div>
+        {{/dimensions}}
     </fieldset>
-    
+
     <fieldset class="span5 clause-fields">
       <legend>Clauses</legend>
 
       {{#clauses}}
-      <div class="control-group{{#errors}} error{{/errors}}">
-        <label class="control-label" for="field-{{key}}">{{label}}</label>
-        <input id="field-{{key}}"
-               name="${{key}}"
-               type="text"
-               placeholder="{{placeholder}}"
-               value="{{value}}" />
-        {{#errors}}
-        <span class="help-inline">{{.}}</span>
-        {{/errors}}
-      </div>
+        <div class="control-group{{#errors}} error{{/errors}}">
+          <label class="control-label" for="field-{{key}}">{{label}}</label>
+          <input id="field-{{key}}"
+          name="${{key}}"
+          type="text"
+          placeholder="{{placeholder}}"
+          value="{{value}}" />
+          {{#errors}}
+            <span class="help-inline">{{.}}</span>
+          {{/errors}}
+        </div>
       {{/clauses}}
     </fieldset>
   </div>
@@ -82,18 +92,18 @@
     <thead>
       <tr>
         {{#columns}}
-        <th>{{.}}</th>
+          <th>{{.}}</th>
         {{/columns}}
       </tr>
     </thead>
 
     <tbody>
       {{#data}}
-      <tr>
-        {{#.}}
-        <td>{{.}}</td>
-        {{/.}}
-      </tr>
+        <tr>
+          {{#.}}
+            <td>{{.}}</td>
+          {{/.}}
+        </tr>
       {{/data}}
     </tbody>
   </table>
