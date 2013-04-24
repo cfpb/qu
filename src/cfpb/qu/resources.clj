@@ -43,7 +43,7 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for an individual dataset."}
   dataset
-  :available-media-types ["text/html" "application/json" "application/xml"]  
+  :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
@@ -70,6 +70,39 @@ functions to return the resource that will be presented later."
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
                  (views/dataset (:media-type representation) resource))))
 
+(defn- templated-url
+  "Build the templated URL for slice queries."
+  [base-href clauses]
+  (str base-href "?"
+       (str/join "&"
+                 (map
+                  (comp #(str "$" % "={?" % "}") name)
+                  clauses))))
+
+(defn- slice-resource
+  "Build a HAL resource for a slice."
+  [slice request query]
+  (let [base-href (:uri request)
+        href (url-like (if-let [query-string (:query-string request)]
+                         (str base-href "?" query-string)
+                         base-href))
+        result (:result query)
+        clauses (map (comp keyword :key) views/clauses)
+        page (:page query)]
+    (-> (hal/new-resource href)
+        (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+        (hal/add-link :rel "query"
+                      :href (templated-url base-href clauses)
+                      :templated true)
+        (hal/add-properties {:dataset dataset
+                             :slice (name slice)
+                             :size (:size result)
+                             :total (:total result)
+                             :page page
+                             :query (select-keys query clauses)
+                             :dimensions (:dimensions query)
+                             :results (:data result)}))))
+
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
@@ -95,30 +128,8 @@ functions to return the resource that will be presented later."
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) slicedef)
                      query (query/execute dataset (:table slicedef) query)
-                     base-href (:uri request)
-                     href (url-like (if-let [query-string (:query-string request)]
-                                      (str base-href "?" query-string)
-                                      base-href))
-                     result (:result query)
-                     clauses (map (comp keyword :key) views/clauses)
-                     page (:page query)
-                     resource (-> (hal/new-resource href)
-                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
-                                  (hal/add-link :rel "query"
-                                                :href
-                                                (str base-href "?"
-                                                     (str/join "&"
-                                                      (map
-                                                       (comp #(str "$" % "={?" % "}") name)
-                                                       clauses)))
-                                                :templated true)
-                                  (hal/add-properties {:dataset dataset :slice (name slice)})
-                                  (hal/add-properties {:size (:size result) :total (:total result)})
-                                  (hal/add-property :page page)
-                                  (hal/add-property :query (select-keys query clauses))
-                                  (hal/add-property :dimensions (:dimensions query))
-                                  (hal/add-property :results (:data result)))
-                     view-map {:base-href base-href
+                     resource (slice-resource slice request query)
+                     view-map {:base-href (:uri request)
                                :metadata metadata
                                :slicedef slicedef
                                :headers headers
