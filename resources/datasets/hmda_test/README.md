@@ -14,6 +14,7 @@ To a sample roughly 1/10 of the size of the full dataset:
 make sample
 ```
 
+Then load as described on the main docs
 ```clojure
 (require 'cfpb.qu.loader)
 (in-ns 'cfpb.qu.loader)
