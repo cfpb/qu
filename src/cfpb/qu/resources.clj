@@ -14,6 +14,7 @@ functions to return the resource that will be presented later."
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
+   [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
    [cfpb.qu.query :as query :refer [params->Query]]
@@ -35,7 +36,7 @@ functions to return the resource that will be presented later."
                      resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
                                      (hal/add-properties
-                                      (hal/new-resource (str "/data/" (:name dataset)))
+                                      (hal/new-resource (urls/dataset-path (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
                  (views/index (:media-type representation) resource))))
@@ -59,12 +60,12 @@ functions to return the resource that will be presented later."
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href "/data")
+                                  (hal/add-link :rel "up" :href (urls/index-path))
                                   (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata))
                                   (hal/add-property :concepts (:concepts metadata)))
                      embedded (map (fn [[slice info]]
-                                     (-> (hal/new-resource (str "/data/" dataset "/" (name slice)))
+                                     (-> (hal/new-resource (urls/slice-path dataset (name slice)))
                                          (hal/add-property :id (name slice))
                                          (hal/add-properties info))) (:slices metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
@@ -98,7 +99,7 @@ functions to return the resource that will be presented later."
                              (query/execute (:table slicedef) query))
                      href (:uri request)
                      resource (-> (hal/new-resource href)
-                                  (hal/add-link :rel "up" :href (str "/data/" dataset))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
                                   (hal/add-link :rel "query"
                                                 :href (str href "?$where={?where}&$orderBy={?orderBy}&$select={?select}&$offset={?offset}&$limit={?limit}")
                                                 :templated true)
