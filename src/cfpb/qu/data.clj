@@ -2,13 +2,24 @@
   "This namespace contains all our functions for retrieving data from
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
-  (:require [clojure.string :as str]
-            [cfpb.qu.where :as where]
+  (:require [taoensso.timbre :as log]
+            [environ.core :refer [env]]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
              [collection :as coll]
+             [conversion :as conv]
              json]))
+
+(defn ensure-mongo-connection []
+  (when-not (bound? #'mongo/*mongodb-connection*)
+    (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
+          options (mongo/mongo-options)]
+      (mongo/connect! address options))))
+
+(defn disconnect-mongo []
+  (mongo/disconnect!))
+
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
@@ -28,87 +39,46 @@ stored in a Mongo database called 'metadata'."
   (with-db (get-db "metadata")
     (coll/find-one-as-map "datasets" {:name dataset})))
 
-(defn concept-description
-  "Each dataset has a list of concepts. A concept is a definition of a
-  type of data in the dataset. This function retrieves the description
-  of the concept."
-  [metadata concept]
-  (get-in metadata [:concepts (keyword concept) :description] concept))
-
 (defn slice-columns
   "Slices are made up of dimensions, columns that can be queried, and
   metrics, which are columns, usually numeric, connected to a set of
   those dimensions. This function retrieves the names of all the
   columns, both dimensions and metrics."
-  [slice-def]
-  (concat (:dimensions slice-def) (:metrics slice-def)))
+  [slicedef]
+  (concat (:dimensions slicedef) (:metrics slicedef)))
 
-(defn select-fields
-  "In API requests, the user can select the columns they want
-  returned. If they choose to do this, the columns will be in a
-  comma-separated string. This function returns a seq of column names
-  from that string."
-  [select]
-  (if select
-    (str/split select #",\s*")))
+(defn- strip-id [data]
+  (map #(dissoc % :_id) data))
 
-(defn order-by-sort
-  "In API requests, the user can select the order of data returned. If
-  they do this, the order will be specified as a comma-separated
-  string like so: 'column [desc], column, ...'. This function takes
-  that string and returns a sorted map consisting of columns as keys
-  and -1/1 for values depending on whether the sort is descending or
-  ascending for that column."
-  [order-by]
-  (if order-by
-    (->> (str/split order-by #",\s*")
-         (map (fn [order]
-                (let [order (str/split order #"\s+")]
-                  ;; TODO refactor
-                  (if (= (count order) 2)
-                    (vector (first order)
-                            (if (= "desc" (str/lower-case (second order)))
-                              -1
-                              1))
-                    (vector (first order) 1)))))
-         flatten
-         (apply sorted-map))))
+(defrecord QueryResult [total size data])
 
+(defn get-find
+  "Given a collection and a Mongo find map, return a QueryResult of the form:
+   :total - Total number of documents for the input query irrespective of skip or limit
+   :size - Number of documents for the input query after skip and limit are applied
+   :data - Seq of maps with the IDs stripped out"
+  [collection find-map]
+  (log/info (str "Mongo find: " find-map))
 
-(defn- get-and-parse-where [where]
-  (if where
-    (where/mongo-eval (where/parse where))
-    {}))
+  (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
+                        (.limit (:limit find-map))
+                        (.skip (:skip find-map))
+                        (.sort (conv/to-db-object (:sort find-map))))]
+    (->QueryResult
+      (.count cursor)
+      (.size cursor)
+      (strip-id (map (fn [x] (conv/from-db-object x true)) cursor)))))
 
-(defn get-data
-  "Given the definition of a slice (from the dataset's metadata) and a
-  map with the queried dimensions and other clauses for the request,
-  return the queried data from the slice.
-
-  $where and $group are currently not supported clauses, although
-  their presence will cause no errors."
-  [slice {:keys [dimensions clauses]}]
-  (let [table (:table slice)
-        columns (slice-columns :table)
-        fields (or (select-fields (:$select clauses))
-                   (slice-columns :table))
-        ;; only call Integer/parseInt if giving a string
-        limit (Integer/parseInt (:$limit clauses "100"))
-        offset (Integer/parseInt (:$offset clauses "0"))
-        sort (or (order-by-sort (:$orderBy clauses))
-                 {})
-        where (->> (:$where clauses)
-                   get-and-parse-where
-                   (merge dimensions))
-        ; add $group
-        ]
-    (map #(dissoc % :_id)
-         (q/with-collection table
-           (q/find where)
-           (q/fields fields)
-           (q/limit limit)
-           (q/skip offset)
-           (q/sort sort)))))
+(defn get-aggregation
+  "Given a collection and a Mongo aggregation, return a QueryResult of the form:
+   :total - Total number of results returned
+   :size - Same as :total
+   :data - Seq of maps with the IDs stripped out"
+  [collection aggregation]
+  (log/info (str "Mongo aggregation: " aggregation))
+  (let [data (strip-id (coll/aggregate collection aggregation))
+        size (count data)]
+    (->QueryResult size size data)))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

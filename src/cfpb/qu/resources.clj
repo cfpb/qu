@@ -8,13 +8,15 @@ context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
   (:require
    [clojure.string :as str]
+   [clojure.tools.logging :refer [info error]]
    [liberator.core :refer [defresource request-method-in]]
    [monger.core :as mongo]
-   [validateur.validation :as valid]
+   [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
-   [cfpb.qu.where.parse-fns :refer [where-expr]]))
+   [cfpb.qu.query :as query :refer [params->Query]]
+   [cfpb.qu.query.parser :refer [where-expr]]))
 
 (defn index [_]
   (views/layout-html
@@ -22,8 +24,10 @@ functions to return the resource that will be presented later."
     (data/get-datasets))))
 
 (defn not-found [msg]
-  (views/layout-html
-   (views/not-found-html msg)))
+  (status
+   404
+   (views/layout-html
+    (views/not-found-html msg))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
@@ -47,70 +51,16 @@ functions to return the resource that will be presented later."
                        (views/dataset-html dataset metadata))))
   :available-media-types ["text/html" "text/plain;q=0.8"])
 
-(defn- cast-value [value type]
-    (case type
-      "integer" (Integer/parseInt value)
-      value))
-
-(defn- cast-dimensions
-  "Given a slice definition and a set of dimensions from the request,
-cast the requested dimensions into the right type for comparison when
-querying the database."
-  [slice-def dimensions]
-  (into {}
-        (for [[dimension value] dimensions]
-          (vector dimension (cast-value
-                             value
-                             (get-in slice-def [:types dimension]))))))
-
-(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
-
-(defn parse-params
-  "Given a slice definition and the request parameters, convert those
-parameters into something we can use. Specifically, pull out the
-dimensions and clauses and cast the dimension values into something we
-can query with."
-  [slice-def params]
-  (let [dimensions (set (:dimensions slice-def))]
-    {:dimensions (->> (into {} (filter (fn [[key value]]
-                                         (and
-                                          (not= value "")
-                                          (dimensions (name key)))) params))
-                      (cast-dimensions slice-def))
-     :clauses (into {} (->> params
-                            (map (fn [[key value]]
-                                   [(keyword key) value]))
-                            (filter (fn [[key value]]
-                                      (and
-                                       (not= value "")
-                                       (allowed-clauses key))))))}))
-
-(defn- parses-correctly [key parsefn & {:keys [allow-nil] :or {allow-nil true}}]
-  (fn [m]
-    (let [input (m key)]
-      (try        
-        (if (or (and allow-nil (str/blank? input))
-                (parse parsefn key))
-          [true #{}]
-          [false {key #{"does not parse correctly"}}])
-        (catch Exception e
-          [false {key #{"does not parse correctly"}}])))))
-
 (defresource
   ^{:doc "Resource for an individual slice."}
   slice
   :available-media-types ["text/html" "text/csv" "application/json"]
   :method-allowed? (request-method-in :get)
-  :malformed? (fn [{:keys [request]}]
-                (let [params (:params request)
-                      validator (valid/validation-set
-                                 (parses-correctly "$where" where-expr))]
-                  (valid/invalid? validator params)))
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
                    metadata (data/get-metadata dataset)
                    slice (get-in request [:params :slice])]
-               (if-let [slice-def (get-in metadata [:slices (keyword slice)])]
+               (if-let [slicedef (get-in metadata [:slices (keyword slice)])]
                  {:dataset dataset
                   :metadata metadata
                   :slice (keyword slice)})))
@@ -124,14 +74,14 @@ can query with."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [params (:params request)
                      headers (:headers request)
-                     slice-def (get-in metadata [:slices slice])
+                     slicedef (get-in metadata [:slices slice])
+                     query (params->Query params slicedef)
                      view-map {:dataset dataset
-                               :slice-def slice-def
+                               :slicedef slicedef
                                :params params
-                               :headers headers}]
-                 (mongo/with-db (mongo/get-db dataset)
-                   (let [parsed-params (parse-params slice-def params)
-                         data (data/get-data slice-def parsed-params)]
-                     (views/slice (:media-type representation)
-                                  data
-                                  view-map))))))
+                               :headers headers}
+                     query (mongo/with-db (mongo/get-db dataset)
+                            (query/execute (:table slicedef) query))]
+                 (views/slice (:media-type representation)
+                              query
+                              view-map))))

@@ -1,6 +1,7 @@
-(ns cfpb.qu.test.data
+(ns cfpb.qu.data-test
   (:require [midje.sweet :refer :all]
-            [cfpb.qu.data :refer :all]))
+            [cfpb.qu.data :refer :all]
+            [cfpb.qu.query :refer [is-aggregation? params->Query]]))
 
 (fact "get-data-table converts maps to seqs"
       (let [raw-data [{:name "Pete" :age 36 :city "York"}

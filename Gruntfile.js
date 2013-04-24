@@ -19,7 +19,8 @@ module.exports = function(grunt) {
     },
     recess: {
       dist: {
-        src: ['resources/components/bootstrap/less/bootstrap.less'],
+        src: ['resources/components/bootstrap/less/bootstrap.less',
+              'resources/static/css/data-api.less'],
         dest: 'resources/static/css/data-api.min.css',
         options: {
           compile: true,

@@ -1,167 +1,127 @@
 (ns cfpb.qu.views
   "Functions to display resource data in HTML, CSV, and JSON formats."
   (:require
-   [clojure.java.io :as io]
+   [taoensso.timbre :as log]
    [clojure
     [string :as str]
     [pprint :refer [pprint]]]
    [compojure
-    [route :as route]
     [response :refer [render]]]
-   [clojure-csv.core :refer [write-csv]]
-   [cheshire.core :as json]
-   [monger
-    [core :as mongo :refer [get-db with-db]]
-    [collection :as coll]
-    json]
-   [net.cgrand.enlive-html
-    :as html
-    :refer [deftemplate defsnippet]]
+   [stencil.core :refer [render-file]]
    [ring.util.response :refer [content-type]]
    ring.middleware.content-type
-   [cfpb.qu.data :as data]))
-
-(def http-status
-  {:bad-request 400
-   :not-found 404})
+   [noir.response :as response]
+   [clojure-csv.core :refer [write-csv]]
+   monger.json
+   [cfpb.qu.data :as data]
+   [cfpb.qu.query :as query]
+   [cfpb.qu.query.select :as select]))
 
 (defn json-error
-  ([msg] (json-error msg {}))
-  ([msg body]
-     (let [body (merge body {:error msg})]
-       (json/generate-string body))))
+  ([status] (json-error status {}))
+  ([status body]
+     (response/status
+      status
+      (response/json body))))
 
-(deftemplate layout-html "templates/layout.html"
-  [content]
+(defn layout-html [content]
+  (render-file "templates/layout"
+               {:content content}))
 
-  [:div#content]
-  (html/content content))
+(defn index-html [datasets]
+  (render-file "templates/index" {:datasets datasets}))
 
-(defsnippet index-html "templates/index.html" [:#content]
-  [datasets]
+(defn not-found-html [message]
+  (render-file "templates/404" {:message message}))
 
-  [:ul#dataset-list :li]
-  (html/clone-for [dataset datasets]
-                  [:a]
-                  (html/do->
-                   (html/content (str (get-in dataset [:info :name])))
-                   (html/set-attr :href (str "/data/" (:name dataset))))
+(defn dataset-html [dataset metadata]
+  (let [slices (map name (keys (:slices metadata)))]
+    (render-file "templates/dataset"
+                 {:dataset dataset
+                  :slices slices
+                  :metadata (with-out-str (pprint metadata))})))
 
-                  [:small]
-                  (html/content (get-in dataset [:info :description]))))
+(defn select-fields
+  "In API requests, the user can select the columns they want
+  returned. If they choose to do this, the columns will be in a
+  comma-separated string. This function returns a seq of column names
+  from that string."
+  [select]
+  (if select
+    (map :select (select/parse select))))
 
-(defsnippet not-found-html "templates/404.html" [:#content]
-  [msg]
+(defn- columns-for-view [query slicedef]
+  (let [select (:select query)]
+    (if (or (str/blank? select)
+            (not (empty? (:errors query))))
+      (data/slice-columns slicedef)
+      (map name (select-fields select)))))
 
-  [:.message]
-  (html/content msg))
+(defn slice-html
+  [view-map]
+  (render-file "templates/slice" view-map))
 
-(defsnippet dataset-html "templates/dataset.html" [:#content]
-  [dataset metadata]
+(def clauses
+  [{:key "select"  :label "Select (fields to return)" :placeholder "state,age,population_2010"}
+   {:key "group"   :label "Group By"}
+   {:key "where"   :label "Where"                     :placeholder "age > 18"}
+   {:key "orderBy" :label "Order By"                  :placeholder "age desc, population_2010"}
+   {:key "limit"   :label "Limit (default is 100)"    :placeholder 100}
+   {:key "offset"  :label "Offset (default is 0)"     :placeholder 0}])
 
-  [:h1 html/any-node]
-  (html/replace-vars {:dataset dataset})
-
-  [:h1 :a.index]
-  (html/set-attr :href "/data")
-
-  [:ul#slices :li]
-  (html/clone-for [slice (map name (keys (:slices metadata)))]
-                  [:a]
-                  (html/do->
-                   (html/content slice)
-                   (html/set-attr :href (str "/data/" dataset "/" slice))))
-
-  [:pre.definition]
-  (html/content (with-out-str (pprint metadata))))
-
-(defn- columns-for-view [slice-def params]
-  (let [select (:$select params)]
-    (if (and select
-             (not= select ""))
-      (data/select-fields select)
-      (data/slice-columns slice-def))))
-
-(defn- fill-in-input-value [params]
-  (fn [node]
-    ((html/set-attr :value (params (get-in node [:attrs :name])))
-     node)))
-
-(defsnippet slice-html "templates/slice.html" [:#content]
-  [params action dataset metadata slice-def columns data]
-
-  [:form#query-form]
-  (html/do->
-   (html/set-attr :action action)
-   (html/set-attr :data-href action))
-
-  [:h1 html/any-node]
-  (html/replace-vars {:dataset dataset})
-
-  [:h1 :a.index]
-  (html/set-attr :href "/data")
-
-  [:h1 :a.dataset]
-  (html/set-attr :href (str "/data/" dataset))
-
-  [:.metadata html/any-node]
-  (html/replace-vars {:dimensions (str/join ", " (:dimensions slice-def))
-                      :metrics (str/join ", " (:metrics slice-def))})
-
-  [:.dimension-fields :.dimension-field]
-  (html/clone-for [dimension (:dimensions slice-def)]
-                  [:label]
-                  (html/do->
-                   (html/content (data/concept-description metadata dimension))
-                   (html/set-attr :for (str "field-" dimension)))
-
-                  [:input]
-                  (html/do->
-                   (html/set-attr :name dimension)
-                   (html/set-attr :id (str "field-" dimension))
-                   (html/set-attr :value (or (params (keyword dimension))
-                                             (params dimension)))))
-
-  [:.clause-field :input]
-  (fill-in-input-value params)
-
-  [:#query-results :thead :tr]
-  (html/content (html/html
-                 (for [column columns]
-                   [:th (data/concept-description metadata column)])))
-
-  [:#query-results :tbody :tr]
-  (html/clone-for [row data]
-                  (html/content (html/html
-                                 (for [value row]
-                                   [:td value])))))
+(defn concept-description
+  "Each dataset has a list of concepts. A concept is a definition of a
+  type of data in the dataset. This function retrieves the description
+  of the concept."
+  [metadata concept]
+  (get-in metadata [:concepts (keyword concept) :description] (name concept)))
 
 (defmulti slice (fn [format _ _]
                   format))
 
-(defmethod slice "text/html" [_ data {:keys [dataset slice-def params headers]}]
-  (let [metadata (data/get-metadata dataset)
-        slice-name (:slice params)
-        action (str "http://" (headers "host") "/data/" dataset "/" slice-name)
-        columns (columns-for-view slice-def params)
-        data (data/get-data-table data columns)]
+(defmethod slice "text/html" [_ query {:keys [dataset slicedef params headers]}]
+  (let [desc (partial concept-description (data/get-metadata dataset))
+        slicename (:slice params)
+        action (str "http://" (headers "host") "/data/" dataset "/" slicename)
+        slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
+                        :metrics (str/join ", " (:metrics slicedef))}
+        dimensions (map #(hash-map :key %
+                                   :name (desc %)
+                                   :value (get-in query [:dimensions (keyword %)]))
+                        (:dimensions slicedef))
+        clauses (->> clauses
+                     (map #(assoc-in % [:value] (get-in query [(keyword (:key %))])))
+                     (map #(assoc-in % [:errors] (get-in query [:errors (keyword (:key %))]))))
+        data (get-in query [:result :data])
+        columns (columns-for-view query slicedef)
+        data (data/get-data-table data columns)
+        columns (map desc columns)]
+    (apply str (layout-html (slice-html
+                             {:action action
+                              :dataset dataset
+                              :slice slicename
+                              :metadata slice-metadata
+                              :dimensions dimensions
+                              :clauses clauses
+                              :columns columns
+                              :data data})))))
 
-    (apply str (layout-html (slice-html params
-                                        action
-                                        dataset
-                                        metadata
-                                        slice-def
-                                        columns
-                                        data)))))
+(defmethod slice "application/json" [_ query _]
+  (response/json (:result query)))
 
-(defmethod slice "application/json" [_ data _]
-  (json/generate-string data))
-
-(defmethod slice "text/csv" [_ data {:keys [slice-def params]}]
-  (let [table (:table slice-def)
-        columns (columns-for-view slice-def params)
+(defmethod slice "text/csv" [_ query {:keys [slicedef]}]
+  (let [table (:table slicedef)
+        data ( get-in query [:result :data])
+        columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)]
-    (str (write-csv (vector columns)) (write-csv rows))))
+    (response/content-type
+     "text/csv; charset=utf-8"
+     (str (write-csv (vector columns)) (write-csv rows)))))
 
 (defmethod slice :default [format _ _]
-  (route/not-found (str "format not found: " format)))
+  (response/status
+   406
+   (response/content-type
+    "text/plain"
+    (str "Format not found: " format
+         ". Valid formats are application/json, text/csv, and text/html."))))

@@ -78,6 +78,24 @@ Before starting the API, you will want to start MongoDB and load some
 data into it. Currently, _qu_ only supports connecting to a local
 MongoDB connection.
 
+### Configuration
+
+In development mode, the application will connect to your local MongoDB server. In production, or if you want to connect to a different Mongo server in dev, you will have to specify the Mongo host and port.
+
+You can do this via setting environment variables:
+
+```sh
+MONGO_HOST=192.168.21.98
+MONGO_PORT=27017
+```
+
+You can also do this via setting Java system properties:
+
+```sh
+java -jar qu.jar -Dmongo.host=192.168.21.98 -Dmongo.port=27017
+```
+
+
 ### Loading data
 
 Make sure you have MongoDB started. To load some sample data, run
@@ -86,7 +104,7 @@ Make sure you have MongoDB started. To load some sample data, run
 ```clojure
 (require 'cfpb.qu.loader)
 (in-ns 'cfpb.qu.loader)
-(mongo/connect!)
+(ensure-mongo-connection)
 (load-dataset "county_taxes")
 (load-dataset "census") ; Takes quite a while to run; can skip.
 (mongo/disconnect!)
@@ -105,6 +123,6 @@ If you want the tests to automatically run whenever you change the
 code, eliminating the JVM startup time and generally being great, run:
 
 ```sh
-lein midge :autotest
+lein midje :autotest
 ```
 
