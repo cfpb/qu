@@ -4,6 +4,7 @@
             [monger.collection :as coll]
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
+            [cfpb.qu.util :refer [->int]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]))
 
@@ -13,47 +14,72 @@
 
 (declare parse-params mongo-find mongo-aggregation)
 
-(defrecord Query [select group where orderBy limit offset mongo errors slicedef])
+(defrecord Query [select group where orderBy limit offset callback mongo errors slicedef])
+(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset :$callback :$page :$perPage})
 
 (defn params->Query
   "Convert params from a web request plus a slice definition into a Query record."
   [params slicedef]
   (let [{:keys [dimensions clauses]} (parse-params params slicedef)
-        select (:$select clauses)
-        group (:$group clauses)
-        orderBy (:$orderBy clauses)
-        where (:$where clauses)
-        limit (:$limit clauses)
-        offset (:$offset clauses)]
+        {select :$select
+         group :$group
+         orderBy :$orderBy
+         where :$where
+         limit :$limit
+         offset :$offset
+         page :$page
+         perPage :$perPage
+         callback :$callback} clauses]
     (map->Query {:select select
                  :group group
                  :where where
                  :limit limit
                  :offset offset
+                 :page page
+                 :perPage perPage
                  :orderBy orderBy
+                 :callback callback
                  :dimensions dimensions
                  :slicedef slicedef})))
 
 (defn is-aggregation? [query]
   (:group query false))
 
+(defn- resolve-limit-and-offset [{:keys [limit offset page perPage] :as query}]
+  (let [limit (or (->int limit nil)
+                  (->int perPage nil)
+                  default-limit)
+        offset (->int offset nil)
+        page (->int page nil)]
+    (cond
+     page (merge query {:offset (-> page
+                                    dec
+                                    (* limit))
+                        :limit limit
+                        :page page})     
+     offset (merge query {:offset offset
+                          :limit limit})
+     :default (merge query {:offset default-offset
+                            :limit limit
+                            :page 1}))))
+
 (defn execute
   "Execute the query against the provided collection."
-  [collection query]
+  [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
-        query (mongo/process query)
+        query (-> query
+                  resolve-limit-and-offset
+                  mongo/process)
         _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
       (cond
         (not (empty? (:errors query))) []
 
         (is-aggregation? query)
-        (data/get-aggregation collection (mongo-aggregation query))
+        (data/get-aggregation dataset collection (mongo-aggregation query))
 
         :default
-        (data/get-find collection (mongo-find query))))))
-
-(def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset})
+        (data/get-find dataset collection (mongo-find query))))))
 
 (defn- cast-value [value type]
   (case type
@@ -88,18 +114,13 @@ can query with."
                                    (not= value "")
                                    (allowed-clauses key))) params))}))
 
-(defn- ->int [val]
-  (cond
-    (integer? val) val
-    :default (Integer/parseInt val)))
-
 (defn mongo-find
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
                 (q/find (get-in query [:mongo :match]))
-                (q/limit (->int (or (:limit query) default-limit)))
-                (q/skip (->int (or (:offset query) default-offset)))
+                (q/limit (->int (:limit query) default-limit))
+                (q/skip (->int (:offset query) default-offset))
                 (q/sort (get-in query [:mongo :sort] {}))
                 (q/fields (or (get-in query [:mongo :project]) {})))]
     mongo))
@@ -111,8 +132,8 @@ can query with."
         project (get-in query [:mongo :project])
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
-        skip (->int (or (:offset query) default-offset))
-        limit (->int (or (:limit query) default-aggregation-limit))]
+        skip (->int (:offset query))
+        limit (->int (:limit query))]
     (-> []
       (->/when match
         (conj {"$match" match}))
@@ -120,6 +141,8 @@ can query with."
       (conj {"$project" project})
       (->/when sort
         (conj {"$sort" sort}))
-      (conj {"$skip" skip})
-      (conj {"$limit" limit}))))
+      (->/when skip
+        (conj {"$skip" skip}))
+      (->/when limit
+        (conj {"$limit" limit})))))
 

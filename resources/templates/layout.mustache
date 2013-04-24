@@ -5,6 +5,14 @@
 
   <title>Data API prototype</title>
   <link href="/static/css/data-api.min.css" media="screen" rel="stylesheet" type="text/css" />
+  {{#resource}}
+  {{#href}}
+  <link rel="self" href="{{.}}" />
+  {{/href}}
+  {{#links}}
+  <link rel="{{rel}}" href="{{href}}" />
+  {{/links}}
+  {{/resource}}
 </head>
 
 <body>

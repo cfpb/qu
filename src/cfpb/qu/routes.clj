@@ -12,7 +12,9 @@
 datasets, individual datasets, and slices. Static files are served
 through Jetty, not through another web server."
   (GET "/" [] resources/index)
+  (GET "/data.:extension" [] resources/index)  
   (GET "/data" [] resources/index)
+  (GET "/data/:dataset.:extension" [dataset] resources/dataset)
   (GET "/data/:dataset" [dataset] resources/dataset)
   (GET "/data/:dataset/:slice.:extension" [dataset slice] resources/slice)
   (GET "/data/:dataset/:slice" [dataset slice] resources/slice)

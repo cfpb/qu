@@ -30,8 +30,12 @@
       .find("#query-url")
       .html((formString === "") ?
             action :
-            action + "<br />?" + formString);
+            action + "<br />?" + formString)
+      .end()
+      .find("#field-callback")
+      .prop({disabled: (format === "jsonp" ? "" : "disabled")});
   };
+
 
   $(document).ready(function () {
     buildQueryUrl();
