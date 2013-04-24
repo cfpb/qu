@@ -13,22 +13,23 @@ serve their public data sets."
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.1.1"]
                  [clojure-csv/clojure-csv "2.0.0-alpha2"]
+                 [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.5.0"]
                  [com.novemberain/validateur "1.4.0"]
                  [com.taoensso/timbre "1.5.3"]
                  [compojure "1.1.3"]
-                 [stencil "0.3.2"]
                  [environ "0.4.0"]
+                 [halresource "0.1.0-SNAPSHOT"]
                  [lib-noir "0.5.0"]
                  [liberator "0.8.0"]
+                 [lonocloud/synthread "1.0.4"]
                  [parse-ez "0.3.4"]
+                 [ring.middleware.mime-extensions "0.2.0"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
-                 [ring.middleware.mime-extensions "0.2.0"]
-                 [halresource "0.1.0-SNAPSHOT"]
-
+                 [stencil "0.3.2"]
+                 
                  ;; provisional
-                 [lonocloud/synthread "1.0.4"]
                  [slingshot "0.10.3"]
                  ]
   :main cfpb.qu.core

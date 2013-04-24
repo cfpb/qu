@@ -15,7 +15,14 @@
    [cfpb.qu.util :refer [->int]]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
-   [cfpb.qu.query.select :as select]))
+   [cfpb.qu.query.select :as select]
+   [cheshire.generate :refer [add-encoder encode-str]]
+   [clojurewerkz.urly.core :as url]
+   [lonocloud.synthread :as ->])
+  (:import [clojurewerkz.urly UrlLike]))
+
+;; Allow for encoding of UrlLike's in JSON.
+(add-encoder UrlLike encode-str)
 
 (defn json-error
   ([status] (json-error status {}))
@@ -87,10 +94,11 @@
 
 (defmethod dataset "text/html" [_ resource]
   (layout-html resource
-               (render-file "templates/dataset" {:resource resource
-                                                 :dataset (get-in resource [:properties :id])
-                                                 :slices (map second (:embedded resource))
-                                                 :definition (with-out-str (pprint (:properties resource)))})))
+               (render-file "templates/dataset"
+                            {:resource resource
+                             :dataset (get-in resource [:properties :id])
+                             :slices (map second (:embedded resource))
+                             :definition (with-out-str (pprint (:properties resource)))})))
 
 (defmethod dataset "application/json" [_ resource]
   (hal/resource->representation resource :json))
@@ -113,10 +121,60 @@
    {:key "offset"   :label "Offset (default is 0)"     :placeholder 0}
    {:key "callback" :label "Callback for JSONP"        :placeholder "callback"}])
 
+(defn resource-to-href [resource]
+  (let [clauses (->> (get-in resource [:properties :query])
+                     (into [])
+                     (map (fn [[k v]]
+                            (str "$" (name k) "=" v))))
+        dimensions (->> (get-in resource [:properties :dimensions])
+                        (into [])
+                        (map (fn [[k v]]
+                            (str (name k) "=" v))))
+        query (str/join "&" (concat clauses dimensions))]
+    (url/mutate-query (:href resource) query)))
+
+(defn- href-for-page [resource page]
+  (resource-to-href
+   (update-in resource [:properties :query]
+              (fn [query]
+                (merge query {:page page
+                              :offset ""})))))
+
+(defn- create-pagination [resource]
+  (let [window-size 3       
+        current-page (or (get-in resource [:properties :page]) 1)
+        href (:href resource)
+        limit (get-in resource [:properties :query :limit])
+        total (get-in resource [:properties :total])
+        total-pages (+ (quot total limit)
+                       (if (zero? (rem total limit)) 0 1))
+        window (range (max 1 (- current-page window-size))
+                               (inc (min total-pages (+ current-page window-size))))
+        in-window? (fn [page]
+                     (contains? (set window) page))
+        pagination (->> window
+                        (map #(hash-map :page %
+                                        :class (when (= % current-page) "active")
+                                        :href (href-for-page resource %))))]
+    (-> pagination
+        (conj {:page "Prev"
+               :class (when (<= current-page 1) "disabled")
+               :href (href-for-page resource (dec current-page))})
+        (conj {:page "First"
+               :class (when (in-window? 1) "disabled")
+               :href (href-for-page resource 1)})
+        (concat [{:page "Next"
+                  :class (when (>= current-page total-pages) "disabled")
+                  :href (href-for-page resource (inc current-page))}
+                 {:page "Last"
+                  :class (when (in-window? total-pages) "disabled")
+                  :href (href-for-page resource total-pages)}]))))
+
 (defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
   (let [desc (partial concept-description metadata)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
+        query (get-in resource [:properties :query])
         action (str "http://" (headers "host")
                     "/data/" dataset
                     "/" slice)
@@ -141,7 +199,8 @@
         end (-> (get-in resource [:properties :size])
                 (+ start)
                 dec)
-        total (get-in resource [:properties :total])]
+        total (get-in resource [:properties :total])
+        pagination (create-pagination resource)]
     (layout-html resource
                  (slice-html
                   {:action action
@@ -154,6 +213,7 @@
                    :start start
                    :end end
                    :total total
+                   :pagination pagination
                    :data data}))))
 
 (defmethod slice "text/csv" [_ resource {:keys [slicedef]}]

@@ -1,4 +1,5 @@
-(ns cfpb.qu.urls)
+(ns cfpb.qu.urls
+  )
 
 (defn index-path
   ([] "/data")

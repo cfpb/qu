@@ -58,18 +58,19 @@
                 {"$limit" 100}])))
 
 (facts "about execute"
-       (fact "it calls data/get-find if is-aggregation? is false"
-             (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
-             (provided
+       (let [query (merge query {:limit 0 :offset 0 :page 1})]
+         (fact "it calls data/get-find if is-aggregation? is false"
+               (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
+               (provided
                 (#'cfpb.qu.query.mongo/process query) => query
                 (is-aggregation? query) => false
                 (mongo-find query) => {}
                 (#'cfpb.qu.data/get-find ..dataset.. ..collection.. {}) => ..get-find..))
 
-       (fact "it calls data/get-aggregation if is-aggregation? is true"
-             (execute ..dataset.. ..collection.. query) => (contains {:result ..get-aggregation..})
-             (provided
-              (#'cfpb.qu.query.mongo/process query) => query
-              (is-aggregation? query) => true
-              (mongo-aggregation query) => {}
-              (#'cfpb.qu.data/get-aggregation ..dataset.. ..collection.. {}) => ..get-aggregation..)))
+         (fact "it calls data/get-aggregation if is-aggregation? is true"
+               (execute ..dataset.. ..collection.. query) => (contains {:result ..get-aggregation..})
+               (provided
+                (#'cfpb.qu.query.mongo/process query) => query
+                (is-aggregation? query) => true
+                (mongo-aggregation query) => {}
+                (#'cfpb.qu.data/get-aggregation ..dataset.. ..collection.. {}) => ..get-aggregation..))))

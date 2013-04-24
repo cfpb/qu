@@ -13,6 +13,7 @@ functions to return the resource that will be presented later."
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
+   [clojurewerkz.urly.core :as url :refer [url-like]]
    [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
@@ -95,11 +96,12 @@ functions to return the resource that will be presented later."
                      query (params->Query (:params request) slicedef)
                      query (query/execute dataset (:table slicedef) query)
                      base-href (:uri request)
-                     href (if-let [query-string (:query-string request)]
-                            (str base-href "?" query-string)
-                            base-href)
+                     href (url-like (if-let [query-string (:query-string request)]
+                                      (str base-href "?" query-string)
+                                      base-href))
                      result (:result query)
                      clauses (map (comp keyword :key) views/clauses)
+                     page (:page query)
                      resource (-> (hal/new-resource href)
                                   (hal/add-link :rel "up" :href (urls/dataset-path dataset))
                                   (hal/add-link :rel "query"
@@ -112,7 +114,9 @@ functions to return the resource that will be presented later."
                                                 :templated true)
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
                                   (hal/add-properties {:size (:size result) :total (:total result)})
+                                  (hal/add-property :page page)
                                   (hal/add-property :query (select-keys query clauses))
+                                  (hal/add-property :dimensions (:dimensions query))
                                   (hal/add-property :results (:data result)))
                      view-map {:base-href base-href
                                :metadata metadata

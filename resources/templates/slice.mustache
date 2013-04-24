@@ -88,6 +88,8 @@
 <div>
   <h2>Query Results ({{start}}-{{end}} of {{total}})</h2>
 
+  {{> templates/pagination}}
+
   <table class="table table-hover table-bordered" id="query-results">
     <thead>
       <tr>
@@ -107,5 +109,8 @@
       {{/data}}
     </tbody>
   </table>
+
+  {{> templates/pagination}}
+  
 </div>
 
