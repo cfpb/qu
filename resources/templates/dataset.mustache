@@ -5,10 +5,10 @@
 <ul id="slices">
   {{#slices}}
   <li>
-    <a href="/data/{{dataset}}/{{.}}">{{.}}</a>
+    <a href="{{href}}">{{properties.id}}</a>
   </li>
   {{/slices}}
 </ul>
 <h2>Dataset definition</h2>
-<pre class="definition">{{metadata}}</pre>
+<pre class="definition">{{definition}}</pre>
 
