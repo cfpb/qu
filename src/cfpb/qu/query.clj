@@ -4,6 +4,7 @@
             [monger.collection :as coll]
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
+            [cfpb.qu.util :refer [->int]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]))
 
@@ -42,7 +43,7 @@
 
 (defn execute
   "Execute the query against the provided collection."
-  [collection query]
+  [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (mongo/process query)
         _ (log/info (str "Post-process query: " (into {} query)))]
@@ -51,10 +52,10 @@
         (not (empty? (:errors query))) []
 
         (is-aggregation? query)
-        (data/get-aggregation collection (mongo-aggregation query))
+        (data/get-aggregation dataset collection (mongo-aggregation query))
 
         :default
-        (data/get-find collection (mongo-find query))))))
+        (data/get-find dataset collection (mongo-find query))))))
 
 (defn- cast-value [value type]
   (case type
@@ -89,18 +90,13 @@ can query with."
                                    (not= value "")
                                    (allowed-clauses key))) params))}))
 
-(defn- ->int [val]
-  (cond
-    (integer? val) val
-    :default (Integer/parseInt val)))
-
 (defn mongo-find
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
                 (q/find (get-in query [:mongo :match]))
-                (q/limit (->int (or (:limit query) default-limit)))
-                (q/skip (->int (or (:offset query) default-offset)))
+                (q/limit (->int (:limit query) default-limit))
+                (q/skip (->int (:offset query) default-offset))
                 (q/sort (get-in query [:mongo :sort] {}))
                 (q/fields (or (get-in query [:mongo :project]) {})))]
     mongo))
@@ -112,8 +108,8 @@ can query with."
         project (get-in query [:mongo :project])
         group (get-in query [:mongo :group])
         sort (get-in query [:mongo :sort])
-        skip (->int (or (:offset query) default-offset))
-        limit (->int (or (:limit query) default-aggregation-limit))]
+        skip (->int (:offset query))
+        limit (->int (:limit query))]
     (-> []
       (->/when match
         (conj {"$match" match}))
@@ -121,6 +117,8 @@ can query with."
       (conj {"$project" project})
       (->/when sort
         (conj {"$sort" sort}))
-      (conj {"$skip" skip})
-      (conj {"$limit" limit}))))
+      (->/when skip
+        (conj {"$skip" skip}))
+      (->/when limit
+        (conj {"$limit" limit})))))
 

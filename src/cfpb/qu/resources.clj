@@ -10,15 +10,13 @@ functions to return the resource that will be presented later."
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [liberator.core :refer [defresource request-method-in]]
-   [monger.core :as mongo]
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
    [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
-   [cfpb.qu.query :as query :refer [params->Query]]
-   [cfpb.qu.query.parser :refer [where-expr]]))
+   [cfpb.qu.query :as query :refer [params->Query]]))
 
 (defn not-found [msg]
   (status
@@ -95,19 +93,29 @@ functions to return the resource that will be presented later."
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) slicedef)
-                     query (mongo/with-db (mongo/get-db dataset)
-                             (query/execute (:table slicedef) query))
-                     href (:uri request)
+                     query (query/execute dataset (:table slicedef) query)
+                     base-href (:uri request)
+                     href (if-let [query-string (:query-string request)]
+                            (str base-href "?" query-string)
+                            base-href)
+                     result (:result query)
+                     clauses (map (comp keyword :key) views/clauses)
                      resource (-> (hal/new-resource href)
                                   (hal/add-link :rel "up" :href (urls/dataset-path dataset))
                                   (hal/add-link :rel "query"
-                                                :href (str href "?$where={?where}&$orderBy={?orderBy}&$select={?select}&$offset={?offset}&$limit={?limit}")
+                                                :href
+                                                (str base-href "?"
+                                                     (str/join "&"
+                                                      (map
+                                                       (comp #(str "$" % "={?" % "}") name)
+                                                       clauses)))
                                                 :templated true)
                                   (hal/add-properties {:dataset dataset :slice (name slice)})
-                                  (hal/add-properties (-> query
-                                                          (dissoc :slicedef :mongo :dimensions :result)
-                                                          (assoc :results (get-in query [:result :data])))))
-                     view-map {:metadata metadata
+                                  (hal/add-properties {:size (:size result) :total (:total result)})
+                                  (hal/add-property :query (select-keys query clauses))
+                                  (hal/add-property :results (:data result)))
+                     view-map {:base-href base-href
+                               :metadata metadata
                                :slicedef slicedef
                                :headers headers
                                :dimensions (:dimensions query)}]

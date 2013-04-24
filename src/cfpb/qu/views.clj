@@ -12,6 +12,7 @@
    [clojure-csv.core :refer [write-csv]]
    monger.json
    [halresource.resource :as hal]
+   [cfpb.qu.util :refer [->int]]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
    [cfpb.qu.query.select :as select]))
@@ -127,13 +128,20 @@
                         (:dimensions slicedef))
         clauses (->> clauses
                      (map #(assoc-in % [:value] (get-in resource
-                                                        [:properties (keyword (:key %))])))
+                                                        [:properties :query (keyword (:key %))])))
                      (map #(assoc-in % [:errors] (get-in resource
                                                          [:properties :errors (keyword (:key %))]))))
         data (get-in resource [:properties :results])
         columns (columns-for-view resource slicedef)
         data (data/get-data-table data columns)
-        columns (map desc columns)]
+        columns (map desc columns)
+        start (-> (get-in resource [:properties :query :offset])
+                  (->int 0)
+                  inc)
+        end (-> (get-in resource [:properties :size])
+                (+ start)
+                dec)
+        total (get-in resource [:properties :total])]
     (layout-html resource
                  (slice-html
                   {:action action
@@ -143,6 +151,9 @@
                    :dimensions dimensions
                    :clauses clauses
                    :columns columns
+                   :start start
+                   :end end
+                   :total total
                    :data data}))))
 
 (defmethod slice "text/csv" [_ resource {:keys [slicedef]}]

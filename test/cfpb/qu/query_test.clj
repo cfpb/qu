@@ -59,17 +59,17 @@
 
 (facts "about execute"
        (fact "it calls data/get-find if is-aggregation? is false"
-             (execute ..collection.. query) => (contains {:result ..get-find..})
+             (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
              (provided
                 (#'cfpb.qu.query.mongo/process query) => query
                 (is-aggregation? query) => false
                 (mongo-find query) => {}
-                (#'cfpb.qu.data/get-find ..collection.. {}) => ..get-find..))
+                (#'cfpb.qu.data/get-find ..dataset.. ..collection.. {}) => ..get-find..))
 
        (fact "it calls data/get-aggregation if is-aggregation? is true"
-             (execute ..collection.. query) => (contains {:result ..get-aggregation..})
+             (execute ..dataset.. ..collection.. query) => (contains {:result ..get-aggregation..})
              (provided
               (#'cfpb.qu.query.mongo/process query) => query
               (is-aggregation? query) => true
               (mongo-aggregation query) => {}
-              (#'cfpb.qu.data/get-aggregation ..collection.. {}) => ..get-aggregation..)))
+              (#'cfpb.qu.data/get-aggregation ..dataset.. ..collection.. {}) => ..get-aggregation..)))
