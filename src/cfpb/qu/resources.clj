@@ -81,7 +81,7 @@ functions to return the resource that will be presented later."
 
 (defn- slice-resource
   "Build a HAL resource for a slice."
-  [slice request query]
+  [dataset slice request query]
   (let [base-href (:uri request)
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
@@ -128,7 +128,7 @@ functions to return the resource that will be presented later."
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) slicedef)
                      query (query/execute dataset (:table slicedef) query)
-                     resource (slice-resource slice request query)
+                     resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
                                :metadata metadata
                                :slicedef slicedef

@@ -49,8 +49,13 @@
   (let [limit (or (->int limit nil)
                   (->int perPage nil)
                   default-limit)
+        limit (if (= limit 0)
+                default-limit
+                limit)
         offset (->int offset nil)
-        page (->int page nil)]
+        page (->int page (when (and offset
+                                    (= (mod offset limit) 0))
+                           (inc (/ offset limit))))]
     (cond
      page (merge query {:offset (-> page
                                     dec
@@ -58,7 +63,8 @@
                         :limit limit
                         :page page})     
      offset (merge query {:offset offset
-                          :limit limit})
+                          :limit limit
+                          :page page})
      :default (merge query {:offset default-offset
                             :limit limit
                             :page 1}))))

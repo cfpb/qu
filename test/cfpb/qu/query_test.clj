@@ -58,7 +58,7 @@
                 {"$limit" 100}])))
 
 (facts "about execute"
-       (let [query (merge query {:limit 0 :offset 0 :page 1})]
+       (let [query (merge query {:limit 100 :offset 0 :page 1})]
          (fact "it calls data/get-find if is-aggregation? is false"
                (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
                (provided
