@@ -25,8 +25,6 @@ In addition to the page text indicating links to all other resources available f
 
 ### JSON
 
-**TODO**: Totals and pagination are not currently present.
-
 JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links to related resources. Links are found under the `_links` key and linked resources are found under the `_embedded` key. Here is an example of the format for the URL `/data/county_taxes/incomes.json`.
 
 ```json
