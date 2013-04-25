@@ -5,9 +5,9 @@
 
 (log/set-level! :warn)
 
-(if (env :integration)
-  (data/ensure-mongo-connection)
+(when (env :integration)
   (try
+    (data/ensure-mongo-connection)
     (loader/load-dataset "county_taxes")
     (finally (data/disconnect-mongo))))
 
