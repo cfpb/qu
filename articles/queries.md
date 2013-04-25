@@ -23,8 +23,6 @@ All endpoints can have an optional filename extension, so accessing a slice coul
 
 If the MIME type corresponding to the extension is available, it will be served. If an extension is not used, the request's Accept header will be used to determine what MIME type to serve.
 
-**TODO**: Only slices currently work with file extensions.
-
 ## Query Language
 
 Our query language is based on Socrata's [SoQL][] language. Queries are simple GET parameters sent to a slice endpoint.
@@ -78,20 +76,20 @@ Most queries will involve more than simple equality queries. For these, we have 
 <td>Offset into the results to start at. If not specified, this defaults to 0.</td>
 </tr>
 <tr>
-<td><code>$q</code></td>
-<td><strong>TODO</strong>: This will do a full-text search for a value within the row's dimensions.</td>
-</tr>
-<tr>
 <td><code>$page</code></td>
-<td><strong>TODO</strong>: The page of results to return. If not specified, this defaults to 1. If <code>$offset</code> is given, <code>$page</code> is ignored.</td>
+<td><The page of results to return. If not specified, this defaults to 1. If <code>$page</code> is given, <code>$offset</code> is ignored.</td>
 </tr>
 <tr>
 <td><code>$perPage</code></td>
-<td><strong>TODO</strong>: How many results to return per page. This is a synonym for <code>$limit</code>.</td>
+<td>How many results to return per page. This is a synonym for <code>$limit</code>.</td>
 </tr>
 <tr>
 <td><code>$callback</code></td>
-<td><strong>TODO</strong>: The name of the callback function used in a JSONP query. Only used with JSONP.</td>
+<td>The name of the callback function used in a JSONP query. Only used with JSONP.</td>
+</tr>
+<tr>
+<td><code>$q</code></td>
+<td><strong>TODO</strong>: This will do a full-text search for a value within the row's dimensions.</td>
 </tr>
 </tbody>
 </table>

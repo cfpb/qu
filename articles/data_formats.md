@@ -5,10 +5,9 @@ layout: article
 
 ## Data formats
 
-We support HTML, CSV, XML, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
+We support HTML, XML, and JSON data formats. To get a particular format, set your request's Accept header, or suffix the request with the correct file extension.
 
-**TODO**: We also support the JSONP data format. To receive JSONP, use the `.jsonp` file extension and the `$callback` clause.
-
+Slices also support the CSV and JSONP data formats. To receive JSONP, use the `.jsonp` file extension and the `$callback` clause.
 
 ### REST
 
@@ -22,7 +21,7 @@ Qu has a [REST](https://en.wikipedia.org/wiki/Representational_state_transfer) A
 
 The HTML format is used mainly for exploring the API. It not only returns query data, but presents query forms for digging into the data. The text of the page should contain links to all other resources available from a page.
 
-**TODO**: In addition to the page text indicating links to all other resources available from a page, the `<head>` element should contain `<link>` elements with appropriate `rel` attributes pointing to other resources.
+In addition to the page text indicating links to all other resources available from a page, the `<head>` element should contain `<link>` elements with appropriate `rel` attributes pointing to other resources.
 
 ### JSON
 
@@ -43,9 +42,8 @@ JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links
     }
   },
   "total": 1149,
-  "count": 100,
+  "size": 100,
   "page": 1,
-  "perPage": 100,
   "metadata": {
     // TODO - not yet determined
   },
@@ -62,11 +60,9 @@ JSON uses the [Hypertext Application Language (HAL)][HAL] format to convey links
 
 CSV is a simple format to receive data, but a more difficult format for sending metadata.
 
-**TODO**: Our current plan is to offer links as response headers. Metadata is still difficult. One solution might be to offer the metadata as a resource all its own and give a link to that.
+Links to other resources are given with a `Link` header in the response. Metadata is not currently sent with CSV.
 
 ### XML
-
-**TODO**: Totals and pagination are not currently present.
 
 XML uses the [Hypertext Application Language (HAL)][HAL] format to convey links to related resources. Links are found under the `_links` key and individual datums are found under the `_embedded` key. Here is an example of the format for the URL `/data/county_taxes/incomes.xml`.
 
@@ -80,9 +76,8 @@ XML uses the [Hypertext Application Language (HAL)][HAL] format to convey links 
         href="/data/county_taxes/incomes.{?format}?$where={?where}&$orderBy={?orderBy}&$select={?select}"
         templated="true" />
   <total>1149</total>
-  <count>100</count>
+  <size>100</size>
   <page>1</page>
-  <perPage>100</perPage>
   <metadata>
     <!-- TODO not yet determined -->
   </metadata>
