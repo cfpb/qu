@@ -52,7 +52,7 @@
 (defn- columns-for-view [resource slicedef]
   (let [select (get-in resource [:properties :select])]
     (if (or (str/blank? select)
-            (not (empty? (get-in resource [:properties :errors]))))
+            (seq (get-in resource [:properties :errors])))
       (data/slice-columns slicedef)
       (map name (select-fields select)))))
 
@@ -152,10 +152,10 @@
                                (inc (min total-pages (+ current-page window-size))))
         in-window? (fn [page]
                      (contains? (set window) page))
-        pagination (->> window
-                        (map #(hash-map :page %
-                                        :class (when (= % current-page) "active")
-                                        :href (href-for-page resource %))))]
+        pagination (map #(hash-map :page %
+                                   :class (when (= % current-page) "active")
+                                   :href (href-for-page resource %))
+                        window)]
     (-> pagination
         (conj {:page "Prev"
                :class (when (<= current-page 1) "disabled")

@@ -16,7 +16,7 @@ serve their public data sets."
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.5.0"]
                  [com.novemberain/validateur "1.4.0"]
-                 [com.taoensso/timbre "1.5.3"]
+                 [com.taoensso/timbre "1.6.0"]
                  [compojure "1.1.3"]
                  [environ "0.4.0"]
                  [halresource "0.1.0-SNAPSHOT"]
@@ -42,5 +42,10 @@ serve their public data sets."
   :profiles {:dev
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
+              :embongo {:version "2.4.3"}
               :dependencies [[ring-mock "0.1.3"]
-                             [midje "1.6-SNAPSHOT"]]}})
+                             [midje "1.6-SNAPSHOT"]]}
+             :integration [:dev
+              {:env {:mongo-port 37017
+                     :integration true}
+               :embongo {:port 37017}}]})
