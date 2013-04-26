@@ -11,14 +11,17 @@ after retrieval."
              [conversion :as conv]
              json]))
 
-(defn ensure-mongo-connection []
-  (when-not (bound? #'mongo/*mongodb-connection*)
-    (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
-          options (mongo/mongo-options)]
-      (mongo/connect! address options))))
+(defn connect-mongo []
+  (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
+        options (mongo/mongo-options)]
+    (mongo/connect! address options)))
 
 (defn disconnect-mongo []
   (mongo/disconnect!))
+
+(defn ensure-mongo-connection []
+  (when-not (bound? #'mongo/*mongodb-connection*)
+    (connect-mongo)))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is

@@ -49,12 +49,12 @@
   (let [limit (or (->int limit nil)
                   (->int perPage nil)
                   default-limit)
-        limit (if (= limit 0)
+        limit (if (zero? limit)
                 default-limit
                 limit)
         offset (->int offset nil)
         page (->int page (when (and offset
-                                    (= (mod offset limit) 0))
+                                    (zero? (mod offset limit)))
                            (inc (/ offset limit))))]
     (cond
      page (merge query {:offset (-> page
@@ -79,7 +79,7 @@
         _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
       (cond
-        (not (empty? (:errors query))) []
+        (seq (:errors query)) []
 
         (is-aggregation? query)
         (data/get-aggregation dataset collection (mongo-aggregation query))

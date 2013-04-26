@@ -41,7 +41,7 @@ this namespace."
 
 (defn- valid? [query]
   (or (not (:errors query))
-      (= 0 (reduce + (map count (:errors query))))))
+      (zero? (reduce + (map count (:errors query))))))
 
 (declare validate-select validate-group validate-where
          validate-order-by validate-limit validate-offset)
@@ -49,8 +49,7 @@ this namespace."
 (defn validate
   "Check the query for any errors."
   [query]
-  (if (not (:slicedef query))
-    query
+  (if (:slicedef query)
     (let [slicedef (:slicedef query)
           dimensions (:dimensions slicedef)
           metrics (:metrics slicedef)
@@ -60,9 +59,10 @@ this namespace."
           (validate-select column-set)
           (validate-group column-set dimensions)
           validate-where
-          (validate-order-by column-set)
+          validate-order-by
           validate-limit
-          validate-offset))))
+          validate-offset))
+    query))
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
@@ -137,15 +137,15 @@ and :group provisions of the original query."
 (defn- validate-field
   [query clause column-set field]
   (let [field (name field)]
-    (if (not (contains? column-set field))
-      (add-error query clause (str "\"" field "\" is not a valid field."))
-      query)))
+    (if (contains? column-set field)
+      query
+      (add-error query clause (str "\"" field "\" is not a valid field.")))))
 
 (defn- match-fields [match]
   (->> match
        (walk/prewalk (fn [element]
                        (if (map? element)
-                         (into [] element)
+                         (vec element)
                          element)))
        flatten
        (filter keyword?)))
@@ -226,9 +226,9 @@ and :group provisions of the original query."
     (reduce
      (fn [query field]
        (let [field (name field)]
-         (if (not (contains? dimensions field))
-           (add-error query :group (str "\"" field "\" is not a dimension."))
-           query)))
+         (if (contains? dimensions field)
+           query
+           (add-error query :group (str "\"" field "\" is not a dimension.")))))
      query group)))
 
 (defn- validate-group
@@ -253,7 +253,7 @@ and :group provisions of the original query."
       (add-error query :where "Could not parse this clause."))))
 
 (defn- validate-order-by
-  [query column-set]
+  [query]
   (try
     (let [_ (parse parser/order-by-expr (str (:orderBy query)))]
       query)

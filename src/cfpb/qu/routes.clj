@@ -5,13 +5,14 @@
     [handler :as handler]
     [route :as route]]
    [clojure.java.io :as io]
+   [noir.response :as response]
    [cfpb.qu.resources :as resources]))
 
 (defroutes app-routes
   "Create the app routes. Provides GET-only access to the list of
 datasets, individual datasets, and slices. Static files are served
 through Jetty, not through another web server."
-  (GET "/" [] resources/index)
+  (GET "/" [] (response/redirect "/data"))
   (GET "/data.:extension" [] resources/index)  
   (GET "/data" [] resources/index)
   (GET "/data/:dataset.:extension" [dataset] resources/dataset)
