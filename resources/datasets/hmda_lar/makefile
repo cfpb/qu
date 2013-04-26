@@ -9,14 +9,12 @@ full: hmda_lar_all_2011.csv hmda_lar_all_2010.csv hmda_lar_all_2009.csv
 	ln -sf hmda_lar_all_2010.csv hmda_lar_2010.csv
 	ln -sf hmda_lar_all_2009.csv hmda_lar_2009.csv
 	head hmda_lar_20*.csv > report.csv
-	rm header.csv
 
 sample: hmda_lar_sample_2011.csv hmda_lar_sample_2010.csv hmda_lar_sample_2009.csv
 	ln -sf hmda_lar_sample_2011.csv hmda_lar_2011.csv
 	ln -sf hmda_lar_sample_2010.csv hmda_lar_2010.csv
 	ln -sf hmda_lar_sample_2009.csv hmda_lar_2009.csv
 	head hmda_lar_20*.csv > report.csv
-	rm header.csv
 
 
 hmda_lar_2011.zip:

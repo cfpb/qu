@@ -9,7 +9,7 @@ To load all data from 2009-2011:
 make
 ```
 
-To a sample roughly 1/10 of the size of the full dataset:
+To a sample roughly 1/50 of the size of the full dataset:
 ```
 make sample
 ```
