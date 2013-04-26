@@ -23,11 +23,11 @@ hmda_lar_2011.zip:
 
 hmda_lar_2010.zip:
 	wget http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip
-	mv 2011HMDALAR\ -\ National.zip hmda_lar_2011.zip
+	mv 2010HMDALAR\ -\ National.zip hmda_lar_2010.zip
 
 hmda_lar_2009.zip:
 	wget http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip
-	mv 2011HMDALAR\ -\ National.zip hmda_lar_2011.zip
+	mv 2009HMDALAR\ -\ National.zip hmda_lar_2009.zip
 
 
 hmda_lar_all_2011.csv: hmda_lar_2011.zip headers.csv
