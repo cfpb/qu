@@ -1,0 +1,265 @@
+{
+  "info": {
+    "url": "http://www.ffiec.gov/hmda/hmdaproducts.htm", 
+    "name": "2011 HMDA LAR", 
+    "description": "Home Mortgage Disclosure Act Data"
+  }, 
+  "concepts": {
+    "state": {
+      "type": "string",
+      "attributes": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "slices": {
+    "hmda_lar": {
+      "metrics": [
+        "hud_median_family_income",
+        "rate_spread",
+        "loan_type",
+        "respondent_id",
+        "applicant_income_000s",
+        "denial_reason_1",
+        "denial_reason_2",
+        "denial_reason_3",
+        "census_tract_number",
+        "number_of_owner_occupied_units",
+        "tract_to_msamd_income",
+        "number_of_1_to_4_family_units",
+        "loan_amount_000s",
+        "action_type",
+        "population"
+      ], 
+      "table": "hmda_lar", 
+      "dimensions": [
+        "agency_code",
+        "county_code",
+        "applicant_sex",
+        "applicant_ethnicity",
+        "applicant_race_1" ,
+        "agency_code",
+        "as_of_year",
+        "occupancy",
+        "co_applicant_ethnicity",
+        "hoepa_status",
+        "applicant_race_2",
+        "purchaser_type",
+        "edit_status",
+        "msamd",
+        "sequence_number",
+        "minority_population",
+        "co_applicant_race_4",
+        "co_applicant_race_5",
+        "application_date_indicator",
+        "applicant_race_4",
+        "applicant_race_5",
+        "applicant_race_3",
+        "property_type",
+        "co_applicant_race_2",
+        "co_applicant_race_3",
+        "state_code",
+        "co_applicant_sex",
+        "county_code",
+        "preapproval",
+        "co_applicant_race_1",
+        "lien_status",
+        "loan_purpose"
+      ]
+    }
+  }, 
+  "tables": {
+    "hmda_lar": {
+      "sources": [
+        "hmda_lar_2011.csv",
+        "hmda_lar_2010.csv",
+        "hmda_lar_2009.csv"
+
+      ], 
+      "columns": {
+        "Loan Type": {
+          "type": "number", 
+          "name": "loan_type"
+        }, 
+        "HUD Median Family Income": {
+          "type": "string", 
+          "name": "hud_median_family_income"
+        }, 
+        "Agency Code": {
+          "type": "string", 
+          "name": "agency_code"
+        }, 
+        "As of Year": {
+          "type": "number", 
+          "name": "as_of_year"
+        }, 
+        "Applicant Race 1": {
+          "type": "string", 
+          "name": "applicant_race_1"
+        }, 
+        "Occupancy": {
+          "type": "number", 
+          "name": "occupancy"
+        }, 
+        "Co Applicant Ethnicity": {
+          "type": "string", 
+          "name": "co_applicant_ethnicity"
+        }, 
+        "HOEPA Status": {
+          "type": "string", 
+          "name": "hoepa_status"
+        }, 
+        "Purchaser Type": {
+          "type": "string", 
+          "name": "purchaser_type"
+        }, 
+        "Edit Status": {
+          "type": "string", 
+          "name": "edit_status"
+        }, 
+        "MSA/MD": {
+          "type": "string", 
+          "name": "msamd"
+        }, 
+        "Applicant Income (000s)": {
+          "type": "string", 
+          "name": "applicant_income_000s"
+        }, 
+        "Denial Reason 1": {
+          "type": "string", 
+          "name": "denial_reason_1"
+        }, 
+        "Rate Spread": {
+          "type": "string", 
+          "name": "rate_spread"
+        }, 
+        "Minority Population %": {
+          "type": "string", 
+          "name": "minority_population"
+        }, 
+        "Co Applicant Race 4": {
+          "type": "string", 
+          "name": "co_applicant_race_4"
+        }, 
+        "Co Applicant Race 5": {
+          "type": "string", 
+          "name": "co_applicant_race_5"
+        }, 
+        "Denial Reason 3": {
+          "type": "string", 
+          "name": "denial_reason_3"
+        }, 
+        "Property Type": {
+          "type": "string", 
+          "name": "property_type"
+        }, 
+        "Census Tract Number": {
+          "type": "string", 
+          "name": "census_tract_number"
+        }, 
+        "Co Applicant Race 2": {
+          "type": "string", 
+          "name": "co_applicant_race_2"
+        }, 
+        "Co Applicant Race 3": {
+          "type": "string", 
+          "name": "co_applicant_race_3"
+        }, 
+        "State Code": {
+          "type": "string", 
+          "name": "state_code"
+        }, 
+        "Co Applicant Race 1": {
+          "type": "string", 
+          "name": "co_applicant_race_1"
+        }, 
+        "Number of Owner-occupied units": {
+          "type": "string", 
+          "name": "number_of_owner_occupied_units"
+        }, 
+        "Co Applicant Sex": {
+          "type": "number", 
+          "name": "co_applicant_sex"
+        }, 
+        "Loan Purpose": {
+          "type": "number", 
+          "name": "loan_purpose"
+        }, 
+        "Applicant Ethnicity": {
+          "type": "string", 
+          "name": "applicant_ethnicity"
+        }, 
+        "Number of 1-to 4-Family units": {
+          "type": "string", 
+          "name": "number_of_1_to_4_family_units"
+        }, 
+        "Loan Amount (000s)": {
+          "type": "number", 
+          "name": "loan_amount_000s"
+        }, 
+        "Sequence Number": {
+          "type": "string", 
+          "name": "sequence_number"
+        }, 
+        "Denial Reason 2": {
+          "type": "string", 
+          "name": "denial_reason_2"
+        }, 
+        "Application Date Indicator": {
+          "type": "number", 
+          "name": "application_date_indicator"
+        }, 
+        "County Code": {
+          "type": "string", 
+          "name": "county_code"
+        }, 
+        "Applicant Sex": {
+          "type": "number", 
+          "name": "applicant_sex"
+        }, 
+        "Applicant Race 5": {
+          "type": "string", 
+          "name": "applicant_race_5"
+        }, 
+        "Applicant Race 4": {
+          "type": "string", 
+          "name": "applicant_race_4"
+        }, 
+        "Respondent ID": {
+          "type": "string", 
+          "name": "respondent_id"
+        }, 
+        "Preapproval": {
+          "type": "string", 
+          "name": "preapproval"
+        }, 
+        "Applicant Race 3": {
+          "type": "string", 
+          "name": "applicant_race_3"
+        }, 
+        "Applicant Race 2": {
+          "type": "string", 
+          "name": "applicant_race_2"
+        }, 
+        "Action Type": {
+          "type": "number", 
+          "name": "action_type"
+        }, 
+        "Lien Status": {
+          "type": "string", 
+          "name": "lien_status"
+        }, 
+        "Tract to MSA/MD Income %": {
+          "type": "string", 
+          "name": "tract_to_msamd_income"
+        }, 
+        "Population": {
+          "type": "string", 
+          "name": "population"
+        }
+      }
+    }
+  }
+}
