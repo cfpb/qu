@@ -19,6 +19,6 @@ Then load as described on the main docs
 (require 'cfpb.qu.loader)
 (in-ns 'cfpb.qu.loader)
 (mongo/connect!)
-(load-dataset "hmda_test")
+(load-dataset "hmda_lar")
 (mongo/disconnect!)
 ```
