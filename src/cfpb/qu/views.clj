@@ -50,9 +50,9 @@
     (map :select (select/parse select))))
 
 (defn- columns-for-view [resource slicedef]
-  (let [select (get-in resource [:properties :select])]
+  (let [select (get-in resource [:properties :query :select])]
     (if (or (str/blank? select)
-            (not (empty? (get-in resource [:properties :errors]))))
+            (seq (get-in resource [:properties :errors])))
       (data/slice-columns slicedef)
       (map name (select-fields select)))))
 
@@ -141,34 +141,35 @@
                               :offset ""})))))
 
 (defn- create-pagination [resource]
-  (let [window-size 3       
-        current-page (or (get-in resource [:properties :page]) 1)
-        href (:href resource)
-        limit (get-in resource [:properties :query :limit])
-        total (get-in resource [:properties :total])
-        total-pages (+ (quot total limit)
-                       (if (zero? (rem total limit)) 0 1))
-        window (range (max 1 (- current-page window-size))
-                               (inc (min total-pages (+ current-page window-size))))
-        in-window? (fn [page]
-                     (contains? (set window) page))
-        pagination (->> window
-                        (map #(hash-map :page %
-                                        :class (when (= % current-page) "active")
-                                        :href (href-for-page resource %))))]
-    (-> pagination
-        (conj {:page "Prev"
-               :class (when (<= current-page 1) "disabled")
-               :href (href-for-page resource (dec current-page))})
-        (conj {:page "First"
-               :class (when (in-window? 1) "disabled")
-               :href (href-for-page resource 1)})
-        (concat [{:page "Next"
-                  :class (when (>= current-page total-pages) "disabled")
-                  :href (href-for-page resource (inc current-page))}
-                 {:page "Last"
-                  :class (when (in-window? total-pages) "disabled")
-                  :href (href-for-page resource total-pages)}]))))
+  (if-let [total (get-in resource [:properties :total])]
+    (let [window-size 3       
+          current-page (or (get-in resource [:properties :page]) 1)
+          href (:href resource)
+          limit (get-in resource [:properties :query :limit])
+          total-pages (+ (quot total limit)
+                         (if (zero? (rem total limit)) 0 1))
+          window (range (max 1 (- current-page window-size))
+                        (inc (min total-pages (+ current-page window-size))))
+          in-window? (fn [page]
+                       (contains? (set window) page))
+          pagination (map #(hash-map :page %
+                                     :class (when (= % current-page) "active")
+                                     :href (href-for-page resource %))
+                          window)]
+      (-> pagination
+          (conj {:page "Prev"
+                 :class (when (<= current-page 1) "disabled")
+                 :href (href-for-page resource (dec current-page))})
+          (conj {:page "First"
+                 :class (when (in-window? 1) "disabled")
+                 :href (href-for-page resource 1)})
+          (concat [{:page "Next"
+                    :class (when (>= current-page total-pages) "disabled")
+                    :href (href-for-page resource (inc current-page))}
+                   {:page "Last"
+                    :class (when (in-window? total-pages) "disabled")
+                    :href (href-for-page resource total-pages)}])))
+    []))
 
 (defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
   (let [desc (partial concept-description metadata)
@@ -197,6 +198,7 @@
                   (->int 0)
                   inc)
         end (-> (get-in resource [:properties :size])
+                (->int 0)
                 (+ start)
                 dec)
         total (get-in resource [:properties :total])

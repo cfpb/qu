@@ -1,5 +1,5 @@
 (ns cfpb.qu.urls
-  )
+  (:require [clojure.string :as str]))
 
 (defn index-path
   ([] "/data")
@@ -10,5 +10,5 @@
   ([dataset ext] (str (dataset-path dataset) "." ext)))
 
 (defn slice-path
-  ([dataset slice] (apply str (interpose "/" ["/data" dataset slice])))
+  ([dataset slice] (str/join "/" ["/data" dataset slice]))
   ([dataset slice ext] (str (slice-path dataset slice) "." ext)))
