@@ -50,7 +50,7 @@
     (map :select (select/parse select))))
 
 (defn- columns-for-view [resource slicedef]
-  (let [select (get-in resource [:properties :select])]
+  (let [select (get-in resource [:properties :query :select])]
     (if (or (str/blank? select)
             (seq (get-in resource [:properties :errors])))
       (data/slice-columns slicedef)

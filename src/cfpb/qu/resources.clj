@@ -100,6 +100,7 @@ functions to return the resource that will be presented later."
                              :total (:total result)
                              :page page
                              :query (select-keys query clauses)
+                             :errors (:errors query)
                              :dimensions (:dimensions query)
                              :results (:data result)}))))
 
