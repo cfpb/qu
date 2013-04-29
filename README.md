@@ -126,3 +126,9 @@ code, eliminating the JVM startup time and generally being great, run:
 lein midje :autotest
 ```
 
+We also have integration tests that run tests against a Mongo database.
+To run these tests:
+
+```sh
+lein with-profile integration embongo midje
+```
