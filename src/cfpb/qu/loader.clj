@@ -133,3 +133,50 @@ directory containing a definition.json and a set of CSV files."
           (doseq [file sources]
             (load-csv-file table (str dir "/" file) columns)))))))
 
+(defn- pload-csv-file
+  "Given a table and CSV file name and the definitions of the table's
+columns, read the data from the CSV file, transform it, and insert it
+into the table."
+  [table file columns]
+  (with-open [in-file (io/reader (io/resource file))]
+    (let [data (parse-csv in-file)
+          headers (map keyword (first data))
+          data (map #(zipmap headers %) (rest data))
+          data (partition 1000 data)
+          agents (map agent data)]
+      (doseq [agent agents]
+        (send-off agent (fn [data]
+                          (doseq [datum data]
+                            (coll/insert table (cast-data datum columns))))))
+      (apply await-for 100000 agents))))
+
+(defn pload-dataset
+  "Given the name of a dataset, load that dataset from disk into the
+database. The dataset must be under the datasets/ directory as a
+directory containing a definition.json and a set of CSV files."
+  [name]
+  (let [dir (str "datasets/" name)
+        definition (-> (str dir "/definition.json")
+                       io/resource
+                       slurp
+                       (json/parse-string true))
+        tables (:tables definition)
+        slices (:slices definition)]
+    (save-dataset-definition name definition)
+    (with-db (get-db name)
+      (doseq [table (keys tables)]
+        (coll/remove table)
+        (let [tabledef (table tables)
+              indexes (get-indexes slices table)
+              sources (:sources tabledef)
+              columns (:columns tabledef)
+              agents (map agent sources)]
+          (set-indexes table indexes)
+          (doseq [agent agents]
+            (send-off agent (fn [file]
+                              (load-csv-file table (str dir "/" file) columns))))
+          (apply await-for 100000 agents))))))
+
+; (ensure-mongo-connection)
+; (with-out-str (time (load-dataset "county_taxes")))
+; (with-out-str (time (pload-dataset "county_taxes")))
