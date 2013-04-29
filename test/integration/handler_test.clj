@@ -5,7 +5,9 @@
             [cfpb.qu.data :as data]
             [monger.core :as mongo]))
 
-(with-state-changes [(before :facts (data/ensure-mongo-connection))]
+(with-state-changes [(before :facts (data/connect-mongo))
+                     (after :facts (data/disconnect-mongo))]
+  
   (fact "the index URL redirects to /data"
         (app (request :get "/"))
         => (contains {:status 302
