@@ -37,3 +37,23 @@
 
              (app (request :get "/data/bad-dataset"))
              => (contains {:status 404})))
+
+(facts "about /data/dataset/slice"
+       (fact "it returns successfully when the dataset and slice exist"
+             (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {:whoa {}}}
+                           (#'cfpb.qu.query/execute "good-dataset" anything anything)
+                           => {:total 0 :size 0 :data []})
+
+             (app (request :get "/data/good-dataset/whoa"))
+             => (contains {:status 200
+                           :headers {"Content-Type" "text/html;charset=UTF-8"}})
+
+             (app (request :get "/data/good-dataset/whoa.xml"))
+             => (contains {:status 200
+                           :headers {"Content-Type" "application/xml;charset=UTF-8"}}))
+
+       (fact "it returns a 404 when the slice does not exist"
+             (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {}})
+
+             (app (request :get "/data/good-dataset/what"))
+             => (contains {:status 404})))
