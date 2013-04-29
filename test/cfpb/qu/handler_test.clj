@@ -52,6 +52,12 @@
              => (contains {:status 200
                            :headers {"Content-Type" "application/xml;charset=UTF-8"}}))
 
+       (fact "it returns a 404 when the dataset does not exist"
+             (prerequisite (#'cfpb.qu.data/get-metadata "bad-dataset") => nil)
+
+             (app (request :get "/data/bad-dataset/what"))
+             => (contains {:status 404}))
+
        (fact "it returns a 404 when the slice does not exist"
              (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {}})
 
