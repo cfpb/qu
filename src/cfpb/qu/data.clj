@@ -12,7 +12,7 @@ after retrieval."
              json]))
 
 (defn connect-mongo []
-  (let [address (mongo/server-address (env :mongo-host) (env :mongo-port))
+  (let [address (mongo/server-address (env :mongo-host)  (Integer/parseInt(str (env :mongo-port))))
         options (mongo/mongo-options)]
     (mongo/connect! address options)))
 
