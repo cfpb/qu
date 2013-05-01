@@ -17,6 +17,11 @@
 (defrecord Query [select group where orderBy limit offset callback mongo errors slicedef])
 (def allowed-clauses #{:$select :$where :$orderBy :$group :$limit :$offset :$callback :$page :$perPage})
 
+;; TODO refactor and move this and other validations into separate namespace
+(defn valid? [query]
+  (or (not (:errors query))
+      (zero? (reduce + (map count (:errors query))))))
+
 (defn params->Query
   "Convert params from a web request plus a slice definition into a Query record."
   [params slicedef]

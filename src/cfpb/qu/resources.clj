@@ -136,6 +136,10 @@ functions to return the resource that will be presented later."
                                :headers headers
                                :dimensions (:dimensions query)
                                :callback (:callback query)}]
-                 (views/slice (:media-type representation)
-                              resource
-                              view-map))))
+                 (status
+                  (if (query/valid? query)
+                    200
+                    400)
+                  (views/slice (:media-type representation)
+                               resource
+                               view-map)))))
