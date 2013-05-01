@@ -135,30 +135,6 @@ directory containing a definition.json and a set of CSV files."
         (let [tabledef (table tables)
               indexes (get-indexes slices table)
               sources (:sources tabledef)
-              columns (:columns tabledef)]
-          (set-indexes table indexes)
-          (doseq [file sources]
-            (load-csv-file table (str dir "/" file) columns)))))))
-
-(defn pload-dataset
-  "Given the name of a dataset, load that dataset from disk into the
-database. The dataset must be under the datasets/ directory as a
-directory containing a definition.json and a set of CSV files."
-  [name]
-  (let [dir (str "datasets/" name)
-        definition (-> (str dir "/definition.json")
-                       io/resource
-                       slurp
-                       (json/parse-string true))
-        tables (:tables definition)
-        slices (:slices definition)]
-    (save-dataset-definition name definition)
-    (with-db (get-db name)
-      (doseq [table (keys tables)]
-        (coll/remove table)
-        (let [tabledef (table tables)
-              indexes (get-indexes slices table)
-              sources (:sources tabledef)
               columns (:columns tabledef)
               agents (map agent sources)]
           (set-indexes table indexes)
