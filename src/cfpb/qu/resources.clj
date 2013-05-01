@@ -134,7 +134,8 @@ functions to return the resource that will be presented later."
                                :metadata metadata
                                :slicedef slicedef
                                :headers headers
-                               :dimensions (:dimensions query)}]
+                               :dimensions (:dimensions query)
+                               :callback (:callback query)}]
                  (views/slice (:media-type representation)
                               resource
                               view-map))))
