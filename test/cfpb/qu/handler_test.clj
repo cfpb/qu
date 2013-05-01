@@ -46,11 +46,13 @@
 
              (app (request :get "/data/good-dataset/whoa"))
              => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"}})
+                           :headers {"Content-Type" "text/html"
+                                     "Vary" "Accept"}})
 
              (app (request :get "/data/good-dataset/whoa.xml"))
              => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"}}))
+                           :headers {"Content-Type" "application/xml"
+                                     "Vary" "Accept"}}))
 
        (fact "it returns a 404 when the dataset does not exist"
              (prerequisite (#'cfpb.qu.data/get-metadata "bad-dataset") => nil)
