@@ -12,7 +12,7 @@ serve their public data sets."
             [lein-embongo "0.2.0"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.1.1"]
-                 [clojure-csv/clojure-csv "2.0.0-alpha2"]
+                 [org.clojure/data.csv "0.1.2"]
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.5.0"]
                  [com.novemberain/validateur "1.4.0"]
