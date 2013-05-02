@@ -99,27 +99,36 @@ that table."
 
 (defn- load-csv-file
   "Given a table and CSV file name and the definitions of the table's
-columns, read the data from the CSV file, transform it, and insert it
-into the table."
+  columns, read the data from the CSV file, transform it, and insert
+  it into the table.
+
+  Steps:
+  1. We read in the data from the CSV.
+  2. We get the headers.
+  3. We split the data into chunks of 100, and in parallel,
+     transform each of those chunks into a map.
+  4. We insert each of those chunks into the DB in a batch load."
   [table file columns]
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
           headers (map keyword (first data))
-          data (->> (rest data)
-                    (partition-all 100)
-                    (pmap (fn [chunk]
-                            (doall
-                             (map #(->> %
-                                        (zipmap headers)
-                                        (cast-data columns)) chunk))))
-                    (apply concat))]
-      (doseq [datum data]    
-        (coll/insert table datum)))))
+          chunk-size 100
+          chunks (->> (rest data)
+                      (partition-all chunk-size)
+                      (pmap (fn [chunk]
+                              (doall
+                               (map #(->> %
+                                          (zipmap headers)
+                                          (cast-data columns)) chunk)))))]
+      (doseq [chunk chunks]
+        (coll/insert-batch table chunk)))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
-database. The dataset must be under the datasets/ directory as a
-directory containing a definition.json and a set of CSV files."
+  database. The dataset must be under the datasets/ directory as a
+  directory containing a definition.json and a set of CSV files.
+
+  These files are loaded in parallel."
   [name]
   (let [dir (str "datasets/" name)
         definition (-> (str dir "/definition.json")
@@ -145,4 +154,3 @@ directory containing a definition.json and a set of CSV files."
 
 ; (ensure-mongo-connection)
 ; (with-out-str (time (load-dataset "county_taxes")))
-; (with-out-str (time (pload-dataset "county_taxes")))
