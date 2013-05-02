@@ -52,7 +52,14 @@
 
              (app (request :get "/data/county_taxes/incomes.xml"))
              => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"}})))
+                           :headers {"Content-Type" "application/xml;charset=UTF-8"}}))
+
+       (fact "JSONP uses the callback we supply"
+             (let [result (app (request :get "/data/county_taxes/incomes.jsonp?$callback=foo"))]
+               result => (contains {:status 200
+                                    :headers {"Content-Type" "text/javascript;charset=UTF-8"}})
+
+               (:body result) => #"^foo\(")))
 
   (facts "about /data/bad-dataset/bad-slice"
          (fact "it returns a 404"

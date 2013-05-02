@@ -234,9 +234,8 @@
 (defmethod slice "application/json" [_ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod slice "text/javascript" [_ resource _]
-  (let [callback (get-in resource [:properties :callback])
-        callback (if (str/blank? callback) "callback" callback)]
+(defmethod slice "text/javascript" [_ resource {:keys [callback]}]
+  (let [callback (if (str/blank? callback) "callback" callback)]
     (str callback "("
          (hal/resource->representation resource :json)
          ");")))
