@@ -11,11 +11,10 @@
     (loader/load-dataset "county_taxes")
     (finally (data/disconnect-mongo))))
 
-(change-defaults :fact-filter
-                 (fn [metadata]
-                   (let [file (:midje/file metadata)]
-                     (if (env :integration)
-                       (re-find #"integration/" file)
+(when-not (env :integration)
+  (change-defaults :fact-filter
+                   (fn [metadata]
+                     (let [file (:midje/file metadata)]
                        (not (re-find #"integration/" file))))))
 
 
