@@ -5,7 +5,7 @@ transforming the data within."
   (:require
    [clojure.string :as str]
    [clojure.java.io :as io]
-   [clojure-csv.core :refer [parse-csv]]
+   [clojure.data.csv :as csv]
    [cheshire.core :as json]
    [monger
     [core :as mongo :refer [with-db get-db]]
@@ -27,26 +27,14 @@ value into the correct type."
 (defn- cast-data
   "Given the data from a CSV file and the definition of the data's columns,
 transform that data into the data that will be saved in the database."
-  [data definition]
+  [definition data]
   (into {}
         (remove nil?
                 (for [[column value] data]
                   (let [columndef (definition column)]
-                    (if (not (:skip columndef))
-                      [(or (:name columndef) column)
-                       (cast-value value columndef)]))))))
-
-(defn- load-csv-file
-  "Given a table and CSV file name and the definitions of the table's
-columns, read the data from the CSV file, transform it, and insert it
-into the table."
-  [table file columns]
-  (with-open [in-file (io/reader (io/resource file))]
-    (let [data (parse-csv in-file)
-          headers (map keyword (first data))
-          data (map #(zipmap headers %) (rest data))]
-      (doseq [datum data]    
-        (coll/insert table (cast-data datum columns))))))
+                    (when-not (:skip columndef)
+                      (vector (or (:name columndef) column)
+                              (cast-value value columndef))))))))
 
 (defn- set-indexes
   "Given a table name and a seq of indexes, create those indexes for the table."
@@ -109,10 +97,38 @@ that table."
            [])))
        flatten))
 
+(defn- load-csv-file
+  "Given a table and CSV file name and the definitions of the table's
+  columns, read the data from the CSV file, transform it, and insert
+  it into the table.
+
+  Steps:
+  1. We read in the data from the CSV.
+  2. We get the headers.
+  3. We split the data into chunks of 100, and in parallel,
+     transform each of those chunks into a map.
+  4. We insert each of those chunks into the DB in a batch load."
+  [table file columns]
+  (with-open [in-file (io/reader (io/resource file))]
+    (let [data (csv/read-csv in-file)
+          headers (map keyword (first data))
+          chunk-size 100
+          chunks (->> (rest data)
+                      (partition-all chunk-size)
+                      (pmap (fn [chunk]
+                              (doall
+                               (map #(->> %
+                                          (zipmap headers)
+                                          (cast-data columns)) chunk)))))]
+      (doseq [chunk chunks]
+        (coll/insert-batch table chunk)))))
+
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
-database. The dataset must be under the datasets/ directory as a
-directory containing a definition.json and a set of CSV files."
+  database. The dataset must be under the datasets/ directory as a
+  directory containing a definition.json and a set of CSV files.
+
+  These files are loaded in parallel."
   [name]
   (let [dir (str "datasets/" name)
         definition (-> (str dir "/definition.json")
@@ -128,8 +144,13 @@ directory containing a definition.json and a set of CSV files."
         (let [tabledef (table tables)
               indexes (get-indexes slices table)
               sources (:sources tabledef)
-              columns (:columns tabledef)]
+              columns (:columns tabledef)
+              agents (map agent sources)]
           (set-indexes table indexes)
-          (doseq [file sources]
-            (load-csv-file table (str dir "/" file) columns)))))))
+          (doseq [agent agents]
+            (send-off agent (fn [file]
+                              (load-csv-file table (str dir "/" file) columns))))
+          (apply await agents))))))
 
+; (ensure-mongo-connection)
+; (with-out-str (time (load-dataset "county_taxes")))
