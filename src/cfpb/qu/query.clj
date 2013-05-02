@@ -4,6 +4,7 @@
             [monger.collection :as coll]
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
+            [cfpb.qu.query.validation :as validation]
             [cfpb.qu.util :refer [->int]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]))
@@ -66,7 +67,7 @@
                                     dec
                                     (* limit))
                         :limit limit
-                        :page page})     
+                        :page page})
      offset (merge query {:offset offset
                           :limit limit
                           :page page})
@@ -79,18 +80,19 @@
   [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (-> query
+                  validation/validate
                   resolve-limit-and-offset
                   mongo/process)
         _ (log/info (str "Post-process query: " (into {} query)))]
     (assoc query :result
-      (cond
-        (seq (:errors query)) []
+           (cond
+            (seq (:errors query)) []
 
-        (is-aggregation? query)
-        (data/get-aggregation dataset collection (mongo-aggregation query))
+            (is-aggregation? query)
+            (data/get-aggregation dataset collection (mongo-aggregation query))
 
-        :default
-        (data/get-find dataset collection (mongo-find query))))))
+            :default
+            (data/get-find dataset collection (mongo-find query))))))
 
 (defn- cast-value [value type]
   (case type
@@ -103,10 +105,10 @@ cast the requested dimensions into the right type for comparison when
 querying the database."
   [slice-def dimensions]
   (into {}
-    (for [[dimension value] dimensions]
-      (vector dimension (cast-value
-                          value
-                          (get-in slice-def [:types dimension]))))))
+        (for [[dimension value] dimensions]
+          (vector dimension (cast-value
+                             value
+                             (get-in slice-def [:types dimension]))))))
 
 (defn parse-params
   "Given a slice definition and the request parameters, convert those
@@ -117,23 +119,23 @@ can query with."
   (let [dimensions (set (:dimensions slice))]
     {:dimensions (->> (into {} (filter (fn [[key value]]
                                          (and
-                                           (not= value "")
-                                           (dimensions (name key)))) params))
+                                          (not= value "")
+                                          (dimensions (name key)))) params))
                       (cast-dimensions slice))
      :clauses (into {} (filter (fn [[key value]]
                                  (and
-                                   (not= value "")
-                                   (allowed-clauses key))) params))}))
+                                  (not= value "")
+                                  (allowed-clauses key))) params))}))
 
 (defn mongo-find
   "Create a Mongo find map from the query."
   [query]
   (let [mongo (q/partial-query
-                (q/find (get-in query [:mongo :match]))
-                (q/limit (->int (:limit query) default-limit))
-                (q/skip (->int (:offset query) default-offset))
-                (q/sort (get-in query [:mongo :sort] {}))
-                (q/fields (or (get-in query [:mongo :project]) {})))]
+               (q/find (get-in query [:mongo :match]))
+               (q/limit (->int (:limit query) default-limit))
+               (q/skip (->int (:offset query) default-offset))
+               (q/sort (get-in query [:mongo :sort] {}))
+               (q/fields (or (get-in query [:mongo :project]) {})))]
     mongo))
 
 (defn mongo-aggregation
@@ -146,14 +148,14 @@ can query with."
         skip (->int (:offset query))
         limit (->int (:limit query))]
     (-> []
-      (->/when match
-        (conj {"$match" match}))
-      (conj {"$group" group})
-      (conj {"$project" project})
-      (->/when sort
-        (conj {"$sort" sort}))
-      (->/when skip
-        (conj {"$skip" skip}))
-      (->/when limit
-        (conj {"$limit" limit})))))
+        (->/when match
+          (conj {"$match" match}))
+        (conj {"$group" group})
+        (conj {"$project" project})
+        (->/when sort
+          (conj {"$sort" sort}))
+        (->/when skip
+          (conj {"$skip" skip}))
+        (->/when limit
+          (conj {"$limit" limit})))))
 
