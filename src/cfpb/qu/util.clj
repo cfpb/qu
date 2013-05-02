@@ -10,8 +10,8 @@ is nil unless specified."
   ([val default]
      (cond
       (integer? val) val
-      (and
-       (string? val)
-       (not (str/blank? val))) (Integer/parseInt val)
-       :default default)))
+      (and (string? val) (not (str/blank? val)))
+      (try (Integer/parseInt val)
+           (catch NumberFormatException e default))
+      :default default)))
 
