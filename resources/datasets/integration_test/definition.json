@@ -1,0 +1,60 @@
+{ "info": {
+    "name": "Integration Test Data",
+    "description": "Data for integration tests.",
+    "url": ""
+  },
+  "concepts": {
+    "state_abbr": {
+      "description": "State Abbreviation"
+    },
+    "county": {
+      "description": "County"
+    },
+    "tax_returns": {
+      "description": "Total Number of Tax Returns"
+    },
+    "adjusted_gross_income": {
+      "description": "Adjusted Gross Income (In Thousands)"
+    }
+  },
+  "slices": {
+    "incomes": {
+      "table": "incomes",
+      "dimensions": [
+        "state_abbr", "county"
+      ],
+      "metrics": [
+        "tax_returns",
+        "adjusted_gross_income"
+      ]
+    }
+  },  
+  "tables": {
+    "incomes": {
+      "sources": [
+        "test_data.csv"
+      ],
+      "columns": {
+        "County Code": {
+          "skip": true
+        },
+        "State Abbreviation": {
+          "name": "state_abbr",
+          "type": "string"
+        },
+        "County Name": {
+          "name": "county",
+          "type": "string"
+        },
+        "Total Number of Tax Returns": {
+          "name": "tax_returns",
+          "type": "integer"
+        },
+        "Adjusted Gross Income (In Thousands)": {
+          "name": "adjusted_gross_income",
+          "type": "dollars"
+        }
+      }
+    }
+  }
+}
