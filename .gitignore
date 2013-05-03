@@ -8,6 +8,7 @@
 pom.xml
 *.jar
 *.class
+.DS_Store
 .lein-deps-sum
 .lein-failures
 .lein-plugins
@@ -20,3 +21,5 @@ pom.xml
 sandbox/
 *.iml
 *.log
+resources/datasets/hmda_lar/*.csv
+resources/datasets/hmda_lar/*.zip
