@@ -45,7 +45,7 @@ into the table."
     (let [data (parse-csv in-file)
           headers (map keyword (first data))
           data (map #(zipmap headers %) (rest data))]
-      (doseq [datum data]    
+      (doseq [datum data]
         (coll/insert table (cast-data datum columns))))))
 
 (defn- set-indexes

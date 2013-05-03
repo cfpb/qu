@@ -1,7 +1,7 @@
 { "info": {
     "name": "Integration Test Data",
     "description": "Data for integration tests.",
-    "url": "http://google.com"
+    "url": ""
   },
   "concepts": {
     "state_abbr": {
