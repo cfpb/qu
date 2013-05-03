@@ -9,7 +9,7 @@
     [response :refer [render]]]
    [stencil.core :refer [render-file]]
    [noir.response :as response]
-   [clojure-csv.core :refer [write-csv]]
+   [clojure.data.csv :as csv]
    monger.json
    [halresource.resource :as hal]
    [cfpb.qu.util :refer [->int]]
@@ -39,6 +39,9 @@
 
 (defn not-found-html [message]
   (render-file "templates/404" {:message message}))
+
+(defn- write-csv [data]
+  (with-out-str (csv/write-csv *out* data)))
 
 (defn select-fields
   "In API requests, the user can select the columns they want
