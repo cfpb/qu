@@ -15,7 +15,7 @@
             [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
-            [lonocloud.synthread :as ->]            
+            [lonocloud.synthread :as ->]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]
@@ -31,8 +31,8 @@ this namespace."
   (if (valid? query)
     (-> query
         match
-        project          
-        group          
+        project
+        group
         sort
         post-validate)
     query))

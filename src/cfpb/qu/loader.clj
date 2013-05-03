@@ -59,7 +59,7 @@ in MongoDB."
         table-def (get-in definition [:tables (keyword table-name)])]
     (reduce (fn [definition column]
               (if (and (:name column)
-                       ((set (slice-columns slice-def)) (:name column)))                
+                       ((set (slice-columns slice-def)) (:name column)))
                 (assoc-in definition
                           [:slices slice :types (keyword (:name column))]
                           (slice-type-for-table-type (:type column)))
@@ -92,9 +92,9 @@ that table."
   [slices table]
   (->> slices
        (map (fn [[_ slice]]
-         (if (= (:table slice) (name table))
-           (:dimensions slice)
-           [])))
+              (if (= (:table slice) (name table))
+                (:dimensions slice)
+                [])))
        flatten))
 
 (defn- load-csv-file
@@ -152,5 +152,5 @@ that table."
                               (load-csv-file table (str dir "/" file) columns))))
           (apply await agents))))))
 
-; (ensure-mongo-connection)
-; (with-out-str (time (load-dataset "county_taxes")))
+;; (ensure-mongo-connection)
+;; (with-out-str (time (load-dataset "county_taxes")))
