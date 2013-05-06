@@ -152,5 +152,38 @@ that table."
                               (load-csv-file table (str dir "/" file) columns))))
           (apply await agents))))))
 
+(defn- prechew-dimension
+  [dataset slice dimension metrics]
+  (let [group-id {dimension (str "$" (name dimension))}
+        agg-types [:sum :min :max]
+        aggs (for [agg agg-types
+                   metric metrics]
+               {(str (name agg) "_" (name metric))
+                {(str "$" (name agg)) (str "$" (name metric))}})
+        group (apply merge {:_id group-id :count {"$sum" 1}} aggs)
+        project {dimension (str "$_id." (name dimension))
+                 :count "$count"}
+        project-aggs (for [agg agg-types
+                           metric metrics]
+                       {(str (name agg) "_" (name metric))
+                        (str "$" (name agg) "_" (name metric))})
+        project (apply merge project project-aggs)
+        aggregation [{"$group" group} {"$project" project}]
+        query-result (get-aggregation dataset slice aggregation)]
+    query-result))
+
+(defn- prechew-slice
+  [dataset metadata slice]
+  (let [slicedef (get-in metadata [:slices slice])
+        dimensions (:dimensions slicedef)
+        metrics (:metrics slicedef)]
+    (map #(prechew-dimension dataset slice % metrics) dimensions)))
+
+(defn prechew-dataset
+  [dataset]
+  (let [metadata (get-metadata dataset)
+        slices (keys (:slices metadata))]
+    (doall (map #(prechew-slice dataset metadata %) slices))))
+
 ; (ensure-mongo-connection)
 ; (with-out-str (time (load-dataset "county_taxes")))
