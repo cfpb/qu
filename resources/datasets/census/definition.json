@@ -15,6 +15,7 @@
   },
   "slices": {
     "population_estimates": {
+      "type": "table",
       "table": "population_estimates",
       "dimensions": [
         "region", "division", "state",
@@ -25,6 +26,24 @@
         "population_estimate_2010",
         "population_estimate_2011"
       ]
+    },
+    "population_by_state": {
+      "type": "derived",
+      "slice": "population_estimates",
+      "dimensions": [
+        "state", "race", "origin", "sex"
+      ],
+      "metrics": [
+        "population_2010",
+        "population_estimate_2010",
+        "population_estimate_2011"
+      ]
+      "aggregations": {
+        "population_2010": ["sum", "population_2010"],
+        "population_estimate_2010": ["sum", "population_estimate_2010"],
+        "population_estimate_2011": ["sum", "population_estimate_2011"]
+      },        
+      "where": "race != 'Total' AND sex != 'Total' AND origin != 'Total'"
     }
   },  
   "tables": {

@@ -28,6 +28,7 @@
   },
   "slices": {
     "incomes": {
+      "type": "table",
       "table": "incomes",
       "dimensions": [
         "state_abbr", "county"
@@ -39,6 +40,27 @@
         "dividend_income",
         "interest_income"
       ]
+    },
+    "incomes_by_state": {
+      "type": "derived",
+      "slice": "incomes",
+      "dimensions": [
+        "state_abbr"
+      ],
+      "metrics": [
+        "tax_returns",
+        "adjusted_gross_income",
+        "wages_and_salaries_income",
+        "dividend_income",
+        "interest_income"
+      ],
+      "aggregations": {
+        "tax_returns": ["sum", "tax_returns"],
+        "adjusted_gross_income": ["sum", "adjusted_gross_income"],
+        "wages_and_salaries_income": ["sum", "wages_and_salaries_income"],
+        "dividend_income": ["sum", "dividend_income"],
+        "interest_income": ["sum", "interest_income"]
+      }
     }
   },  
   "tables": {

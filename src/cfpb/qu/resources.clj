@@ -128,7 +128,7 @@ functions to return the resource that will be presented later."
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) slicedef)
-                     query (query/execute dataset (:table slicedef) query)
+                     query (query/execute dataset slice query)
                      resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
                                :metadata metadata
