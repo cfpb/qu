@@ -18,8 +18,8 @@
 (with-state-changes [(before :facts (do
                                       (data/connect-mongo)
                                       (loader/load-dataset db)
-                                      (def md (data/get-metadata db))
-                                      (def slicedef (get-in md [:slices :incomes]))))
+                                      (def metadata (data/get-metadata db))
+                                      (def slicedef (get-in metadata [:slices :incomes]))))
                      (after :facts (data/disconnect-mongo))]
 
   (facts "about metadata"
@@ -33,11 +33,10 @@
         (map :name ds) => (contains ["county_taxes" "integration_test"] :gaps-ok)))
 
     (fact "get-metadata returns metadata for a dataset"
-      (let [md (data/get-metadata db)]
-        (:name md) => "integration_test"
-        (keys md) => (contains [:_id :name :info :concepts :slices :tables])
-        (get-in md [:tables :incomes]) =not=> nil
-        (get-in md [:slices :incomes :metrics]) => ["tax_returns" "adjusted_gross_income"])))
+        (:name metadata) => "integration_test"
+        (keys metadata) => (contains [:_id :name :info :concepts :slices :tables])
+        (get-in metadata [:tables :incomes]) =not=> nil
+        (get-in metadata [:slices :incomes :metrics]) => ["tax_returns" "adjusted_gross_income"]))
 
   ;; get-find and get-aggregation facts are simply sanity checks
   (facts "about get-find"
