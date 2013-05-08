@@ -11,6 +11,7 @@ transforming the data within."
    [monger
     [core :as mongo :refer [with-db get-db]]
     [collection :as coll]]
+   [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]))
 
@@ -130,6 +131,7 @@ associated tables."
   (let [dimensions (:dimensions slicedef)
         aggregations (:aggregations slicedef)
         original-slice (:slice slicedef)
+        where (:where slicedef)
         group-id (apply merge
                         (map #(hash-map % (str "$" %)) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
@@ -141,7 +143,10 @@ associated tables."
         project-aggs (map (fn [[agg-metric _]]
                             {agg-metric (str "$" (name agg-metric))}) aggregations)
         project (apply merge (concat project-dims project-aggs))
-        aggregation [{"$group" group} {"$project" project}]
+        match (if where
+                 (where/mongo-eval (where/parse where))
+                 {})
+        aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation dataset original-slice aggregation)
         chunk-size 100
         chunks (->> query-result

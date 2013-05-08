@@ -37,12 +37,12 @@
         "population_2010",
         "population_estimate_2010",
         "population_estimate_2011"
-      ]
+      ],
       "aggregations": {
         "population_2010": ["sum", "population_2010"],
         "population_estimate_2010": ["sum", "population_estimate_2010"],
         "population_estimate_2011": ["sum", "population_estimate_2011"]
-      },        
+      },
       "where": "race != 'Total' AND sex != 'Total' AND origin != 'Total'"
     }
   },  
