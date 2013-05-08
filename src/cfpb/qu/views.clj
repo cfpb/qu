@@ -182,7 +182,9 @@
         action (str "http://" (headers "host")
                     "/data/" dataset
                     "/" slice)
-        slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
+        slice-metadata {:name (get-in slicedef [:info :name])
+                        :description (get-in slicedef [:info :description])
+                        :dimensions (str/join ", " (:dimensions slicedef))
                         :metrics (str/join ", " (:metrics slicedef))}
         dimensions (map #(hash-map :key %
                                    :name (desc %)

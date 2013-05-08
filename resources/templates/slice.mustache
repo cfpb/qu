@@ -2,15 +2,28 @@
   <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/{{slice}}
 </h1>
 
-<h2>Slice Metadata</h2>
-
 {{#metadata}}
-  <dl class="metadata">
-    <dt>Dimensions</dt>
-    <dd>{{metadata.dimensions}}</dd>
+  <h2>Properties</h2>
+  <dl class="properties">
+    {{#name}}
+      <dt>Name</dt>
+      <dd>{{name}}</dd>
+    {{/name}}
 
+    {{#description}}
+      <dt>Description</dt>
+      <dd>{{description}}</dd>
+    {{/description}}
+    
+    {{#dimensions}}
+    <dt>Dimensions</dt>
+    <dd>{{dimensions}}</dd>
+    {{/dimensions}}
+
+    {{#metrics}}
     <dt>Metrics</dt>
     <dd>{{metrics}}</dd>
+    {{/metrics}}
   </dl>
 {{/metadata}}
 

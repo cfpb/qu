@@ -14,9 +14,13 @@
     }
   },
   "slices": {
-    "population_estimates": {
+    "population_raw": {      
       "type": "table",
-      "table": "population_estimates",
+      "table": "population",
+      "info": {
+        "name": "Population",
+        "description": "Raw data for 2010 Census population counts by state."
+      },        
       "dimensions": [
         "region", "division", "state",
         "sex", "origin", "race", "age"
@@ -29,7 +33,11 @@
     },
     "population_by_state": {
       "type": "derived",
-      "slice": "population_estimates",
+      "slice": "population_raw",
+      "info": {
+        "name": "Population by State",
+        "description": "Rolled-up populations for each combination of race, origin, and sex by state."
+      },
       "dimensions": [
         "state", "race", "origin", "sex"
       ],
@@ -47,7 +55,7 @@
     }
   },  
   "tables": {
-    "population_estimates": {
+    "population": {
       "sources": [
         "SC-EST2011-alldata6-AL_ID.csv",
         "SC-EST2011-alldata6-IL_MO.csv",
