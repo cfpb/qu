@@ -1,11 +1,11 @@
 (ns cfpb.qu.query.validation
-    (:require [clojure.set :as set]
-              [protoflex.parse :refer [parse]]
-              [taoensso.timbre :as log]
-              [cfpb.qu.util :refer [->int]]
-              [cfpb.qu.query.where :as where]
-              [cfpb.qu.query.select :as select]
-              [cfpb.qu.query.parser :as parser]))
+  (:require [clojure.set :as set]
+            [protoflex.parse :refer [parse]]
+            [taoensso.timbre :as log]
+            [cfpb.qu.util :refer [->int]]
+            [cfpb.qu.query.where :as where]
+            [cfpb.qu.query.select :as select]
+            [cfpb.qu.query.parser :as parser]))
 
 (defn valid? [query]
   (or (not (:errors query))
@@ -130,7 +130,7 @@
 
 (defn- validate-max-limit
   [query max]
-  (let [limit (->int (:limit query) 0)]    
+  (let [limit (->int (:limit query) 0)]
     (if (> limit max)
       (add-error query :limit (str "The maximum limit is " max "."))
       query)))

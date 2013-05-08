@@ -1,12 +1,12 @@
 (ns cfpb.qu.handler
   (:require
    [clojure.string :as str]
-   [ring.adapter.jetty :refer [run-jetty]]   
+   [ring.adapter.jetty :refer [run-jetty]]
    [ring.middleware
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [mime-extensions :refer [wrap-convert-extension-to-accept-header]]]
-   [environ.core :refer [env]]   
+   [environ.core :refer [env]]
    [taoensso.timbre :as log]
    [cfpb.qu
     [data :as data]

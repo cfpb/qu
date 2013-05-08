@@ -132,7 +132,7 @@
         dimensions (->> (get-in resource [:properties :dimensions])
                         (into [])
                         (map (fn [[k v]]
-                            (str (name k) "=" v))))
+                               (str (name k) "=" v))))
         query (str/join "&" (concat clauses dimensions))]
     (url/mutate-query (:href resource) query)))
 
@@ -145,7 +145,7 @@
 
 (defn- create-pagination [resource]
   (if-let [total (get-in resource [:properties :total])]
-    (let [window-size 3       
+    (let [window-size 3
           current-page (or (get-in resource [:properties :page]) 1)
           href (:href resource)
           limit (get-in resource [:properties :query :limit])

@@ -61,7 +61,7 @@ in MongoDB."
         table-def (get-in definition [:tables (keyword table-name)])]
     (reduce (fn [definition column]
               (if (and (:name column)
-                       ((set (slice-columns slice-def)) (:name column)))                
+                       ((set (slice-columns slice-def)) (:name column)))
                 (assoc-in definition
                           [:slices slice :types (keyword (:name column))]
                           (slice-type-for-table-type (:type column)))
@@ -190,5 +190,5 @@ associated tables."
       (doseq [slice slice-load-order]
         (load-slice name slice (slices slice) tables dir)))))
 
-; (ensure-mongo-connection)
-; (with-out-str (time (load-dataset "county_taxes")))
+;; (ensure-mongo-connection)
+;; (with-out-str (time (load-dataset "county_taxes")))

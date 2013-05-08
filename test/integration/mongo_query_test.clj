@@ -17,7 +17,9 @@
 
 (with-state-changes [(before :facts (do
                                       (data/connect-mongo)
-                                      (loader/load-dataset db)))
+                                      (loader/load-dataset db)
+                                      (def metadata (data/get-metadata db))
+                                      (def slicedef (get-in metadata [:slices :incomes]))))
                      (after :facts (data/disconnect-mongo))]
 
   (facts "about metadata"
@@ -31,12 +33,12 @@
         (map :name ds) => (contains ["county_taxes" "integration_test"] :gaps-ok)))
 
     (fact "get-metadata returns metadata for a dataset"
-      (let [md (data/get-metadata db)]
-        (:name md) => "integration_test"
-        (keys md) => (contains [:_id :name :info :concepts :slices :tables])
-        (get-in md [:tables :incomes]) =not=> nil
-        (get-in md [:slices :incomes :metrics]) => ["tax_returns" "adjusted_gross_income"])))
+        (:name metadata) => "integration_test"
+        (keys metadata) => (contains [:_id :name :info :concepts :slices :tables])
+        (get-in metadata [:tables :incomes]) =not=> nil
+        (get-in metadata [:slices :incomes :metrics]) => ["tax_returns" "adjusted_gross_income"]))
 
+  ;; get-find and get-aggregation facts are simply sanity checks
   (facts "about get-find"
 
     (fact "returns a QueryResult object with total, size, and data (Seq of maps)"
@@ -47,9 +49,20 @@
         (:size result) => limit
         (.size (:data result)) => limit)))
 
+  (facts "about get-aggregation"
+
+    (fact "returns a QueryResult object with total, size, and data representing aggregation results"
+      (let [query [{"$group" {:sum_agi {"$sum" "$adjusted_gross_income"}, :_id {:state_abbr "$state_abbr"}}}
+                   {"$project" {"sum_agi" "$sum_agi", "state_abbr" "$_id.state_abbr"}}
+                   {"$sort" {:state_abbr 1}}]
+            result (data/get-aggregation db coll query)]
+        ;; We know the integration_test dataset has 3 states
+        (map :state_abbr (:data result)) => ["NC" "NY" "PA"]
+        (:total result) => 3
+        (:size result) => 3
+        (.size (:data result)) => 3)))
+
   (facts "about execute"
-    (def md (data/get-metadata db))
-    (def slicedef (get-in md [:slices :incomes]))
 
     (fact "passes a Query object to MongoDB and returns results"
       (let [q (params->Query {} slicedef)
@@ -95,11 +108,53 @@
             query_result (:result result)]
         (:total query_result) => upper-bound
         (:size query_result) => upper-bound
-        (:tax_returns (last (:data query_result))) => upper-bound))
+        (:tax_returns (last (:data query_result))) => upper-bound)))
 
-    (fact "result contains :error when invalid select is specified"
-      (let [q (params->Query {:$select "miami_hopper"} slicedef)
+  (facts "about execute and aggregation"
+
+    (fact "passes a Query object to MongoDB and returns result containing aggregation"
+      (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} slicedef)
             result (query/execute db coll q)
             query_result (:result result)]
-        query_result => []
-        (first (get-in result [:errors :select])) => (contains "is not a valid field")))))
+        (:size query_result) => 3
+        (:total query_result) => 3
+        (.size (:data query_result)) => 3
+        (:data query_result) => [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
+                                 {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
+                                 {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"}])))
+
+  (facts "about execute and error handling"
+
+    (fact "result contains :error when invalid $select is specified"
+      (let [q (params->Query {:$select "trick_name"} slicedef)
+            result (query/execute db coll q)]
+        (:result result) => []
+        (first (get-in result [:errors :select])) => (contains "\"trick_name\" is not a valid field")))
+
+    (fact "result contains :error when invalid $where is specified"
+      (let [q (params->Query {:$where "inventor = 'plywood_hoods'", :$orderBy "difficulty"} slicedef)
+            result (query/execute db coll q)
+            errors (:errors result)]
+        (:result result) => []
+        (first (:where errors)) => (contains "\"inventor\" is not a valid field")
+        (first (:orderBy errors)) => (contains "\"difficulty\" is not a valid field")))
+
+    (fact "result contains :error when invalid $limit or $offset is specified"
+      (let [q (params->Query {:$limit "a" :$offset "b"} slicedef)
+            result (query/execute db coll q)]
+        (:result result) => []
+        (first (get-in result [:errors :limit])) => (contains "use an integer")
+        (first (get-in result [:errors :offset])) => (contains "use an integer")))
+
+    (fact "result contains :error when $group is present but $select is not"
+      (let [q (params->Query {:$group "state_abbr"} slicedef)
+            result (query/execute db coll q)]
+        (:result result) => []
+        (first (get-in result [:errors :group])) => (contains "must have a select clause")))
+
+    (fact "result contains :error when invalid $group is specified"
+      (let [q (params->Query {:$select "state_abbr", :$group "cherrypicker"} slicedef)
+            result (query/execute db coll q)]
+        (:result result) => []
+        (first (get-in result [:errors :group])) => (contains "\"cherrypicker\" is not a valid field")
+        (last (get-in result [:errors :group])) => (contains "\"cherrypicker\" is not a dimension")))))
