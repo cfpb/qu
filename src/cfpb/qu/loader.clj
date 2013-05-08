@@ -7,9 +7,11 @@ transforming the data within."
    [clojure.java.io :as io]
    [clojure.data.csv :as csv]
    [cheshire.core :as json]
+   [com.stuartsierra.dependency :as dep]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [collection :as coll]]
+   [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]))
 
@@ -85,18 +87,6 @@ associated tables."
                  (build-types-for-slices (assoc definition :name name))
                  :upsert true)))
 
-(defn- get-indexes
-  "Given the definition of the dataset's slices and the current table
-being imported, return a seq of the columns that should be indexed in
-that table."
-  [slices table]
-  (->> slices
-       (map (fn [[_ slice]]
-              (if (= (:table slice) (name table))
-                (:dimensions slice)
-                [])))
-       flatten))
-
 (defn- load-csv-file
   "Given a table and CSV file name and the definitions of the table's
   columns, read the data from the CSV file, transform it, and insert
@@ -108,7 +98,7 @@ that table."
   3. We split the data into chunks of 100, and in parallel,
      transform each of those chunks into a map.
   4. We insert each of those chunks into the DB in a batch load."
-  [table file columns]
+  [slice file columns]
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
           headers (map keyword (first data))
@@ -121,7 +111,60 @@ that table."
                                           (zipmap headers)
                                           (cast-data columns)) chunk)))))]
       (doseq [chunk chunks]
-        (coll/insert-batch table chunk)))))
+        (coll/insert-batch slice chunk)))))
+
+(defn- load-primary-slice
+  [slice slicedef tables dir]
+  (let [table (keyword (:table slicedef))
+        tabledef (table tables)
+        indexes (:dimensions slicedef)
+        sources (:sources tabledef)
+        columns (:columns tabledef)
+        agents (map agent sources)]
+    (doseq [agent agents]
+      (send-off agent (fn [file]
+                        (load-csv-file slice (str dir "/" file) columns))))
+    (apply await agents)))
+
+(defn- load-derived-slice
+  [dataset slice slicedef]
+  (let [dimensions (:dimensions slicedef)
+        aggregations (:aggregations slicedef)
+        original-slice (:slice slicedef)
+        where (:where slicedef)
+        group-id (apply merge
+                        (map #(hash-map % (str "$" %)) dimensions))
+        aggs (map (fn [[agg-metric [agg metric]]]
+                    {agg-metric {(str "$" (name agg))
+                                 (str "$" (name metric))}}) aggregations)
+        group (apply merge {:_id group-id} aggs)
+        project-dims (map (fn [dimension]
+                       {dimension (str "$_id." (name dimension))}) dimensions)
+        project-aggs (map (fn [[agg-metric _]]
+                            {agg-metric (str "$" (name agg-metric))}) aggregations)
+        project (apply merge (concat project-dims project-aggs))
+        match (if where
+                 (where/mongo-eval (where/parse where))
+                 {})
+        aggregation [{"$group" group} {"$project" project} {"$match" match}]
+        query-result (get-aggregation dataset original-slice aggregation)
+        chunk-size 100
+        chunks (->> query-result
+                    :data
+                    (partition-all chunk-size))]
+    (doseq [chunk chunks]
+      (coll/insert-batch slice chunk))))
+
+(defn- load-slice
+  [dataset slice slicedef tables dir]
+  (let [dimensions (:dimensions slicedef)
+        type (keyword (:type slicedef))]
+    (coll/remove slice)
+    (set-indexes slice dimensions)
+    (case type
+      :table (load-primary-slice slice slicedef tables dir)
+      :derived (load-derived-slice dataset slice slicedef)
+      (println (str "Cannot load slice " slice " with type " type)))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -136,21 +179,16 @@ that table."
                        slurp
                        (json/parse-string true))
         tables (:tables definition)
-        slices (:slices definition)]
+        slices (:slices definition)
+        slice-graph (reduce (fn [graph [slice slicedef]]
+                              (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
+                            (dep/graph)
+                            slices)
+        slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
     (save-dataset-definition name definition)
     (with-db (get-db name)
-      (doseq [table (keys tables)]
-        (coll/remove table)
-        (let [tabledef (table tables)
-              indexes (get-indexes slices table)
-              sources (:sources tabledef)
-              columns (:columns tabledef)
-              agents (map agent sources)]
-          (set-indexes table indexes)
-          (doseq [agent agents]
-            (send-off agent (fn [file]
-                              (load-csv-file table (str dir "/" file) columns))))
-          (apply await agents))))))
+      (doseq [slice slice-load-order]
+        (load-slice name slice (slices slice) tables dir)))))
 
 ;; (ensure-mongo-connection)
 ;; (with-out-str (time (load-dataset "county_taxes")))

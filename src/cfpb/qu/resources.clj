@@ -66,6 +66,9 @@ functions to return the resource that will be presented later."
                      embedded (map (fn [[slice info]]
                                      (-> (hal/new-resource (urls/slice-path dataset (name slice)))
                                          (hal/add-property :id (name slice))
+                                         (hal/add-property
+                                          :name
+                                          (get-in info [:info :name] (name slice)))
                                          (hal/add-properties info))) (:slices metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
                  (views/dataset (:media-type representation) resource))))
@@ -128,7 +131,7 @@ functions to return the resource that will be presented later."
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) slicedef)
-                     query (query/execute dataset (:table slicedef) query)
+                     query (query/execute dataset slice query)
                      resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
                                :metadata metadata
