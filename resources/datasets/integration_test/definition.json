@@ -19,6 +19,7 @@
   },
   "slices": {
     "incomes": {
+      "type": "table",
       "table": "incomes",
       "dimensions": [
         "state_abbr", "county"
