@@ -1,34 +1,43 @@
+SAMPLE_SIZE:=0.1
+
 add_headers_and_unzip()
   cp headers.csv $OUTPUT
   unzip -p $INPUT >> $OUTPUT
 
-add_headers_unzip_and_sample()
-  cp headers.csv $OUTPUT
-  unzip -p $INPUT | ../../bin/sample.py >> $OUTPUT
+sample_keep_headers() [python]
+  import random
+  input = open("$[INPUT]", 'r')
+  output = open("$[OUTPUT]", 'w')
+  sample_size = $[SAMPLE_SIZE]
+  headers_written = False
+  for line in input:
+    if not headers_written:
+      headers_written = True
+      output.write(line)
+    elif random.random() < sample_size:
+      output.write(line)
+  input.close()
+  output.close()
 
 hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip <- [-timecheck]
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT0
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT1
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT2
 
 hmda_lar_all_2011.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip]
-
 hmda_lar_all_2010.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
-
 hmda_lar_all_2009.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
 
-hmda_lar_sample_2011.csv <- hmda_lar_2011.zip [method:add_headers_unzip_and_sample]
+hmda_lar_sample_2011.csv <- hmda_lar_all_2011.csv [method:sample_keep_headers]
+hmda_lar_sample_2010.csv <- hmda_lar_all_2010.csv [method:sample_keep_headers]
+hmda_lar_sample_2009.csv <- hmda_lar_all_2009.csv [method:sample_keep_headers]
 
-hmda_lar_sample_2010.csv <- hmda_lar_2010.zip [method:add_headers_unzip_and_sample]
-
-hmda_lar_sample_2009.csv <- hmda_lar_2009.zip [method:add_headers_unzip_and_sample]
-
-sample <- hmda_lar_sample_2011.csv, hmda_lar_sample_2010.csv, hmda_lar_sample_2009.csv [-check]
+%sample <- hmda_lar_sample_2011.csv, hmda_lar_sample_2010.csv, hmda_lar_sample_2009.csv
   ln -sf $INPUT0 hmda_lar_2011.csv
   ln -sf $INPUT1 hmda_lar_2010.csv
   ln -sf $INPUT2 hmda_lar_2009.csv
 
-full <- hmda_lar_all_2011.csv, hmda_lar_all_2010.csv, hmda_lar_all_2009.csv [-check]
+%full <- hmda_lar_all_2011.csv, hmda_lar_all_2010.csv, hmda_lar_all_2009.csv
   ln -sf $INPUT0 hmda_lar_2011.csv
   ln -sf $INPUT1 hmda_lar_2010.csv
   ln -sf $INPUT2 hmda_lar_2009.csv
