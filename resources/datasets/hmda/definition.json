@@ -485,12 +485,22 @@
           }
         },         
         "Loan Type": {
-          "type": "number", 
-          "name": "loan_type"
+          "type": "lookup", 
+          "name": "loan_type",
+          "lookup": {
+            "1": "Conventional",
+            "2": "FHA-insured",
+            "3": "VA-guaranteed",
+            "4": "FSA/RHS"
         },
         "Property Type": {
-          "type": "string", 
-          "name": "property_type"
+          "type": "lookup", 
+          "name": "property_type",
+          "lookup": {
+            "1": "One to four-family",
+            "2": "Manufactured Housing",
+            "3": "Multifamily"
+          }
         },
         "Loan Purpose": {
           "type": "number", 
