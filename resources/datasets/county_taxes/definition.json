@@ -4,26 +4,35 @@
     "url": "https://explore.data.gov/Population/Tax-Year-2007-County-Income-Data/wvps-imhx"
   },
   "concepts": {
-    "state_abbr": {
-      "description": "State Abbreviation"
+    "state": {
+      "name": "State Abbreviation",
+      "type": "string",
+      "table": "states",
+      "properties": {
+        "name": {
+          "name": "Name",
+          "description": "The name of the state",
+          "type": "string"
+        }
+      }        
     },
     "county": {
-      "description": "County"
+      "name": "County"
     },
     "tax_returns": {
-      "description": "Total Number of Tax Returns"
+      "name": "Total Number of Tax Returns"
     },
     "adjusted_gross_income": {
-      "description": "Adjusted Gross Income (In Thousands)"
+      "name": "Adjusted Gross Income (In Thousands)"
     },
     "wages_and_salaries_income": {
-      "description": "Wages and Salaries (In Thousands)"
+      "name": "Wages and Salaries (In Thousands)"
     },
     "dividend_income": {
-      "description": "Dividend Income (In Thousands)"
+      "name": "Dividend Income (In Thousands)"
     },
     "interest_income": {
-      "description": "Interest Income (In Thousands)"
+      "name": "Interest Income (In Thousands)"
     }
   },
   "slices": {
@@ -45,7 +54,7 @@
       "type": "derived",
       "slice": "incomes",
       "dimensions": [
-        "state_abbr"
+        "state"
       ],
       "metrics": [
         "tax_returns",
@@ -64,44 +73,51 @@
     }
   },  
   "tables": {
+    "states": {
+      "sources": [
+        "states.csv"
+      ],
+      "columns": {
+        "state": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },      
     "incomes": {
       "sources": [
         "Tax_Year_2007_County_Income_Data.csv"
       ],
       "columns": {
-        "County Code": {
+        "county_code": {
           "skip": true
         },
-        "State Abbreviation": {
+        "state_abbr": {
           "name": "state_abbr",
           "type": "string"
         },
-        "County Name": {
-          "name": "county",
+        "county": {
           "type": "string"
         },
-        "Total Number of Tax Returns": {
-          "name": "tax_returns",
+        "tax_returns": {
           "type": "integer"
         },
-        "Total Number of Exemptions": {
-          "name": "exceptions",
+        "exemptions": {
           "type": "integer"
         },
-        "Adjusted Gross Income (In Thousands)": {
-          "name": "adjusted_gross_income",
+        "adjusted_gross_income": {
           "type": "dollars"
         },
-        "Wages and Salaries Incomes (In Thousands)": {
+        "wages_and_salaries_income": {
           "name": "wages_and_salaries_income",
           "type": "dollars"
         },
-        "Dividend Incomes (In Thousands)": {
-          "name": "dividend_income",
+        "dividend_income": {
           "type": "dollars"
         },
-        "Interest Income (In Thousands)": {
-          "name": "interest_income",
+        "interest_income": {
           "type": "dollars"
         }
       }
