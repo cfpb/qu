@@ -40,7 +40,7 @@
       "type": "table",
       "table": "incomes",
       "dimensions": [
-        "state_abbr", "county"
+        "state", "county"
       ],
       "metrics": [
         "tax_returns",
@@ -88,14 +88,16 @@
     },      
     "incomes": {
       "sources": [
-        "Tax_Year_2007_County_Income_Data.csv"
+        "county_incomes.csv"
       ],
       "columns": {
-        "county_code": {
-          "skip": true
+        "state_code": {
+          "type": "integer"
         },
-        "state_abbr": {
-          "name": "state_abbr",
+        "county_code": {
+          "type": "integer"
+        },
+        "state": {
           "type": "string"
         },
         "county": {
@@ -108,17 +110,16 @@
           "type": "integer"
         },
         "adjusted_gross_income": {
-          "type": "dollars"
+          "type": "integer"
         },
         "wages_and_salaries_income": {
-          "name": "wages_and_salaries_income",
-          "type": "dollars"
+          "type": "integer"
         },
         "dividend_income": {
-          "type": "dollars"
+          "type": "integer"
         },
         "interest_income": {
-          "type": "dollars"
+          "type": "integer"
         }
       }
     }

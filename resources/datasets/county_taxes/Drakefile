@@ -6,4 +6,4 @@ county_incomes.csv.header <- [-timecheck]
 
 county_incomes.csv <- county_incomes.csv.header, countyincome07.csv
   cat $INPUT0 > $OUTPUT
-  tail -n +2 $INPUT1 >> $OUTPUT
+  tail -n +2 $INPUT1 | grep -v '^$' | grep -v '"000"' >> $OUTPUT
