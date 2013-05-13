@@ -9,6 +9,7 @@ transforming the data within."
    [clojure.data.csv :as csv]
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
+   [drake.core :as drake]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
@@ -17,6 +18,8 @@ transforming the data within."
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]
            [com.mongodb MapReduceCommand$OutputType MapReduceOutput]))
+
+(def ^:dynamic *chunk-size* 256)
 
 (defn- cast-value
   "Given a string value and a definition of that value, transform the
@@ -105,9 +108,8 @@ associated tables."
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
           headers (map keyword (first data))
-          chunk-size 256
           chunks (->> (rest data)
-                      (partition-all chunk-size)
+                      (partition-all *chunk-size*)
                       (map (fn [chunk]
                              (doall
                               (map #(->> %
@@ -151,10 +153,9 @@ associated tables."
                (q/find {})
                (q/fields (reduce merge (map #(hash-map % 1) columns))))
         query-result (get-find dataset from-collection query)
-        chunk-size 256
         chunks (->> query-result
                     :data
-                    (partition-all chunk-size))]
+                    (partition-all *chunk-size*))]
     (log/info "Loading table slice" slice)
     (doseq [chunk chunks]
       (coll/insert-batch to-collection chunk))))
@@ -181,10 +182,9 @@ associated tables."
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation dataset from-collection aggregation)
-        chunk-size 256
         chunks (->> query-result
                     :data
-                    (partition-all chunk-size))]
+                    (partition-all *chunk-size*))]
     (log/info "Loading derived slice" slice)
     (doseq [chunk chunks]
       (coll/insert-batch to-collection chunk))))
@@ -209,7 +209,11 @@ associated tables."
 
   These files are loaded in parallel."
   [dataset]
-  (let [dir (str "datasets/" dataset)
+  (let [dataset (name dataset)
+        dir (str "datasets/" dataset)
+        drakefile (-> (str dir "/Drakefile")
+                      (io/resource)
+                      (io/as-file))
         definition (-> (str dir "/definition.json")
                        io/resource
                        slurp
@@ -224,6 +228,12 @@ associated tables."
     (log/info "Loading dataset" dataset)
     (log/info "Saving definition for" dataset)
     (save-dataset-definition dataset definition)
+
+    (when (.exists drakefile)
+      (log/info "Running Drakefile")
+      ;; The following is Dark Drake Magic.
+      (drake/run-workflow drakefile :targetv ["=..."]))
+    
     (with-db (get-db dataset)
       (doseq [table (keys tables)]
         (load-table table (tables table) dir))
