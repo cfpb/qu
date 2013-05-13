@@ -119,28 +119,25 @@ associated tables."
 (defn- table-collection [table]
   (str "table__" (name table)))
 
-#_(defn- load-table
-    [table tabledef dir]
-    (log/info "Loading table" table)
-    (let [collection (table-collection table)]
-      (coll/drop collection)
-      (let [sources (:sources tabledef)
-            columns (:columns tabledef)
-            agents (map agent sources)]
-        (doseq [agent agents]
-          (send-off agent (fn [file]
-                            (load-csv-file collection (str dir "/" file) columns))))
-        (apply await agents))))
-
 (defn- load-table
   [table tabledef dir]
   (log/info "Loading table" table)
   (let [collection (table-collection table)]
     (coll/drop collection)
     (let [sources (:sources tabledef)
-          columns (:columns tabledef)]
-      (doseq [file sources]
-        (load-csv-file collection (str dir "/" file) columns)))))
+          columns (:columns tabledef)
+          agent-error-handler (fn [agent exception]
+                                (log/error "Error in table loading agent"
+                                           (.getMessage exception)))
+          agents (map (fn [source]
+                        (agent source
+                               :error-mode :continue
+                               :error-handler agent-error-handler))
+                      sources)]
+      (doseq [agent agents]
+        (send-off agent (fn [file]
+                          (load-csv-file collection (str dir "/" file) columns))))
+      (apply await agents))))
 
 (defn- load-table-slice
   [dataset slice slicedef]
