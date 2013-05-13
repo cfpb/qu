@@ -3,6 +3,7 @@
 into a Monger query."
   (:require
    [clojure.string :as str]
+   [taoensso.timbre :as log]   
    [protoflex.parse :as p]
    [cfpb.qu.query.parser :refer [where-expr]]
    [slingshot.slingshot :refer [throw+]])
@@ -12,6 +13,7 @@ into a Monger query."
   "Parse a valid WHERE expression and return an abstract syntax tree
 for use in constructing Mongo queries."
   [clause]
+  (log/info "Where clause parsed to" (p/parse where-expr clause))
   (p/parse where-expr clause))
 
 (def mongo-operators
@@ -73,14 +75,14 @@ for use in constructing Mongo queries."
 a valid Monger query."
   [ast]
   (cond
-   (get ast :not)
+   (contains? ast :not)
    (mongo-eval-not (:not ast))
 
-   (get ast :op)
+   (contains? ast :op)
    (let [{:keys [op left right]} ast]
      {(op mongo-operators) [(mongo-eval left) (mongo-eval right)]})
 
-   (get ast :comparison)
+   (contains? ast :comparison)
    (let [[ident op value] (:comparison ast)
          value (mongo-eval value)]
      (case op
@@ -89,7 +91,7 @@ a valid Monger query."
        :ILIKE {ident (ilike-to-regex value)}
        {ident {(op mongo-operators) value}}))
 
-   (get ast :bool)
+   (contains? ast :bool)
    (:bool ast)
 
    :default
@@ -97,16 +99,16 @@ a valid Monger query."
 
 (defn- mongo-eval-not [ast]
   (cond
-   (get ast :not)
+   (contains? ast :not)
    (mongo-eval (:not ast))
 
-   (get ast :op)
+   (contains? ast :op)
    (let [{:keys [op left right]} ast]
      (case op
        :OR {"$nor" [(mongo-eval left) (mongo-eval right)]}
        :AND {"$or" [(mongo-eval-not left) (mongo-eval-not right)]}))
 
-   (get ast :comparison)
+   (contains? ast :comparison)
    (mongo-not (mongo-eval ast))
 
    :default
