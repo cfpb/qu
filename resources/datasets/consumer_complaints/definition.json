@@ -75,7 +75,7 @@
       ], 
       "columns": {
         "Complaint ID": {
-          "type": "number", 
+          "type": "integer", 
           "name": "complaint_id"
         }, 
         "Product": {
