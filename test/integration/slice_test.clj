@@ -9,7 +9,7 @@
 
   (facts "about querying a slice with no parameters"
        (fact "it returns successfully as text/html"
-             (app (request :get "/data/county_taxes/incomes"))
+             (app (request :get "/data/integration_test/incomes"))
              => (contains {:status 200
                            :headers {"Content-Type" "text/html"
                                      "Vary" "Accept"}})))
@@ -26,14 +26,14 @@
 
   (facts "about specifying JSON"
          (fact "it returns a content-type of application/json"
-             (app (request :get "/data/county_taxes/incomes.json"))
+             (app (request :get "/data/integration_test/incomes.json"))
              => (contains {:status 200
                            :headers {"Content-Type" "application/json"
                                      "Vary" "Accept"}})))
 
   (facts "about specifying JSONP"
          (fact "it uses the callback we supply"
-             (let [result (app (request :get "/data/county_taxes/incomes.jsonp?$callback=foo"))]
+             (let [result (app (request :get "/data/integration_test/incomes.jsonp?$callback=foo"))]
                result => (contains {:status 200
                                     :headers {"Content-Type" "text/javascript"
                                               "Vary" "Accept"}})
@@ -41,7 +41,7 @@
                (:body result) => #"^foo\("))
 
          (fact "it uses 'callback' by default"
-               (let [result (app (request :get "/data/county_taxes/incomes.jsonp"))]
+               (let [result (app (request :get "/data/integration_test/incomes.jsonp"))]
                  result => (contains {:status 200
                                       :headers {"Content-Type" "text/javascript"
                                                 "Vary" "Accept"}})
@@ -50,12 +50,12 @@
   
   (facts "about specifying XML"
          (fact "it returns a content-type of application/xml"
-             (app (request :get "/data/county_taxes/incomes.xml"))
+             (app (request :get "/data/integration_test/incomes.xml"))
              => (contains {:status 200
                            :headers {"Content-Type" "application/xml"
                                      "Vary" "Accept"}})))
 
   (facts "about querying with an error"
          (fact "it returns the status code for bad request"
-               (app (request :get "/data/county_taxes/incomes?$where=peanut%20butter"))
+               (app (request :get "/data/integration_test/incomes?$where=peanut%20butter"))
                => (contains {:status 400}))))
