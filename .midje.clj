@@ -8,7 +8,7 @@
 (when (env :integration)
   (try
     (data/ensure-mongo-connection)
-    (loader/load-dataset "county_taxes")
+    (loader/load-dataset "integration_test")
     (finally (data/disconnect-mongo))))
 
 (when-not (env :integration)
