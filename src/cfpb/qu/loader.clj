@@ -233,7 +233,7 @@ associated tables."
     (log/info "Saving definition for" dataset)
     (save-dataset-definition dataset definition)
 
-    (when (.exists drakefile)
+    (when (and drakefile (.isFile drakefile))
       (log/info "Running Drakefile")
       ;; The following is Dark Drake Magic.
       (drake/run-workflow drakefile :targetv ["=..."]))
