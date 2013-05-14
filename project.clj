@@ -29,6 +29,7 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
                  [stencil "0.3.2"]
+                 [factual/drake "0.1.4-SNAPSHOT"]
                  
                  ;; provisional
                  [slingshot "0.10.3"]
