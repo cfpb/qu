@@ -138,8 +138,10 @@ turn it into a tree built in proper precedence order."
     {:select column}))
 
 (defn- aggregation []
-  (let [agg (string-in ["SUM" "COUNT" "MAX" "MIN"])]
-    (keyword agg)))
+  (let [valid-aggs ["SUM" "COUNT" "MAX" "MIN"]
+        valid-aggs (concat valid-aggs (map #(str/lower-case %) valid-aggs))
+        agg (string-in valid-aggs)]
+    (keyword (str/upper-case agg))))
 
 (defn- aggregation-select
   []
