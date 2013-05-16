@@ -107,11 +107,22 @@
               {:aggregation [:SUM :population]
                :select :sum_population}])
 
+       (fact "aggregations are case-insensitive"
+             (p/parse select-expr "state, sum(population)") =>
+             [{:select :state}
+              {:aggregation [:SUM :population]
+               :select :sum_population}]
+             
+             (p/parse select-expr "state, cOuNt(population)") =>
+             [{:select :state}
+              {:aggregation [:COUNT :population]
+               :select :count_population}])
+
        (fact "invalid aggregations do not work"
              (p/parse select-expr "state, TOTAL(population)") =>
              (throws Exception #"^Parse Error")))
 
-(facts "about select expressions"
+(facts "about group expressions"
        (fact "can have one column"
              (p/parse group-expr "state") => [:state])
        

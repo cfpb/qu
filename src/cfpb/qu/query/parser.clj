@@ -139,8 +139,11 @@ turn it into a tree built in proper precedence order."
     {:select column}))
 
 (defn- aggregation []
-  (let [agg (string-in ["SUM" "COUNT" "MAX" "MIN"])]
-    (keyword agg)))
+  (let [agg (any #(ci-string "SUM")
+                 #(ci-string "COUNT")
+                 #(ci-string "MAX")
+                 #(ci-string "MIN"))]
+    (keyword (str/upper-case agg))))
 
 (defn- aggregation-select
   []
