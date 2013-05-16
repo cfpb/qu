@@ -1,0 +1,9 @@
+countyincome07.csv <- [-timecheck]
+  curl -O http://www.irs.gov/pub/irs-soi/countyincome07.csv
+
+county_incomes.csv.header <- [-timecheck]
+  echo "state_code,county_code,state,county,tax_returns,exemptions,adjusted_gross_income,wages_and_salaries_income,dividend_income,interest_income" > $OUTPUT
+
+county_incomes.csv <- county_incomes.csv.header, countyincome07.csv
+  cat $INPUT0 > $OUTPUT
+  tail -n +2 $INPUT1 | grep -v '^$' | grep -v '"000"' >> $OUTPUT

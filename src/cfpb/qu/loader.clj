@@ -3,15 +3,23 @@
 datasets into MongoDB. This includes parsing CSV files and
 transforming the data within."
   (:require
+   [taoensso.timbre :as log]
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.data.csv :as csv]
    [cheshire.core :as json]
+   [com.stuartsierra.dependency :as dep]
+   [drake.core :as drake]
    [monger
     [core :as mongo :refer [with-db get-db]]
+    [query :as q]
     [collection :as coll]]
+   [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
-  (:import [org.bson.types ObjectId]))
+  (:import [org.bson.types ObjectId]
+           [com.mongodb MapReduceCommand$OutputType MapReduceOutput]))
+
+(def ^:dynamic *chunk-size* 256)
 
 (defn- cast-value
   "Given a string value and a definition of that value, transform the
@@ -20,6 +28,10 @@ value into the correct type."
   (case (:type valuedef)
     "integer" (Integer/parseInt value)
     "dollars" (Integer/parseInt (str/replace value #"^\$(-?\d+)" "$1"))
+    "boolean" (cond
+               (str/blank? value) nil
+               (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
+               :default true)
     ;; Have to call keyword on value because Cheshire turns keys into keywords
     "lookup" ((:lookup valuedef) (keyword value))
     value))
@@ -85,19 +97,7 @@ associated tables."
                  (build-types-for-slices (assoc definition :name name))
                  :upsert true)))
 
-(defn- get-indexes
-  "Given the definition of the dataset's slices and the current table
-being imported, return a seq of the columns that should be indexed in
-that table."
-  [slices table]
-  (->> slices
-       (map (fn [[_ slice]]
-              (if (= (:table slice) (name table))
-                (:dimensions slice)
-                [])))
-       flatten))
-
-(defn- load-csv-file
+(defn load-csv-file
   "Given a table and CSV file name and the definitions of the table's
   columns, read the data from the CSV file, transform it, and insert
   it into the table.
@@ -108,20 +108,103 @@ that table."
   3. We split the data into chunks of 100, and in parallel,
      transform each of those chunks into a map.
   4. We insert each of those chunks into the DB in a batch load."
-  [table file columns]
+  [collection file columns]
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
           headers (map keyword (first data))
-          chunk-size 100
           chunks (->> (rest data)
-                      (partition-all chunk-size)
-                      (pmap (fn [chunk]
-                              (doall
-                               (map #(->> %
-                                          (zipmap headers)
-                                          (cast-data columns)) chunk)))))]
+                      (partition-all *chunk-size*)
+                      (map (fn [chunk]
+                             (doall
+                              (map #(->> %
+                                         (zipmap headers)
+                                         (cast-data columns)) chunk)))))]
       (doseq [chunk chunks]
-        (coll/insert-batch table chunk)))))
+        (coll/insert-batch collection chunk)))))
+
+(defn- table-collection [table]
+  (str "table__" (name table)))
+
+(defn- load-table
+  [table tabledef dir]
+  (log/info "Loading table" table)
+  (let [collection (table-collection table)]
+    (coll/drop collection)
+    (let [sources (:sources tabledef)
+          columns (:columns tabledef)
+          agent-error-handler (fn [agent exception]
+                                (log/error "Error in table loading agent"
+                                           (.getMessage exception)))
+          agents (map (fn [source]
+                        (agent source
+                               :error-mode :continue
+                               :error-handler agent-error-handler))
+                      sources)]
+      (doseq [agent agents]
+        (send-off agent (fn [file]
+                          (load-csv-file collection (str dir "/" file) columns))))
+      (apply await agents))))
+
+(defn- load-table-slice
+  [dataset slice slicedef]
+  (let [table (:table slicedef)
+        from-collection (table-collection table)
+        to-collection (name slice)
+        dimensions (:dimensions slicedef)
+        metrics (:metrics slicedef)
+        columns (map keyword (concat dimensions metrics))
+        query (q/partial-query
+               (q/find {})
+               (q/fields (reduce merge (map #(hash-map % 1) columns))))
+        query-result (get-find dataset from-collection query)
+        chunks (->> query-result
+                    :data
+                    (partition-all *chunk-size*))]
+    (log/info "Loading table slice" slice)
+    (doseq [chunk chunks]
+      (coll/insert-batch to-collection chunk))))
+
+(defn- load-derived-slice
+  [dataset slice slicedef]
+  (let [dimensions (:dimensions slicedef)
+        aggregations (:aggregations slicedef)
+        from-collection (:slice slicedef)
+        to-collection slice
+        match (if-let [where (:where slicedef)]
+                (where/mongo-eval (where/parse where))
+                {})        
+        group-id (apply merge
+                        (map #(hash-map % (str "$" %)) dimensions))
+        aggs (map (fn [[agg-metric [agg metric]]]
+                    {agg-metric {(str "$" (name agg))
+                                 (str "$" (name metric))}}) aggregations)
+        group (apply merge {:_id group-id} aggs)
+        project-dims (map (fn [dimension]
+                            {dimension (str "$_id." (name dimension))}) dimensions)
+        project-aggs (map (fn [[agg-metric _]]
+                            {agg-metric (str "$" (name agg-metric))}) aggregations)
+        project (apply merge (concat project-dims project-aggs))
+        aggregation [{"$group" group} {"$project" project} {"$match" match}]
+        query-result (get-aggregation dataset from-collection aggregation)
+        chunks (->> query-result
+                    :data
+                    (partition-all *chunk-size*))]
+    (log/info "Loading derived slice" slice)
+    (doseq [chunk chunks]
+      (coll/insert-batch to-collection chunk))))
+
+(defn- load-slice
+  [dataset slice slicedef]
+  (let [dimensions (:dimensions slicedef)
+        type (keyword (:type slicedef))]
+    (log/info "Dropping slice" slice)
+    (coll/drop slice)
+    (case type
+      :table (load-table-slice dataset slice slicedef)
+      :derived (load-derived-slice dataset slice slicedef)
+      (log/error "Cannot load slice" slice "with type" type))
+    (log/info "Indexing slice" slice)
+    (set-indexes slice dimensions)))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -129,28 +212,37 @@ that table."
   directory containing a definition.json and a set of CSV files.
 
   These files are loaded in parallel."
-  [name]
-  (let [dir (str "datasets/" name)
+  [dataset]
+  (let [dataset (name dataset)
+        dir (str "datasets/" dataset)
+        drakefile (-> (str dir "/Drakefile")
+                      (io/resource)
+                      (io/as-file))
         definition (-> (str dir "/definition.json")
                        io/resource
                        slurp
                        (json/parse-string true))
         tables (:tables definition)
-        slices (:slices definition)]
-    (save-dataset-definition name definition)
-    (with-db (get-db name)
+        slices (:slices definition)
+        slice-graph (reduce (fn [graph [slice slicedef]]
+                              (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
+                            (dep/graph)
+                            slices)
+        slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
+    (log/info "Loading dataset" dataset)
+    (log/info "Saving definition for" dataset)
+    (save-dataset-definition dataset definition)
+
+    (when (and drakefile (.isFile drakefile))
+      (log/info "Running Drakefile")
+      ;; The following is Dark Drake Magic.
+      (drake/run-workflow drakefile :targetv ["=..."]))
+    
+    (with-db (get-db dataset)
       (doseq [table (keys tables)]
-        (coll/remove table)
-        (let [tabledef (table tables)
-              indexes (get-indexes slices table)
-              sources (:sources tabledef)
-              columns (:columns tabledef)
-              agents (map agent sources)]
-          (set-indexes table indexes)
-          (doseq [agent agents]
-            (send-off agent (fn [file]
-                              (load-csv-file table (str dir "/" file) columns))))
-          (apply await agents))))))
+        (load-table table (tables table) dir))
+      (doseq [slice slice-load-order]
+        (load-slice dataset slice (slices slice))))))
 
 ;; (ensure-mongo-connection)
 ;; (with-out-str (time (load-dataset "county_taxes")))

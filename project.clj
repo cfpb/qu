@@ -17,6 +17,7 @@ serve their public data sets."
                  [com.novemberain/monger "1.5.0"]
                  [com.novemberain/validateur "1.4.0"]
                  [com.taoensso/timbre "1.6.0"]
+                 [com.stuartsierra/dependency "0.1.0"]                 
                  [compojure "1.1.3"]
                  [environ "0.4.0"]
                  [halresource "0.1.0-SNAPSHOT"]
@@ -28,6 +29,7 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
                  [stencil "0.3.2"]
+                 [factual/drake "0.1.4-SNAPSHOT"]
                  
                  ;; provisional
                  [slingshot "0.10.3"]

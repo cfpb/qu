@@ -4,33 +4,43 @@
     "url": "https://explore.data.gov/Population/Tax-Year-2007-County-Income-Data/wvps-imhx"
   },
   "concepts": {
-    "state_abbr": {
-      "description": "State Abbreviation"
+    "state": {
+      "name": "State Abbreviation",
+      "type": "string",
+      "table": "states",
+      "properties": {
+        "name": {
+          "name": "Name",
+          "description": "The name of the state",
+          "type": "string"
+        }
+      }        
     },
     "county": {
-      "description": "County"
+      "name": "County"
     },
     "tax_returns": {
-      "description": "Total Number of Tax Returns"
+      "name": "Total Number of Tax Returns"
     },
     "adjusted_gross_income": {
-      "description": "Adjusted Gross Income (In Thousands)"
+      "name": "Adjusted Gross Income (In Thousands)"
     },
     "wages_and_salaries_income": {
-      "description": "Wages and Salaries (In Thousands)"
+      "name": "Wages and Salaries (In Thousands)"
     },
     "dividend_income": {
-      "description": "Dividend Income (In Thousands)"
+      "name": "Dividend Income (In Thousands)"
     },
     "interest_income": {
-      "description": "Interest Income (In Thousands)"
+      "name": "Interest Income (In Thousands)"
     }
   },
   "slices": {
     "incomes": {
+      "type": "table",
       "table": "incomes",
       "dimensions": [
-        "state_abbr", "county"
+        "state", "county"
       ],
       "metrics": [
         "tax_returns",
@@ -39,48 +49,77 @@
         "dividend_income",
         "interest_income"
       ]
+    },
+    "incomes_by_state": {
+      "type": "derived",
+      "slice": "incomes",
+      "dimensions": [
+        "state"
+      ],
+      "metrics": [
+        "tax_returns",
+        "adjusted_gross_income",
+        "wages_and_salaries_income",
+        "dividend_income",
+        "interest_income"
+      ],
+      "aggregations": {
+        "tax_returns": ["sum", "tax_returns"],
+        "adjusted_gross_income": ["sum", "adjusted_gross_income"],
+        "wages_and_salaries_income": ["sum", "wages_and_salaries_income"],
+        "dividend_income": ["sum", "dividend_income"],
+        "interest_income": ["sum", "interest_income"]
+      }
     }
   },  
   "tables": {
-    "incomes": {
+    "states": {
       "sources": [
-        "Tax_Year_2007_County_Income_Data.csv"
+        "states.csv"
       ],
       "columns": {
-        "County Code": {
-          "skip": true
-        },
-        "State Abbreviation": {
-          "name": "state_abbr",
+        "state": {
           "type": "string"
         },
-        "County Name": {
-          "name": "county",
+        "name": {
+          "type": "string"
+        }
+      }
+    },      
+    "incomes": {
+      "sources": [
+        "county_incomes.csv"
+      ],
+      "columns": {
+        "state_code": {
+          "type": "integer"
+        },
+        "county_code": {
+          "type": "integer"
+        },
+        "state": {
           "type": "string"
         },
-        "Total Number of Tax Returns": {
-          "name": "tax_returns",
+        "county": {
+          "type": "string"
+        },
+        "tax_returns": {
           "type": "integer"
         },
-        "Total Number of Exemptions": {
-          "name": "exceptions",
+        "exemptions": {
           "type": "integer"
         },
-        "Adjusted Gross Income (In Thousands)": {
-          "name": "adjusted_gross_income",
-          "type": "dollars"
+        "adjusted_gross_income": {
+          "type": "integer"
         },
-        "Wages and Salaries Incomes (In Thousands)": {
-          "name": "wages_and_salaries_income",
-          "type": "dollars"
+        "wages_and_salaries_income": {
+          "type": "integer"
         },
-        "Dividend Incomes (In Thousands)": {
-          "name": "dividend_income",
-          "type": "dollars"
+        "dividend_income": {
+          "type": "integer"
         },
-        "Interest Income (In Thousands)": {
-          "name": "interest_income",
-          "type": "dollars"
+        "interest_income": {
+          "type": "integer"
         }
       }
     }

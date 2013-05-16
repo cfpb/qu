@@ -25,12 +25,12 @@
   (facts "about metadata"
 
     (fact "get-dataset-names contains expected dataset names"
-      (data/get-dataset-names) => (contains ["county_taxes", "integration_test"] :gaps-ok))
+      (data/get-dataset-names) => (contains ["integration_test"] :gaps-ok))
 
     (fact "get-datasets returns sequence of maps"
       (let [ds (data/get-datasets)]
-        (>= (.size ds) 2) => true
-        (map :name ds) => (contains ["county_taxes" "integration_test"] :gaps-ok)))
+        (>= (.size ds) 1) => true
+        (map :name ds) => (contains ["integration_test"] :gaps-ok)))
 
     (fact "get-metadata returns metadata for a dataset"
         (:name metadata) => "integration_test"

@@ -63,6 +63,13 @@
   [view-map]
   (render-file "templates/slice" view-map))
 
+(defn concept-name
+  "Each dataset has a list of concepts. A concept is a definition of a
+  type of data in the dataset. This function retrieves the name
+  of the concept."
+  [metadata concept]
+  (get-in metadata [:concepts (keyword concept) :name] (name concept)))
+
 (defn concept-description
   "Each dataset has a list of concepts. A concept is a definition of a
   type of data in the dataset. This function retrieves the description
@@ -175,14 +182,16 @@
     []))
 
 (defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
-  (let [desc (partial concept-description metadata)
+  (let [desc (partial concept-name metadata)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
         query (get-in resource [:properties :query])
         action (str "http://" (headers "host")
                     "/data/" dataset
                     "/" slice)
-        slice-metadata {:dimensions (str/join ", " (:dimensions slicedef))
+        slice-metadata {:name (get-in slicedef [:info :name])
+                        :description (get-in slicedef [:info :description])
+                        :dimensions (str/join ", " (:dimensions slicedef))
                         :metrics (str/join ", " (:metrics slicedef))}
         dimensions (map #(hash-map :key %
                                    :name (desc %)
