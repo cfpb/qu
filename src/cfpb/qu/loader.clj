@@ -28,6 +28,10 @@ value into the correct type."
   (case (:type valuedef)
     "integer" (Integer/parseInt value)
     "dollars" (Integer/parseInt (str/replace value #"^\$(-?\d+)" "$1"))
+    "boolean" (cond
+               (str/blank? value) nil
+               (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
+               :default true)
     ;; Have to call keyword on value because Cheshire turns keys into keywords
     "lookup" ((:lookup valuedef) (keyword value))
     value))
