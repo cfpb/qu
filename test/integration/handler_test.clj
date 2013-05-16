@@ -25,11 +25,11 @@
 
   (facts "about /data/county_taxes"
          (fact "it returns successfully"
-             (app (request :get "/data/county_taxes"))
+             (app (request :get "/data/integration_test"))
              => (contains {:status 200
                            :headers {"Content-Type" "text/html;charset=UTF-8"}})
 
-             (app (request :get "/data/county_taxes.xml"))
+             (app (request :get "/data/integration_test.xml"))
              => (contains {:status 200
                            :headers {"Content-Type" "application/xml;charset=UTF-8"}})))
 
