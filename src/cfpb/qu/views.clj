@@ -12,6 +12,7 @@
    [clojure.data.csv :as csv]
    monger.json
    [halresource.resource :as hal]
+   [cfpb.qu.project :refer [project]]
    [cfpb.qu.util :refer [->int]]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
@@ -24,6 +25,10 @@
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
 
+(def footer-info {:qu_version (:version project)
+                  :build_number (:build-number project)
+                  :build_url (:build-url project)})
+
 (defn json-error
   ([status] (json-error status {}))
   ([status body]
@@ -34,8 +39,8 @@
 (defn layout-html
   ([content] (layout-html {} content))
   ([resource content] (render-file "templates/layout"
-                                   {:content content
-                                    :resource resource})))
+                                   (merge footer-info {:content content
+                                                       :resource resource}))))
 
 (defn not-found-html [message]
   (render-file "templates/404" {:message message}))

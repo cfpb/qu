@@ -1,6 +1,14 @@
+(def build-number (or (System/getenv "BUILD_NUMBER") "handbuilt"))
+(def build-url (System/getenv "BUILD_URL"))
+(def git-commit (or (System/getenv "GIT_COMMIT")
+                    (System/getenv "TRAVIS_COMMIT")))
+
 (defproject qu "0.1.0-SNAPSHOT"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
+  :build-number ~build-number
+  :build-url ~build-url
+  :git-commit ~git-commit
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]
@@ -9,7 +17,9 @@ serve their public data sets."
             [lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
             [lein-ring "0.8.2"]
-            [lein-embongo "0.2.0"]]
+            [lein-embongo "0.2.0"]
+            [configleaf "0.4.6"]]
+  :hooks [configleaf.hooks]  
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.1.1"]
                  [org.clojure/data.csv "0.1.2"]
@@ -40,6 +50,7 @@ serve their public data sets."
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
+  :configleaf {:namespace cfpb.qu.project}
   :profiles {:dev
              {:env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
