@@ -35,7 +35,8 @@ serve their public data sets."
   :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init
-         :destroy cfpb.qu.handler/destroy}
+         :destroy cfpb.qu.handler/destroy
+         :war-exclusions [#"(^|/)\." #"datasets.*" #".*javax.servlet-2.5.0.*"]}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
