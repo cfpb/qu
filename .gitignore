@@ -23,4 +23,5 @@ sandbox/
 *.log
 resources/datasets/hmda_lar/*.csv
 resources/datasets/hmda_lar/*.zip
+src/cfpb/qu/project.clj
 .drake
