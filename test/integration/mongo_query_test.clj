@@ -29,7 +29,7 @@
 
     (fact "get-datasets returns sequence of maps"
       (let [ds (data/get-datasets)]
-        (>= (.size ds) 1) => true
+        (>= (count ds) 1) => true
         (map :name ds) => (contains ["integration_test"] :gaps-ok)))
 
     (fact "get-metadata returns metadata for a dataset"
@@ -47,7 +47,7 @@
              result (data/get-find db coll query)]
         (> (:total result) limit ) => true
         (:size result) => limit
-        (.size (:data result)) => limit)))
+        (count (:data result)) => limit)))
 
   (facts "about get-aggregation"
 
@@ -60,7 +60,7 @@
         (map :state_abbr (:data result)) => ["NC" "NY" "PA"]
         (:total result) => 3
         (:size result) => 3
-        (.size (:data result)) => 3)))
+        (count (:data result)) => 3)))
 
   (facts "about execute"
 
@@ -85,7 +85,7 @@
             q (params->Query {:$limit limit} slicedef)
             result (query/execute db coll q)
             query_result (:result result)]
-        (.size (:data query_result)) => limit
+        (count (:data query_result)) => limit
         (:size query_result) => limit
         (> (:total query_result) limit) => true))
 
@@ -118,7 +118,7 @@
             query_result (:result result)]
         (:size query_result) => 3
         (:total query_result) => 3
-        (.size (:data query_result)) => 3
+        (count (:data query_result)) => 3
         (:data query_result) => [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
                                  {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
                                  {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"}])))
