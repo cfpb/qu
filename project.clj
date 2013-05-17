@@ -48,7 +48,7 @@ serve their public data sets."
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init
          :destroy cfpb.qu.handler/destroy
-         :war-exclusions [#"(^|/)\." #"datasets.*" #".*javax.servlet-2.5.0.*"]}
+         :war-exclusions [#"(^|/)\." #"datasets.*" #".*javax.servlet-2.5.0.*" #".*appengine-api-*" #".*aws-java-sdk-*"]}
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
