@@ -69,7 +69,7 @@ Most queries will involve more than simple equality queries. For these, we have 
 </tr>
 <tr>
 <td><code>$limit</code></td>
-<td>Maximum number of results to return. If not specified, this defaults to 1000. <strong>TODO</strong>: This has a hard limit of 1000.</td>
+<td>Maximum number of results to return. If not specified, this defaults to 100. This has a hard limit of 1000.</td>
 </tr>
 <tr>
 <td><code>$offset</code></td>
@@ -86,10 +86,6 @@ Most queries will involve more than simple equality queries. For these, we have 
 <tr>
 <td><code>$callback</code></td>
 <td>The name of the callback function used in a JSONP query. Only used with JSONP.</td>
-</tr>
-<tr>
-<td><code>$q</code></td>
-<td><strong>TODO</strong>: This will do a full-text search for a value within the row's dimensions.</td>
 </tr>
 </tbody>
 </table>
