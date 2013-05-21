@@ -6,6 +6,7 @@
 /classes
 /checkouts
 pom.xml
+report.xml
 *.jar
 *.class
 .DS_Store
