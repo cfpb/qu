@@ -15,3 +15,15 @@ is nil unless specified."
            (catch NumberFormatException e default))
       :default default)))
 
+(defn ->num
+  "Convert strings and numbers to numbers. A blank string or
+anything but a string or number will return the default value, which
+is nil unless specified."
+  ([val] (->num val nil))
+  ([val default]
+     (cond
+      (number? val) val
+      (and (string? val) (not (str/blank? val)))
+      (try (Float/parseFloat val)
+           (catch NumberFormatException e default))
+      :default default)))

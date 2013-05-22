@@ -217,7 +217,7 @@
       ], 
       "columns": {
         "As of Year": {
-          "type": "number", 
+          "type": "integer", 
           "name": "as_of_year"
         }, 
         "Respondent ID": {
@@ -229,7 +229,7 @@
           "name": "agency_code"
         },         
         "Loan Type": {
-          "type": "number", 
+          "type": "string", 
           "name": "loan_type"
         },
         "Property Type": {
@@ -237,15 +237,15 @@
           "name": "property_type"
         },
         "Loan Purpose": {
-          "type": "number", 
+          "type": "string", 
           "name": "loan_purpose"
         },
         "Occupancy": {
-          "type": "number", 
+          "type": "string", 
           "name": "occupancy"
         },
         "Loan Amount (Thousands)": {
-          "type": "number", 
+          "type": "integer", 
           "name": "loan_amount_000s"
         },
         "Preapproval": {
@@ -253,7 +253,7 @@
           "name": "preapproval"
         },
         "Action Type": {
-          "type": "number", 
+          "type": "integer", 
           "name": "action_type"
         },
         "MSA/MD": {
@@ -321,15 +321,15 @@
           "name": "co_applicant_race_5"
         },
         "Applicant Sex": {
-          "type": "number", 
+          "type": "string", 
           "name": "applicant_sex"
         }, 
         "Co Applicant Sex": {
-          "type": "number", 
+          "type": "string", 
           "name": "co_applicant_sex"
         }, 
         "Applicant Income (Thousands)": {
-          "type": "string", 
+          "type": "integer", 
           "name": "applicant_income_000s"
         }, 
         "Purchaser Type": {
@@ -369,19 +369,19 @@
           "name": "sequence_number"
         }, 
         "Population": {
-          "type": "string", 
+          "type": "integer", 
           "name": "population"
         },
         "Minority Population %": {
-          "type": "string", 
+          "type": "number", 
           "name": "minority_population"
         },         
         "HUD Median Family Income": {
-          "type": "string", 
+          "type": "integer", 
           "name": "hud_median_family_income"
         },
         "Tract to MSA/MD Income %": {
-          "type": "string", 
+          "type": "number", 
           "name": "tract_to_msamd_income"
         },       
         "Number of Owner-Occupied Units": {
@@ -393,7 +393,7 @@
           "name": "number_of_1_to_4_family_units"
         }, 
         "Application Date Indicator": {
-          "type": "number", 
+          "type": "string", 
           "name": "application_date_indicator"
         }
       }
