@@ -14,6 +14,7 @@ transforming the data within."
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
     [collection :as coll]]
+   [cfpb.qu.util :refer [->int ->num]]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]
@@ -25,16 +26,18 @@ transforming the data within."
   "Given a string value and a definition of that value, transform the
 value into the correct type."
   [value valuedef]
-  (case (:type valuedef)
-    "integer" (Integer/parseInt value)
-    "dollars" (Integer/parseInt (str/replace value #"^\$(-?\d+)" "$1"))
-    "boolean" (cond
-               (str/blank? value) nil
-               (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
-               :default true)
-    ;; Have to call keyword on value because Cheshire turns keys into keywords
-    "lookup" ((:lookup valuedef) (keyword value))
-    value))
+  (let [value (str/trim value)]
+    (case (:type valuedef)
+      "integer" (->int value)
+      "number"  (->num value)
+      "dollars" (->num (str/replace value #"^\$(-?\d+)" "$1"))
+      "boolean" (cond
+                 (str/blank? value) nil
+                 (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
+                 :default true)
+      ;; Have to call keyword on value because Cheshire turns keys into keywords
+      "lookup" ((:lookup valuedef) (keyword value))
+      value)))
 
 (defn- cast-data
   "Given the data from a CSV file and the definition of the data's columns,
@@ -63,6 +66,7 @@ in MongoDB."
   (case type
     "integer" "integer"
     "dollars" "integer"
+    "number" "number"
     "string"))
 
 (defn- build-types-for-slice [slice definition]
@@ -160,7 +164,7 @@ associated tables."
         chunks (->> query-result
                     :data
                     (partition-all *chunk-size*))]
-    (log/info "Loading table slice" slice)
+    (log/info "Loading table-backed slice" slice)
     (doseq [chunk chunks]
       (coll/insert-batch to-collection chunk))))
 
@@ -202,9 +206,14 @@ associated tables."
     (case type
       :table (load-table-slice dataset slice slicedef)
       :derived (load-derived-slice dataset slice slicedef)
-      (log/error "Cannot load slice" slice "with type" type))
-    (log/info "Indexing slice" slice)
-    (set-indexes slice dimensions)))
+      (log/error "Cannot load slice" slice "with type" type))))
+
+(defn- load-concept
+  "Go through each slice and replace any dimensions that match a
+concept where the concept is backed by a table with the relevant row
+from that table."
+  [concept definition slices]
+  "whoa")
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -224,6 +233,7 @@ associated tables."
                        (json/parse-string true))
         tables (:tables definition)
         slices (:slices definition)
+        concepts (:concepts definition)
         slice-graph (reduce (fn [graph [slice slicedef]]
                               (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
                             (dep/graph)
@@ -239,10 +249,18 @@ associated tables."
       (drake/run-workflow drakefile :targetv ["=..."]))
     
     (with-db (get-db dataset)
-      (doseq [table (keys tables)]
-        (load-table table (tables table) dir))
+      (doseq [[table definition] tables]
+        (log/info "Loading table" (name table) "for dataset" dataset)
+        (load-table table definition dir))
       (doseq [slice slice-load-order]
-        (load-slice dataset slice (slices slice))))))
+        (log/info "Loading slice" (name slice) "for dataset" dataset)
+        (load-slice dataset slice (slices slice)))
+      (doseq [[concept definition] concepts]
+        (log/info "Updating slices with concept" concept)        
+        (load-concept concept definition slices))
+      (doseq [[slice definition] slices]
+        (log/info "Indexing slice" slice)
+        (set-indexes slice (:dimensions definition))))))
 
 ;; (ensure-mongo-connection)
 ;; (with-out-str (time (load-dataset "county_taxes")))
