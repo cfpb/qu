@@ -126,47 +126,31 @@ associated tables."
       (doseq [chunk chunks]
         (coll/insert-batch collection chunk)))))
 
-(defn- table-collection [table]
-  (str "table__" (name table)))
-
-(defn- load-table
-  [table tabledef dir]
-  (log/info "Loading table" table)
-  (let [collection (table-collection table)]
-    (coll/drop collection)
-    (let [sources (:sources tabledef)
-          columns (:columns tabledef)
-          agent-error-handler (fn [agent exception]
-                                (log/error "Error in table loading agent"
-                                           (.getMessage exception)))
-          agents (map (fn [source]
-                        (agent source
-                               :error-mode :continue
-                               :error-handler agent-error-handler))
-                      sources)]
-      (doseq [agent agents]
-        (send-off agent (fn [file]
-                          (load-csv-file collection (str dir "/" file) columns))))
-      (apply await agents))))
+(defn- load-collection
+  [collection tabledef dir]
+  (coll/drop collection)  
+  (let [sources (:sources tabledef)
+        columns (:columns tabledef)
+        agent-error-handler (fn [agent exception]
+                              (log/error "Error in table loading agent"
+                                         (.getMessage exception)))
+        agents (map (fn [source]
+                      (agent source
+                             :error-mode :continue
+                             :error-handler agent-error-handler))
+                    sources)]
+    (doseq [agent agents]
+      (send-off agent (fn [file]
+                        (load-csv-file collection (str dir "/" file) columns))))
+    (apply await agents)))
 
 (defn- load-table-slice
-  [dataset slice slicedef]
+  [dataset slice slicedef tables dir]
   (let [table (:table slicedef)
-        from-collection (table-collection table)
-        to-collection (name slice)
-        dimensions (:dimensions slicedef)
-        metrics (:metrics slicedef)
-        columns (map keyword (concat dimensions metrics))
-        query (q/partial-query
-               (q/find {})
-               (q/fields (reduce merge (map #(hash-map % 1) columns))))
-        query-result (get-find dataset from-collection query)
-        chunks (->> query-result
-                    :data
-                    (partition-all *chunk-size*))]
+        tabledef ((keyword table) tables)
+        collection (name slice)]
     (log/info "Loading table-backed slice" slice)
-    (doseq [chunk chunks]
-      (coll/insert-batch to-collection chunk))))
+    (load-collection collection tabledef dir)))
 
 (defn- load-derived-slice
   [dataset slice slicedef]
@@ -193,27 +177,50 @@ associated tables."
         chunks (->> query-result
                     :data
                     (partition-all *chunk-size*))]
+    (coll/drop to-collection)
     (log/info "Loading derived slice" slice)
     (doseq [chunk chunks]
       (coll/insert-batch to-collection chunk))))
 
 (defn- load-slice
-  [dataset slice slicedef]
+  [dataset slice slicedef tables dir]
   (let [dimensions (:dimensions slicedef)
         type (keyword (:type slicedef))]
     (log/info "Dropping slice" slice)
-    (coll/drop slice)
     (case type
-      :table (load-table-slice dataset slice slicedef)
+      :table (load-table-slice dataset slice slicedef tables dir)
       :derived (load-derived-slice dataset slice slicedef)
       (log/error "Cannot load slice" slice "with type" type))))
+
+(defn- concept-collection [concept]
+  (str "concept__" (name concept)))
+
+(defn- add-concept-to-slice
+  [dataset slice concept]
+  (let [collection (concept-collection concept)
+        query (q/partial-query (q/fields {}))
+        query-result (get-find dataset collection query)]
+    (doseq [row (:data query-result)]
+      (coll/update (name slice)
+                   {concept (concept row)}
+                   {"$set" {(keyword (str "__" (name concept))) row}}
+                   :multi true))))
 
 (defn- load-concept
   "Go through each slice and replace any dimensions that match a
 concept where the concept is backed by a table with the relevant row
 from that table."
-  [concept definition slices]
-  "whoa")
+  [dataset concept definition slices tables dir]
+  (if-let [table (:table definition)]
+    (let [concept (keyword concept)
+          tabledef ((keyword table) tables)
+          collection (concept-collection concept)]
+      (log/info "Loading table-backed concept" concept)
+      (load-collection collection tabledef dir)
+      (doseq [[slice slicedef] slices]
+        (when (contains? (set (slice-columns slicedef)) (name concept))
+          (log/info "Matching concept" concept "in" slice)
+          (add-concept-to-slice dataset slice concept))))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -249,15 +256,12 @@ from that table."
       (drake/run-workflow drakefile :targetv ["=..."]))
     
     (with-db (get-db dataset)
-      (doseq [[table definition] tables]
-        (log/info "Loading table" (name table) "for dataset" dataset)
-        (load-table table definition dir))
       (doseq [slice slice-load-order]
         (log/info "Loading slice" (name slice) "for dataset" dataset)
-        (load-slice dataset slice (slices slice)))
+        (load-slice dataset slice (slices slice) tables dir))
       (doseq [[concept definition] concepts]
-        (log/info "Updating slices with concept" concept)        
-        (load-concept concept definition slices))
+        (log/info "Loading concept" concept)        
+        (load-concept dataset concept definition slices tables dir))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
         (set-indexes slice (:dimensions definition))))))
