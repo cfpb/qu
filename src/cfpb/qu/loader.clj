@@ -65,7 +65,7 @@ in MongoDB."
   [type]
   (case type
     "integer" "integer"
-    "dollars" "integer"
+    "dollars" "number"
     "number" "number"
     "string"))
 

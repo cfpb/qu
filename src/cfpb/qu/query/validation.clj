@@ -26,9 +26,10 @@
 
 (defn- validate-select-fields
   [query column-set select]
-  (let [fields (map (comp name #(if (:aggregation %)
-                                  (second (:aggregation %))
-                                  (:select %))) select)]
+  (let [fields (map (comp name #(cond
+                                 (:aggregation %) (second (:aggregation %))
+                                 (:concept %) (:concept %)
+                                 :default (:select %))) select)]
     (reduce #(validate-field %1 :select column-set %2) query fields)))
 
 (defn- validate-select-no-aggregations-without-group
