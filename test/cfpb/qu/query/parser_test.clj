@@ -101,6 +101,12 @@
              [{:select :length}
               {:select :height}])
 
+       (fact "can have concept data"
+             (p/parse select-expr "length.units") =>
+             [{:select :length.units
+               :concept :length
+               :field :units}])
+
        (fact "can have aggregations"
              (p/parse select-expr "state, SUM(population)") =>
              [{:select :state}

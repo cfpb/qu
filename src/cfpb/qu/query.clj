@@ -5,7 +5,7 @@
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
             [cfpb.qu.query.validation :as validation]
-            [cfpb.qu.util :refer [->int]]
+            [cfpb.qu.util :refer [->int ->num]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]))
 
@@ -96,7 +96,8 @@
 
 (defn- cast-value [value type]
   (case type
-    "integer" (Integer/parseInt value)
+    "integer" (->int value)
+    "number" (->num value)
     value))
 
 (defn- cast-dimensions

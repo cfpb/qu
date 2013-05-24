@@ -154,9 +154,19 @@ turn it into a tree built in proper precedence order."
                            "_"
                            (name column)))}))
 
+(defn- concept-select
+  []
+  (let [concept (identifier)
+        _ (chr \.)
+        field (identifier)]
+    {:select (keyword (str (name concept) "." (name field)))
+     :concept concept
+     :field field}))
+
 (defn- select
   []
   (any aggregation-select
+       concept-select
        simple-select))
 
 (defn select-expr

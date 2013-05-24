@@ -28,6 +28,10 @@
                  (errors (assoc query :group "state_abbr, county"))
                  =not=> (contains {:select anything})))
 
+         (fact "it does not error if you reference concept data on an existing field"
+               (errors {:select "county.population" :slicedef slicedef})
+               =not=> (contains {:select anything}))
+
          (fact "it errors if you reference a field that is not in the slice"
                (errors {:select "foo" :slicedef slicedef})
                => (contains {:select anything})
@@ -35,6 +39,9 @@
                (errors {:select "state_abbr, SUM(foo)"
                         :group "state_abbr"
                         :slicedef slicedef})
+               => (contains {:select anything})
+               
+               (errors {:select "foo.population" :slicedef slicedef})
                => (contains {:select anything}))
          
          (fact "it errors if it cannot parse GROUP"
