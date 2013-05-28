@@ -57,6 +57,14 @@ underscores."
   (let [ident (regex #"[A-Za-z][A-Za-z0-9\-_]*")]
     (keyword ident)))
 
+(defn concept-identifier
+  "Parse function for identifiers that look inside a concept."
+  []
+  (let [concept (identifier)
+        _ (chr \.)
+        ident (identifier)]
+    [concept ident]))
+
 (defn- comparison-normal []
   (let [[identifier op value]
         (series identifier comparison-operator value)]
@@ -156,9 +164,7 @@ turn it into a tree built in proper precedence order."
 
 (defn- concept-select
   []
-  (let [concept (identifier)
-        _ (chr \.)
-        field (identifier)]
+  (let [[concept field] (concept-identifier)]
     {:select (keyword (str (name concept) "." (name field)))
      :concept concept
      :field field}))
