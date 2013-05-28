@@ -17,7 +17,6 @@ transforming the data within."
     [query :as q]
     [collection :as coll]
     [joda-time]]
-    [collection :as coll]]
    [cfpb.qu.util :refer [->int ->num]]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
