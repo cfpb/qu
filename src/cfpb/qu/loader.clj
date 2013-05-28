@@ -10,10 +10,13 @@ transforming the data within."
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
    [drake.core :as drake]
+   [clj-time.core :refer [default-time-zone]]
+   [clj-time.format :as time]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
-    [collection :as coll]]
+    [collection :as coll]
+    [joda-time]]
    [cfpb.qu.util :refer [->int ->num]]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
@@ -21,6 +24,8 @@ transforming the data within."
            [com.mongodb MapReduceCommand$OutputType MapReduceOutput]))
 
 (def ^:dynamic *chunk-size* 256)
+(def default-date-parser (time/formatter (default-time-zone)
+                                         "YYYY-MM-dd" "YYYY/MM/dd" "YYYYMMdd"))
 
 (defn- cast-value
   "Given a string value and a definition of that value, transform the
@@ -35,6 +40,9 @@ value into the correct type."
                  (str/blank? value) nil
                  (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
                  :default true)
+      "date" (if-let [format (:format valuedef)]
+               (time/parse (time/formatter format) value)
+               (time/parse default-date-parser value))
       ;; Have to call keyword on value because Cheshire turns keys into keywords
       "lookup" ((:lookup valuedef) (keyword value))
       value)))

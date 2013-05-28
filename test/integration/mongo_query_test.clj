@@ -36,7 +36,8 @@
         (:name metadata) => "integration_test"
         (keys metadata) => (contains [:_id :name :info :concepts :slices :tables])
         (get-in metadata [:tables :incomes]) =not=> nil
-        (get-in metadata [:slices :incomes :metrics]) => ["tax_returns" "adjusted_gross_income"]))
+        (get-in metadata [:slices :incomes :metrics])
+        => ["tax_returns" "adjusted_gross_income" "date_observed"]))
 
   ;; get-find and get-aggregation facts are simply sanity checks
   (facts "about get-find"

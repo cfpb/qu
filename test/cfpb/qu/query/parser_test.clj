@@ -1,14 +1,12 @@
 (ns cfpb.qu.query.parser-test
   (:require [midje.sweet :refer :all]
             [protoflex.parse :as p]
-            [cfpb.qu.query.parser :refer :all]))
+            [cfpb.qu.query.parser :refer :all]
+            [clj-time.core :as time]))
 
 (facts "about value"
        (fact "can parse numbers"
              (p/parse value "4.5") => 4.5)
-
-       (fact "can parse numeric expressions"
-             (p/parse value "(3 + 4) * 2") => 14)
 
        (fact "can parse strings with single or double quotes"
              (p/parse value "\"hello world\"") => "hello world"
@@ -16,7 +14,11 @@
 
        (fact "can parse boolean literals"
              (p/parse value "true") => {:bool true}
-             (p/parse value "false") => {:bool false}))
+             (p/parse value "false") => {:bool false})
+
+       (fact "can parse dates"
+             (p/parse value "2013-04-01") => (time/date-time 2013 4 1)
+             (p/parse value "1999/12/31") => (time/date-time 1999 12 31)))
 
 (facts "about identifiers"
        (fact "identifiers can be made up of letters, numbers, dashes, and underscores"
@@ -65,7 +67,7 @@
                     :right {:comparison [:height :< 4.5]}}})
 
        (fact "can have AND and OR operators"
-             (p/parse where-expr "length > 1+2 AND height < 4.5") =>
+             (p/parse where-expr "length > 3 AND height < 4.5") =>
              {:left {:comparison [:length :> 3]}
               :op :AND
               :right {:comparison [:height :< 4.5]}}
