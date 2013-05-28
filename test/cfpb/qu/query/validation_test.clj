@@ -50,6 +50,12 @@
                         :slicedef slicedef})
                => (contains {:group anything}))
 
+         (fact "it does not error if you group by concept data on an existing field"
+               (errors {:select "county.state"
+                        :group "county.state"
+                        :slicedef slicedef})
+               =not=> (contains {:group anything}))         
+
          (fact "it errors if you use GROUP without SELECT"
                (let [query {:group "state_abbr"
                             :slicedef slicedef}]

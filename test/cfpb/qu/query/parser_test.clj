@@ -28,7 +28,10 @@
              (p/parse identifier "h3110_w0r1d") => :h3110_w0r1d)
 
        (fact "identifiers must start with a letter"
-             (p/parse identifier "3times") => (throws Exception #"^Parse Error")))
+             (p/parse identifier "3times") => (throws Exception #"^Parse Error"))
+
+       (fact "identifiers can contain one period"
+             (p/parse identifier "hello.world") => [:hello :world]))
 
 (facts "about comparisons"
        (fact "simple comparisons can be parsed"
@@ -103,7 +106,7 @@
 
        (fact "can have concept data"
              (p/parse select-expr "length.units") =>
-             [{:select :length.units
+             [{:select :__length.units
                :concept :length
                :field :units}])
 
@@ -134,4 +137,8 @@
        
        (fact "can have multiple columns"
              (p/parse group-expr "state, county") =>
-             [:state :county]))
+             [:state :county])
+
+       (fact "can have concept data"
+             (p/parse group-expr "state.abbreviation") =>
+             [[:state :abbreviation]]))

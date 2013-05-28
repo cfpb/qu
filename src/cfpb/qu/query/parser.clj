@@ -50,21 +50,26 @@ numeric expressions, strings, and booleans."
   (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]
     (keyword op)))
 
-(defn identifier
-  "Parse function for identifiers in WHERE queries. Valid identifiers
-begin with a letter and are made up of letters,numbers, dashes, and
-underscores."
+(defn- simple-identifier
   []
   (let [ident (regex #"[A-Za-z][A-Za-z0-9\-_]*")]
     (keyword ident)))
 
-(defn concept-identifier
+(defn- concept-identifier
   "Parse function for identifiers that look inside a concept."
   []
-  (let [concept (identifier)
+  (let [concept (simple-identifier)
         _ (chr \.)
-        ident (identifier)]
+        ident (simple-identifier)]
     [concept ident]))
+
+(defn identifier
+  "Parse function for identifiers in WHERE queries. Valid identifiers
+begin with a letter and are made up of letters, numbers, dashes, and
+underscores. Identifiers can have one period in them to denote nested
+identifiers."
+  []
+  (any concept-identifier simple-identifier))
 
 (defn- comparison-normal []
   (let [[identifier op value]
@@ -164,7 +169,7 @@ turn it into a tree built in proper precedence order."
 (defn- aggregation-select
   []
   (let [aggregation (aggregation)
-        column (parens #(any identifier concept-identifier))]
+        column (parens identifier)]
     {:aggregation [aggregation column]
      :select (keyword (str (str/lower-case (name aggregation))
                            "_"
@@ -192,11 +197,10 @@ turn it into a tree built in proper precedence order."
 (defn group-expr
   "The parse function for valid GROUP expressions."
   []
-  (let [identifier #(any concept-identifier identifier)]
-    (if-let [fst (attempt identifier)]
-      (if-let [rst (multi* #(series comma identifier))]
-        (concat (vector fst) (map second rst))
-        (vector fst)))))
+  (if-let [fst (attempt identifier)]
+    (if-let [rst (multi* #(series comma identifier))]
+      (concat (vector fst) (map second rst))
+      (vector fst))))
 
 (defn- order-by
   []
