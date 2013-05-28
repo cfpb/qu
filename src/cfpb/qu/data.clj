@@ -62,15 +62,13 @@ stored in a Mongo database called 'metadata'."
                 (let [submap (reduce
                               (fn [submap [subkey subvalue]]
                                 (assoc submap
-                                  (keyword (str (str/replace (name key) #"^_+" "")
-                                                "." (name subkey)))
+                                  (keyword (str (name key) "." (name subkey)))
                                   subvalue)) {} value)]
                   (merge row submap))
                 (assoc row key value))) {} row)))
 
 (defn- flatten-data [data]
-  (let [data (map #(flatten-row %) data)
-        _ (log/info (into [] data))]
+  (let [data (map #(flatten-row %) data)]
     data))
 
 (defrecord QueryResult [total size data])
@@ -105,7 +103,7 @@ stored in a Mongo database called 'metadata'."
   (log/info (str "Mongo aggregation: " aggregation))
 
   (with-db (get-db database)
-    (let [data (strip-id (coll/aggregate collection aggregation))
+    (let [data (flatten-data (strip-id (coll/aggregate collection aggregation)))
           size (count data)]
       (->QueryResult size size data))))
 

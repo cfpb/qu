@@ -13,7 +13,6 @@ into a Monger query."
   "Parse a valid WHERE expression and return an abstract syntax tree
 for use in constructing Mongo queries."
   [clause]
-  (log/info "Where clause parsed to" (p/parse where-expr clause))
   (p/parse where-expr clause))
 
 (def mongo-operators

@@ -156,8 +156,8 @@
           column-set (set (concat dimensions metrics))]
       (-> query
           (assoc :errors {})
-          (validate-select column-set)
-          (validate-group column-set dimensions)
+          #_(validate-select column-set)
+          #_(validate-group column-set dimensions)
           validate-where
           validate-order-by
           validate-limit
