@@ -3,10 +3,12 @@
   (:require
    [clojure.string :as str]
    [taoensso.timbre :as log]
+   [clj-time.core :as time]
    [protoflex.parse :as p
     :refer [expr eval-expr-tree
             any attempt multi* series
-            number dq-str sq-str chr
+            number dq-str sq-str
+            chr chr-in
             parens sep-by
             word word-in
             string string-in
@@ -17,18 +19,17 @@
   [string]
   (regex (re-pattern (str "(?i)" string))))
 
-(defn- numeric-expr
-  "Simple numeric expressions in WHERE clauses should be evaluated at
-  parse time."
-  []
-  (let [expr (expr)]
-    (eval-expr-tree expr)))
-
-(defn- numeric []
-  (any numeric-expr number))
-
 (defn- string-literal []
   (any dq-str sq-str))
+
+(defn- date-literal []
+  (let [year (regex #"\d{4}")
+        _ (chr-in [\- \/])
+        month (regex #"\d{1,2}")
+        _ (chr-in [\- \/])
+        day (regex #"\d{1,2}")
+        ymd (map #(Integer/parseInt %) [year month day])]
+    (apply time/date-time ymd)))
 
 (defn- boolean-literal
   "Match the boolean literals true and false. Case-insensitive. We
@@ -43,7 +44,7 @@ false will make the parser think it's failed to match."
   "Parse expression for values in WHERE queries. Valid values are numbers,
 numeric expressions, strings, and booleans."
   []
-  (any number string-literal boolean-literal))
+  (any date-literal number string-literal boolean-literal))
 
 (defn- comparison-operator []
   (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]

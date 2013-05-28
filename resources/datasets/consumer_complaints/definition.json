@@ -100,11 +100,13 @@
         },
         "Date received": {
           "type": "date",
-          "name": "date_received"
+          "name": "date_received",
+          "format": "MM/dd/YYYY"
         },
         "Date sent to company": {
           "type": "date",
-          "name": "date_sent_to_company"
+          "name": "date_sent_to_company",
+          "format": "MM/dd/YYYY"          
         },
         "Company": {
           "type": "string",
