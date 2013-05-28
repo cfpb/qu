@@ -13,16 +13,10 @@
 (defn- is-aggregation? [ast]
   (some :aggregation ast))
 
-(defn- prefix-concept-data [node]
-  (if (:concept node)
-    (update-in node [:select] (fn [select] (keyword (str "__" (name select)))))
-    node))
-
 (defn mongo-eval [ast]
   (if (is-aggregation? ast)
     (mongo-eval-aggregation ast)
     (->> ast
-         (map prefix-concept-data)
          (map :select)
          (map #(hash-map % 1))
          (apply merge))))

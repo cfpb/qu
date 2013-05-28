@@ -2,6 +2,7 @@
   "Parse functions for queries."
   (:require
    [clojure.string :as str]
+   [taoensso.timbre :as log]
    [protoflex.parse :as p
     :refer [expr eval-expr-tree
             any attempt multi* series
@@ -145,6 +146,13 @@ turn it into a tree built in proper precedence order."
   (let [column (identifier)]
     {:select column}))
 
+(defn- concept-select
+  []
+  (let [[concept field] (concept-identifier)]
+    {:select (keyword (str "__" (name concept) "." (name field)))
+     :concept concept
+     :field field}))
+
 (defn- aggregation []
   (let [agg (any #(ci-string "SUM")
                  #(ci-string "COUNT")
@@ -155,18 +163,11 @@ turn it into a tree built in proper precedence order."
 (defn- aggregation-select
   []
   (let [aggregation (aggregation)
-        column (parens identifier)]
+        column (parens #(any identifier concept-identifier))]
     {:aggregation [aggregation column]
      :select (keyword (str (str/lower-case (name aggregation))
                            "_"
-                           (name column)))}))
-
-(defn- concept-select
-  []
-  (let [[concept field] (concept-identifier)]
-    {:select (keyword (str (name concept) "." (name field)))
-     :concept concept
-     :field field}))
+                           (str/join "_" (map name (flatten (vector column))))))}))
 
 (defn- select
   []
@@ -190,10 +191,11 @@ turn it into a tree built in proper precedence order."
 (defn group-expr
   "The parse function for valid GROUP expressions."
   []
-  (if-let [fst (attempt identifier)]
-    (if-let [rst (multi* #(series comma identifier))]
-      (concat (vector fst) (map second rst))
-      (vector fst))))
+  (let [identifier #(any concept-identifier identifier)]
+    (if-let [fst (attempt identifier)]
+      (if-let [rst (multi* #(series comma identifier))]
+        (concat (vector fst) (map second rst))
+        (vector fst)))))
 
 (defn- order-by
   []
