@@ -27,3 +27,11 @@ is nil unless specified."
       (try (Float/parseFloat val)
            (catch NumberFormatException e default))
       :default default)))
+
+(defn first-or-identity
+  "If the argument is a collection, return the first element in the
+  collection, else return the argument."
+  [thing]
+  (if (coll? thing)
+    (first thing)
+    thing))

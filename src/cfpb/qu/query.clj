@@ -4,6 +4,7 @@
             [monger.collection :as coll]
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
+            [cfpb.qu.query.select :as select]
             [cfpb.qu.query.validation :as validation]
             [cfpb.qu.util :refer [->int ->num]]
             [lonocloud.synthread :as ->]
@@ -75,11 +76,21 @@
                             :limit limit
                             :page 1}))))
 
+(defn build-aliases
+  "Build a map of aliases to internal names for the query."
+  [query]
+  (let [aliases (apply hash-map (->> (:select query)
+                                     select/parse
+                                     (map (juxt (comp keyword :alias) (comp keyword :select)))
+                                     flatten))]
+    (assoc query :aliases aliases)))
+
 (defn execute
   "Execute the query against the provided collection."
   [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (-> query
+                  build-aliases
                   validation/validate
                   resolve-limit-and-offset
                   mongo/process)
