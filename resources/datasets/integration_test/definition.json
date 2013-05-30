@@ -26,7 +26,8 @@
       ],
       "metrics": [
         "tax_returns",
-        "adjusted_gross_income"
+        "adjusted_gross_income",
+        "date_observed"
       ]
     }
   },  
@@ -54,6 +55,11 @@
         "Adjusted Gross Income (In Thousands)": {
           "name": "adjusted_gross_income",
           "type": "dollars"
+        },
+        "Date Observed": {
+          "name": "date_observed",
+          "type": "date",
+          "format": "YYYY/MM/dd"
         }
       }
     }
