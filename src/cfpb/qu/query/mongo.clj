@@ -78,10 +78,9 @@ and :group provisions of the original query."
   [query]
   (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
-          columns (map (fn [column]
-                         (if (coll? column)
-                           (str "__" (name (first column)))
-                           column)) columns)
+          columns (map (comp keyword #(if (coll? %)
+                                       (str "__" (name (first %)))
+                                       %)) columns)
           id (into {} (map #(vector % (str "$" (name %))) columns))
           aggregations (->> (select/parse (str (:select query)))
                             (filter :aggregation)

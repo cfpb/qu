@@ -150,12 +150,15 @@ turn it into a tree built in proper precedence order."
 (defn- simple-select
   []
   (let [column (identifier)]
-    {:select column}))
+    {:select column
+     :alias column}))
 
 (defn- concept-select
   []
-  (let [[concept field] (concept-identifier)]
-    {:select (keyword (str "__" (name concept) "." (name field)))
+  (let [[concept field] (concept-identifier)
+        alias (str (name concept) "." (name field))]
+    {:select (keyword (str "__" alias))
+     :alias alias
      :concept concept
      :field field}))
 
@@ -169,11 +172,13 @@ turn it into a tree built in proper precedence order."
 (defn- aggregation-select
   []
   (let [aggregation (aggregation)
-        column (parens identifier)]
+        column (parens identifier)
+        alias (keyword (str (str/lower-case (name aggregation))
+                            "_"
+                            (str/join "_" (map name (flatten (vector column))))))]
     {:aggregation [aggregation column]
-     :select (keyword (str (str/lower-case (name aggregation))
-                           "_"
-                           (str/join "_" (map name (flatten (vector column))))))}))
+     :select alias
+     :alias alias}))
 
 (defn- select
   []

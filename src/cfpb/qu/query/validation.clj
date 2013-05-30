@@ -2,7 +2,7 @@
   (:require [clojure.set :as set]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
-            [cfpb.qu.util :refer [->int]]
+            [cfpb.qu.util :refer [->int first-or-identity]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
@@ -15,6 +15,7 @@
   [query field message]
   (update-in query [:errors field]
              (fnil #(conj % message) (vector))))
+
 
 (defn validate-field
   [query clause column-set field]
@@ -45,8 +46,12 @@
 (defn- validate-select-no-non-aggregated-fields
   [query select]
   (if (:group query)
-    (let [group-fields (set (parse parser/group-expr (:group query)))
-          non-aggregated-fields (set (map :select (remove :aggregation select)))
+    (let [convert-group (fn [group]
+                          (if (coll? group)
+                            (str (name (first group)) "." (name (second group)))
+                            (name group)))
+          group-fields (set (map convert-group (parse parser/group-expr (:group query))))
+          non-aggregated-fields (set (map :alias (remove :aggregation select)))
           invalid-fields (set/difference non-aggregated-fields group-fields)]
       (reduce #(add-error %1 :select
                           (str "\"" (name %2)
@@ -73,7 +78,7 @@
 
 (defn- validate-group-fields
   [query group column-set]
-  (reduce #(validate-field %1 :group column-set %2) query group))
+  (reduce #(validate-field %1 :group column-set %2) query (map first-or-identity group)))
 
 (defn- validate-group-only-group-dimensions
   [query group dimensions]
@@ -84,18 +89,19 @@
          (if (contains? dimensions field)
            query
            (add-error query :group (str "\"" field "\" is not a dimension.")))))
-     query group)))
+     query (map first-or-identity group))))
 
 (defn- validate-group
   [query column-set dimensions]
   (if-let [group (:group query)]
     (try
-      (let [group (parse parser/group-expr (str group))]
+      (let [group (parse parser/group-expr group)]
         (-> query
             validate-group-requires-select
             (validate-group-fields group column-set)
             (validate-group-only-group-dimensions group dimensions)))
       (catch Exception e
+        (log/info "Exception:" (class e) e)
         (add-error query :group "Could not parse this clause.")))
     query))
 
