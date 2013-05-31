@@ -135,6 +135,7 @@ functions to return the resource that will be presented later."
                      query (query/execute dataset slice query)
                      resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
+                               :query query
                                :metadata metadata
                                :slicedef slicedef
                                :headers headers
