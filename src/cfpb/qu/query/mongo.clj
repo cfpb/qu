@@ -100,6 +100,10 @@ and :group provisions of the original query."
                              (if (= dir :ASC)
                                [field 1]
                                [field -1])))
+                      (map (fn [[alias dir]]
+                             (if-let [field (get-in query [:aliases (keyword alias)])]
+                               [field dir]
+                               [alias dir])))
                       flatten
                       (apply sorted-map))]
         (assoc-in query [:mongo :sort] sort))
@@ -120,7 +124,10 @@ and :group provisions of the original query."
     (reduce #(validate-field %1 :where column-set %2) query fields)))
 
 (defn- validate-order-fields [query column-set]
-  (let [order-fields (keys (get-in query [:mongo :sort]))
+  (let [order-fields (map (fn [field]
+                            (if-let [match (re-find #"^__(.*?)\." (name field))]
+                              (keyword (second match))
+                              field)) (keys (get-in query [:mongo :sort])))
         group (get-in query [:mongo :group])]
     (if (str/blank? (:group query))
       (reduce #(validate-field %1 :orderBy column-set %2) query order-fields)

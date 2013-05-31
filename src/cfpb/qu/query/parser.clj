@@ -211,7 +211,10 @@ turn it into a tree built in proper precedence order."
   []
   (let [mod-expr #(regex #"(?i)ASC|DESC")
         column (identifier)
-        modifier (attempt mod-expr)]
+        modifier (attempt mod-expr)
+        column (if (coll? column)
+                 (str/join "." (map name column))
+                 column)]
     [column (keyword (str/upper-case (or modifier "ASC")))]))
 
 (defn order-by-expr
