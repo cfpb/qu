@@ -119,26 +119,24 @@ and :group provisions of the original query."
        flatten
        (filter keyword?)))
 
-(defn- validate-match-fields [query column-set]
+(defn- validate-match-fields [query metadata slice]
   (let [fields (match-fields (get-in query [:mongo :match]))]
-    (reduce #(validate-field %1 :where column-set %2) query fields)))
+    (reduce #(validate-field %1 :where metadata slice %2) query fields)))
 
-(defn- validate-order-fields [query column-set]
+(defn- validate-order-fields [query metadata slice]
   (let [order-fields (map (fn [field]
                             (if-let [match (re-find #"^__(.*?)\." (name field))]
                               (keyword (second match))
                               field)) (keys (get-in query [:mongo :sort])))
         group (get-in query [:mongo :group])]
     (if (str/blank? (:group query))
-      (reduce #(validate-field %1 :orderBy column-set %2) query order-fields)
+      (reduce #(validate-field %1 :orderBy metadata slice %2) query order-fields)
       query)))
 
 (defn post-validate [query]
-  (let [slicedef (:slicedef query)
-        dimensions (:dimensions slicedef)
-        metrics (:metrics slicedef)
-        column-set (set (concat dimensions metrics))]
+  (let [metadata (:metadata query)
+        slice (:slice query)]
     (-> query
-        (validate-match-fields column-set)
-        (validate-order-fields column-set))))
+        (validate-match-fields metadata slice)
+        (validate-order-fields metadata slice))))
 

@@ -26,8 +26,9 @@
 
 (defn params->Query
   "Convert params from a web request plus a slice definition into a Query record."
-  [params slicedef]
-  (let [{:keys [dimensions clauses]} (parse-params params slicedef)
+  [params metadata slice]
+  (let [slicedef (get-in metadata [:slices slice])
+        {:keys [dimensions clauses]} (parse-params params slicedef)
         {select :$select
          group :$group
          orderBy :$orderBy
@@ -47,6 +48,8 @@
                  :orderBy orderBy
                  :callback callback
                  :dimensions dimensions
+                 :metadata metadata
+                 :slice slice
                  :slicedef slicedef})))
 
 (defn is-aggregation? [query]
