@@ -14,6 +14,8 @@
             string string-in
             regex starts-with?]]))
 
+(def identifier-regex #"[A-Za-z][A-Za-z0-9\\-_]*")
+
 (defn- ci-string
   "Match case insensitive strings."
   [string]
@@ -52,7 +54,7 @@ numeric expressions, strings, and booleans."
 
 (defn- simple-identifier
   []
-  (let [ident (regex #"[A-Za-z][A-Za-z0-9\-_]*")]
+  (let [ident (regex identifier-regex)]
     (keyword ident)))
 
 (defn- concept-identifier

@@ -1,8 +1,10 @@
 (ns cfpb.qu.query.validation
   (:require [clojure.set :as set]
+            [clojure.string :as str]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
             [cfpb.qu.util :refer [->int first-or-identity]]
+            [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]))
@@ -11,27 +13,44 @@
   (or (not (:errors query))
       (zero? (reduce + (map count (:errors query))))))
 
+(defn valid-field? [metadata slice field]
+  (let [identifier-regex-str (.pattern parser/identifier-regex)
+        concept-regex (re-pattern (str "__(" identifier-regex-str ")\\.(" identifier-regex-str ")"))
+        [concept property] (if-let [match (re-matches concept-regex field)]
+                                     [(nth match 1) (nth match 2)]
+                                     [field nil])
+        columns (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
+                     (map name)
+                     set)
+        concept-properties (->> (get-in metadata [:concepts (keyword concept) :properties])
+                                keys
+                                (map name)
+                                set)
+        concept-in-columns (contains? columns concept)
+        property-nil (nil? property)
+        property-in-properties (contains? concept-properties property)]
+    (and concept-in-columns
+         (or property-nil property-in-properties))))
+
 (defn- add-error
   [query field message]
   (update-in query [:errors field]
              (fnil #(conj % message) (vector))))
 
-
 (defn validate-field
-  [query clause column-set field]
+  [query clause metadata slice field]
   (let [field (name field)]
-    (if (contains? column-set field)
+    (if (valid-field? metadata slice field)
       query
       (add-error query clause (str "\"" field "\" is not a valid field.")))))
 
 
 (defn- validate-select-fields
-  [query column-set select]
+  [query metadata slice select]
   (let [fields (map (comp name #(cond
                                  (:aggregation %) (second (:aggregation %))
-                                 (:concept %) (:concept %)
                                  :default (:select %))) select)]
-    (reduce #(validate-field %1 :select column-set %2) query fields)))
+    (reduce #(validate-field %1 :select metadata slice %2) query fields)))
 
 (defn- validate-select-no-aggregations-without-group
   [query select]
@@ -60,11 +79,11 @@
     query))
 
 (defn- validate-select
-  [query column-set]
+  [query metadata slice]
   (try
     (let [select (select/parse (str (:select query)))]
       (-> query
-          (validate-select-fields column-set select)
+          (validate-select-fields metadata slice select)
           (validate-select-no-aggregations-without-group select)
           (validate-select-no-non-aggregated-fields select)))
     (catch Exception e
@@ -77,8 +96,11 @@
     (add-error query :group "You must have a select clause to use grouping.")))
 
 (defn- validate-group-fields
-  [query group column-set]
-  (reduce #(validate-field %1 :group column-set %2) query (map first-or-identity group)))
+  [query group metadata slice]
+  (let [group (map (fn [g] (if (coll? g)
+                             (str "__" (str/join "." (map name g)))
+                             g)) group)]
+    (reduce #(validate-field %1 :group metadata slice %2) query group)))
 
 (defn- validate-group-only-group-dimensions
   [query group dimensions]
@@ -92,16 +114,16 @@
      query (map first-or-identity group))))
 
 (defn- validate-group
-  [query column-set dimensions]
+  [query metadata slice dimensions]
   (if-let [group (:group query)]
     (try
       (let [group (parse parser/group-expr group)]
         (-> query
             validate-group-requires-select
-            (validate-group-fields group column-set)
+            (validate-group-fields group metadata slice)
             (validate-group-only-group-dimensions group dimensions)))
       (catch Exception e
-        (log/info "Exception:" (class e) e)
+        (log/error "Exception:" (class e) e)
         (add-error query :group "Could not parse this clause.")))
     query))
 
@@ -155,15 +177,14 @@
 (defn validate
   "Check the query for any errors."
   [query]
-  (if (:slicedef query)
-    (let [slicedef (:slicedef query)
-          dimensions (:dimensions slicedef)
-          metrics (:metrics slicedef)
-          column-set (set (concat dimensions metrics))]
+  (if-let [metadata (:metadata query)]
+    (let [slice (:slice query)
+          slicedef (get-in metadata [:slices (:slice query)])
+          dimensions (:dimensions slicedef)]
       (-> query
           (assoc :errors {})
-          (validate-select column-set)
-          (validate-group column-set dimensions)
+          (validate-select metadata slice)
+          (validate-group metadata slice dimensions)
           validate-where
           validate-order-by
           validate-limit
