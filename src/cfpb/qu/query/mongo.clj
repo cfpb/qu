@@ -121,7 +121,7 @@ and :group provisions of the original query."
 
 (defn- validate-match-fields [query metadata slice]
   (let [fields (match-fields (get-in query [:mongo :match]))]
-    (reduce #(validate-field %1 :where metadata slice %2) query fields)))
+    (reduce #(validate-field %1 :where %2) query fields)))
 
 (defn- validate-order-fields [query metadata slice]
   (let [order-fields (map (fn [field]
@@ -130,7 +130,7 @@ and :group provisions of the original query."
                               field)) (keys (get-in query [:mongo :sort])))
         group (get-in query [:mongo :group])]
     (if (str/blank? (:group query))
-      (reduce #(validate-field %1 :orderBy metadata slice %2) query order-fields)
+      (reduce #(validate-field %1 :orderBy %2) query order-fields)
       query)))
 
 (defn post-validate [query]

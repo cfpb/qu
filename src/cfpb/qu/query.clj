@@ -25,7 +25,7 @@
       (zero? (reduce + (map count (:errors query))))))
 
 (defn params->Query
-  "Convert params from a web request plus a slice definition into a Query record."
+  "Convert params from a web request plus a dateset definition and a slice name into a Query record."
   [params metadata slice]
   (let [slicedef (get-in metadata [:slices slice])
         {:keys [dimensions clauses]} (parse-params params slicedef)
@@ -82,16 +82,19 @@
 (defn build-aliases
   "Build a map of aliases to internal names for the query."
   [query]
-  (let [columns (->> (or (:select query) "")
-                     select/parse
-                     (map (juxt (comp keyword :alias) (comp keyword :select))))
-        reverse-aliases (apply hash-map (->> columns
-                                             (map (juxt second first))
-                                             flatten))
-        aliases (apply hash-map (flatten columns))]
-    (-> query
-        (assoc :aliases aliases)
-        (assoc :reverse-aliases reverse-aliases))))
+  (try
+    (let [columns (->> (or (:select query) "")
+                       select/parse
+                       (map (juxt (comp keyword :alias) (comp keyword :select))))
+          reverse-aliases (apply hash-map (->> columns
+                                               (map (juxt second first))
+                                               flatten))
+          aliases (apply hash-map (flatten columns))]
+      (-> query
+          (assoc :aliases aliases)
+          (assoc :reverse-aliases reverse-aliases)))
+    (catch Exception e
+      query)))
 
 (defn execute
   "Execute the query against the provided collection."
