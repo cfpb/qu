@@ -14,7 +14,7 @@
             string string-in
             regex starts-with?]]))
 
-(def identifier-regex #"[A-Za-z][A-Za-z0-9\\-_]*")
+(def identifier-regex #"[A-Za-z][A-Za-z0-9\-_]*")
 
 (defn- ci-string
   "Match case insensitive strings."

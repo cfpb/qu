@@ -97,35 +97,39 @@
 
 (facts "about select expressions"
        (fact "can have one column"
-             (p/parse select-expr "length") => [{:select :length}])
+             (p/parse select-expr "length") => [{:select :length :alias :length}])
        
        (fact "can have multiple columns"
              (p/parse select-expr "length, height") =>
-             [{:select :length}
-              {:select :height}])
+             [{:select :length :alias :length}
+              {:select :height :alias :height}])
 
        (fact "can have concept data"
              (p/parse select-expr "length.units") =>
              [{:select :__length.units
+               :alias "length.units"
                :concept :length
                :field :units}])
 
        (fact "can have aggregations"
              (p/parse select-expr "state, SUM(population)") =>
-             [{:select :state}
+             [{:select :state :alias :state}
               {:aggregation [:SUM :population]
-               :select :sum_population}])
+               :select :sum_population
+               :alias :sum_population}])
 
        (fact "aggregations are case-insensitive"
              (p/parse select-expr "state, sum(population)") =>
-             [{:select :state}
+             [{:select :state :alias :state}
               {:aggregation [:SUM :population]
-               :select :sum_population}]
+               :select :sum_population
+               :alias :sum_population}]
              
              (p/parse select-expr "state, cOuNt(population)") =>
-             [{:select :state}
+             [{:select :state :alias :state}
               {:aggregation [:COUNT :population]
-               :select :count_population}])
+               :select :count_population
+               :alias :count_population}])
 
        (fact "invalid aggregations do not work"
              (p/parse select-expr "state, TOTAL(population)") =>

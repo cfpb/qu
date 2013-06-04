@@ -3,10 +3,14 @@
             [cfpb.qu.query :refer :all]
             [cfpb.qu.query.mongo :as mongo]))
 
+(def metadata
+  {:slices {:county_taxes {:dimensions ["state" "county"]
+                           :metrics ["tax_returns" "population"]}}})
+
 (defn make-query
   [q]
-  (merge {:slicedef {:dimensions ["state" "county"]
-                     :metrics ["tax_returns" "population"]}
+  (merge {:metadata metadata
+          :slicedef (get-in metadata [:slices :county_taxes])
           :limit "0" :offset "0"} q))
 
 (def query (make-query {}))
@@ -25,7 +29,8 @@
 (facts "about params->Query"
        (fact "it stores dimensions in the query"
              (params->Query {:state "AL"}
-                            {:dimensions ["state" "county"]})
+                            metadata
+                            :county_taxes)
              => (contains {:dimensions {:state "AL"}})))
 
 (facts "about mongo-find"
@@ -58,7 +63,8 @@
                 {"$limit" 100}])))
 
 (facts "about execute"
-       (let [query (merge query {:limit 100 :offset 0 :page 1 :errors {}})]
+       (let [query (merge query {:limit 100 :offset 0 :page 1 :errors {}
+                                 :aliases {} :reverse-aliases {}})]
          (fact "it calls data/get-find if is-aggregation? is false"
                (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
                (provided
