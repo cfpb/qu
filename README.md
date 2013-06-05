@@ -72,6 +72,12 @@ In order to run the API as a web server, run:
 lein ring server
 ```
 
+To auto-reload templates during development, run:
+
+```sh
+DEBUG=1 lein ring server
+```
+
 Go to http://localhost:3000 and you should see the app running.
 
 Before starting the API, you will want to start MongoDB and load some
