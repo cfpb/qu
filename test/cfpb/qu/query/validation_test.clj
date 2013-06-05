@@ -59,7 +59,7 @@
          (fact "it does not error if you group by concept data on an existing field"
                (errors (q :select "county.state"
                           :group "county.state"))
-               =not=> (contains {:group anything}))         
+               =not=> (contains {:group anything}))      
 
          (fact "it errors if you use GROUP without SELECT"
                (let [query (q :group "state_abbr")]
@@ -93,7 +93,7 @@
 
          (fact "it errors if limit is greater than 1000"
                (errors (q :limit "1001"))
-               => (contains {:limit ["The maximum limit is 1000."]}))         
+               => (contains {:limit ["The maximum limit is 1000."]}))
          
          (fact "it errors if offset is not an integer string"
                (errors (q :offset "ten"))

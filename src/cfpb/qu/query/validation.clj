@@ -70,7 +70,7 @@
                             (str (name (first group)) "." (name (second group)))
                             (name group)))
           group-fields (set (map convert-group (parse parser/group-expr (:group query))))
-          non-aggregated-fields (set (map :alias (remove :aggregation select)))
+          non-aggregated-fields (set (map (comp name :alias) (remove :aggregation select)))
           invalid-fields (set/difference non-aggregated-fields group-fields)]
       (reduce #(add-error %1 :select
                           (str "\"" (name %2)
@@ -127,7 +127,6 @@
             (validate-group-fields group)
             (validate-group-only-group-dimensions group)))
       (catch Exception e
-        (log/error "Exception:" (class e) e)
         (add-error query :group "Could not parse this clause.")))
     query))
 

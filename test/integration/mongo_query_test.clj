@@ -66,7 +66,7 @@
   (facts "about execute"
 
     (fact "passes a Query object to MongoDB and returns results"
-      (let [q (params->Query {} slicedef)
+      (let [q (params->Query {} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
@@ -75,7 +75,7 @@
         (> (:size query_result) 0) => true))
 
     (fact "returns only fields in $select, if specified"
-      (let [q (params->Query {:$select "state_abbr,county,tax_returns"} slicedef)
+      (let [q (params->Query {:$select "state_abbr,county,tax_returns"} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
@@ -83,7 +83,7 @@
 
     (fact "limits number of returned documents if $limit is specified"
       (let [limit 10
-            q (params->Query {:$limit limit} slicedef)
+            q (params->Query {:$limit limit} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)]
         (count (:data query_result)) => limit
@@ -92,8 +92,8 @@
 
     (fact "skips documents if $offset is specified"
       (let [offset 1
-            all (params->Query {} slicedef)
-            q (params->Query {:$offset offset} slicedef)
+            all (params->Query {} metadata :incomes)
+            q (params->Query {:$offset offset} metadata :incomes)
             all_result (:result (query/execute db coll all))
             query_result (:result (query/execute db coll q))
             first-doc (first (:data query_result))]
@@ -104,7 +104,7 @@
     (fact "filters documents if $where is specified"
       (let [upper-bound 9
             where (str "tax_returns <= " upper-bound)
-            q (params->Query {:$where where} slicedef)
+            q (params->Query {:$where where} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)]
         (:total query_result) => upper-bound
@@ -114,7 +114,7 @@
   (facts "about execute and aggregation"
 
     (fact "passes a Query object to MongoDB and returns result containing aggregation"
-      (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} slicedef)
+      (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)]
         (:size query_result) => 3
@@ -127,13 +127,13 @@
   (facts "about execute and error handling"
 
     (fact "result contains :error when invalid $select is specified"
-      (let [q (params->Query {:$select "trick_name"} slicedef)
+      (let [q (params->Query {:$select "trick_name"} metadata :incomes)
             result (query/execute db coll q)]
         (:result result) => []
         (first (get-in result [:errors :select])) => (contains "\"trick_name\" is not a valid field")))
 
     (fact "result contains :error when invalid $where is specified"
-      (let [q (params->Query {:$where "inventor = 'plywood_hoods'", :$orderBy "difficulty"} slicedef)
+      (let [q (params->Query {:$where "inventor = 'plywood_hoods'", :$orderBy "difficulty"} metadata :incomes)
             result (query/execute db coll q)
             errors (:errors result)]
         (:result result) => []
@@ -141,20 +141,20 @@
         (first (:orderBy errors)) => (contains "\"difficulty\" is not a valid field")))
 
     (fact "result contains :error when invalid $limit or $offset is specified"
-      (let [q (params->Query {:$limit "a" :$offset "b"} slicedef)
+      (let [q (params->Query {:$limit "a" :$offset "b"} metadata :incomes)
             result (query/execute db coll q)]
         (:result result) => []
         (first (get-in result [:errors :limit])) => (contains "use an integer")
         (first (get-in result [:errors :offset])) => (contains "use an integer")))
 
     (fact "result contains :error when $group is present but $select is not"
-      (let [q (params->Query {:$group "state_abbr"} slicedef)
+      (let [q (params->Query {:$group "state_abbr"} metadata :incomes)
             result (query/execute db coll q)]
         (:result result) => []
         (first (get-in result [:errors :group])) => (contains "must have a select clause")))
 
     (fact "result contains :error when invalid $group is specified"
-      (let [q (params->Query {:$select "state_abbr", :$group "cherrypicker"} slicedef)
+      (let [q (params->Query {:$select "state_abbr", :$group "cherrypicker"} metadata :incomes)
             result (query/execute db coll q)]
         (:result result) => []
         (first (get-in result [:errors :group])) => (contains "\"cherrypicker\" is not a valid field")
