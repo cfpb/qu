@@ -59,9 +59,11 @@ serve their public data sets."
                     :mongo-port 27017}
               :embongo {:version "2.4.3"}
               :dependencies [[ring-mock "0.1.3"]
-                             [midje "1.6-SNAPSHOT"]
+                             [midje "1.6-alpha2"]
                              [midje-junit-formatter "0.1.0-SNAPSHOT"]]}
              :integration [:dev
               {:env {:mongo-port 37017
                      :integration true}
+               :dependencies [[clojure-complete "0.2.3"]
+                              [org.clojure/tools.nrepl "0.2.3"]]
                :embongo {:port 37017}}]})
