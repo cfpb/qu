@@ -19,6 +19,7 @@
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]
+            [cfpb.qu.query.concepts :as concepts]            
             [cfpb.qu.query.validation :refer [valid? validate-field]]))
 
 (declare match project group sort post-validate)
@@ -79,7 +80,7 @@ and :group provisions of the original query."
   (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
           columns (map (comp keyword #(if (coll? %)
-                                       (str "__" (name (first %)))
+                                       (str concepts/prefix (name (first %)))
                                        %)) columns)
           id (into {} (map #(vector % (str "$" (name %))) columns))
           aggregations (->> (select/parse (str (:select query)))

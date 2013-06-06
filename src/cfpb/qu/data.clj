@@ -5,6 +5,7 @@ after retrieval."
   (:require [taoensso.timbre :as log]
             [clojure.string :as str]
             [environ.core :refer [env]]
+            [cfpb.qu.query.concepts :as concepts]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -57,15 +58,15 @@ stored in a Mongo database called 'metadata'."
 (defn- flatten-row [row]
   (if (not-any? (fn [[k v]] (map? v)) row)
     row
-    (reduce (fn [row [key value]]
+    (reduce (fn [row [concept value]]
               (if (map? value)
                 (let [submap (reduce
-                              (fn [submap [subkey subvalue]]
+                              (fn [submap [field subvalue]]
                                 (assoc submap
-                                  (keyword (str (name key) "." (name subkey)))
+                                  (keyword (concepts/field-name concept field))
                                   subvalue)) {} value)]
                   (merge row submap))
-                (assoc row key value))) {} row)))
+                (assoc row concept value))) {} row)))
 
 (defn- flatten-data [data]
   (let [data (map #(flatten-row %) data)]

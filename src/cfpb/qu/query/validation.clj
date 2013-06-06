@@ -7,15 +7,15 @@
             [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
-            [cfpb.qu.query.parser :as parser]))
+            [cfpb.qu.query.parser :as parser]
+            [cfpb.qu.query.concepts :as concepts]))
 
 (defn valid? [query]
   (or (not (:errors query))
       (zero? (reduce + (map count (:errors query))))))
 
 (defn valid-field? [{:keys [metadata slice]} field]
-  (let [identifier-regex-str (.pattern parser/identifier-regex)
-        concept-regex (re-pattern (str "__(" identifier-regex-str ")\\.(" identifier-regex-str ")"))
+  (let [concept-regex (concepts/regex false)
         [concept property] (if-let [match (re-matches concept-regex field)]
                                      [(nth match 1) (nth match 2)]
                                      [field nil])
@@ -98,7 +98,7 @@
 (defn- convert-group-to-mongo-form
   [group]
   (if (coll? group)
-    (str "__" (str/join "." (map name group)))
+    (apply concepts/db-name group)
     group))
 
 (defn- validate-group-fields
