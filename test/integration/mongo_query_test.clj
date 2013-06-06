@@ -66,7 +66,7 @@
   (facts "about execute"
 
     (fact "passes a Query object to MongoDB and returns results"
-      (let [q (params->Query {} metadata :incomes)
+      (let [q (params->Query {:state_abbr "NC"} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
@@ -75,11 +75,20 @@
         (> (:size query_result) 0) => true))
 
     (fact "returns only fields in $select, if specified"
-      (let [q (params->Query {:$select "state_abbr,county,tax_returns"} metadata :incomes)
+      (let [q (params->Query {:$select "state_abbr,county,tax_returns" :state_abbr "NC"}
+                             metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
         first-doc => {:tax_returns 1 :county "County 1" :state_abbr "NC"}))
+
+    (fact "returns concept data if specified in $select"
+      (let [q (params->Query {:$select "state_abbr.name,county,tax_returns" :state_abbr "NC"}
+                             metadata :incomes)
+            result (query/execute db coll q)
+            query_result (:result result)
+            first-doc (first (:data query_result))]
+        first-doc => {:tax_returns 1 :county "County 1" :__state_abbr.name "North Carolina"}))
 
     (fact "limits number of returned documents if $limit is specified"
       (let [limit 10
@@ -92,8 +101,8 @@
 
     (fact "skips documents if $offset is specified"
       (let [offset 1
-            all (params->Query {} metadata :incomes)
-            q (params->Query {:$offset offset} metadata :incomes)
+            all (params->Query {:$orderBy "tax_returns"} metadata :incomes)
+            q (params->Query {:$offset offset :$orderBy "tax_returns"} metadata :incomes)
             all_result (:result (query/execute db coll all))
             query_result (:result (query/execute db coll q))
             first-doc (first (:data query_result))]
