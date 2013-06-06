@@ -32,7 +32,7 @@ serve their public data sets."
                  [factual/drake "0.1.4-SNAPSHOT"]
                  [halresource "0.1.0-SNAPSHOT"]
                  [lib-noir "0.6.0"]
-                 [liberator "0.8.0"]
+                 [liberator "0.9.0"]
                  [lonocloud/synthread "1.0.4"]
                  [org.clojure/data.csv "0.1.2"]
                  [parse-ez "0.3.4"]

@@ -10,6 +10,7 @@ functions to return the resource that will be presented later."
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [liberator.core :refer [defresource request-method-in]]
+   [liberator.representation :refer [ring-response]]
    [noir.response :refer [status]]
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
@@ -138,11 +139,10 @@ functions to return the resource that will be presented later."
                                :slicedef slicedef
                                :headers headers
                                :dimensions (:dimensions query)
-                               :callback (:callback query)}]
-                 (status
-                  (if (query/valid? query)
-                    200
-                    400)
-                  (views/slice (:media-type representation)
-                               resource
-                               view-map)))))
+                               :callback (:callback query)}
+                     response-body (views/slice (:media-type representation)
+                                                resource
+                                                view-map)]
+                 (if (query/valid? query)
+                   response-body
+                   (ring-response {:status 400 :body response-body})))))

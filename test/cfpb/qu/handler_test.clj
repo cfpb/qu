@@ -14,11 +14,13 @@
        (fact "it returns successfully"
              (app (request :get "/data"))
              => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"}})
+                           :headers {"Content-Type" "text/html;charset=UTF-8"
+                                     "Vary" "Accept"}})
 
              (app (request :get "/data.xml"))
              => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"}})))
+                           :headers {"Content-Type" "application/xml;charset=UTF-8"
+                                     "Vary" "Accept"}})))
 
 (facts "about /data/dataset"
        (fact "it returns successfully when the dataset exists"
@@ -26,11 +28,13 @@
 
              (app (request :get "/data/good-dataset"))
              => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"}})
+                           :headers {"Content-Type" "text/html;charset=UTF-8"
+                                     "Vary" "Accept"}})
 
              (app (request :get "/data/good-dataset.xml"))
              => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"}}))
+                           :headers {"Content-Type" "application/xml;charset=UTF-8"
+                                     "Vary" "Accept"}}))
 
        (fact "it returns a 404 when the dataset does not exist"
              (prerequisite (#'cfpb.qu.data/get-metadata "bad-dataset") => nil)
@@ -46,12 +50,12 @@
 
              (app (request :get "/data/good-dataset/whoa"))
              => (contains {:status 200
-                           :headers {"Content-Type" "text/html"
+                           :headers {"Content-Type" "text/html;charset=UTF-8"
                                      "Vary" "Accept"}})
 
              (app (request :get "/data/good-dataset/whoa.xml"))
              => (contains {:status 200
-                           :headers {"Content-Type" "application/xml"
+                           :headers {"Content-Type" "application/xml;charset=UTF-8"
                                      "Vary" "Accept"}}))
 
        (fact "it returns a 404 when the dataset does not exist"
