@@ -19,6 +19,7 @@ transforming the data within."
     [joda-time]]
    [cfpb.qu.util :refer [->int ->num]]
    [cfpb.qu.query.where :as where]
+   [cfpb.qu.query.concepts :as concepts]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]
            [com.mongodb MapReduceCommand$OutputType MapReduceOutput]))
@@ -211,7 +212,7 @@ associated tables."
     (doseq [row (:data query-result)]
       (coll/update (name slice)
                    {concept (concept row)}
-                   {"$set" {(keyword (str "__" (name concept))) row}}
+                   {"$set" {(keyword (str concepts/prefix (name concept))) row}}
                    :multi true))))
 
 (defn- load-concept
