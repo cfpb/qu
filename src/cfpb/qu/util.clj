@@ -4,7 +4,7 @@
 
 (defn str+
   [& xs]
-  (apply str (map name xs)))
+  (str/join (map name xs)))
 
 (defn ->int
   "Convert strings and integers to integers. A blank string or

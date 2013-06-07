@@ -69,7 +69,7 @@ stored in a Mongo database called 'metadata'."
                 (assoc row concept value))) {} row)))
 
 (defn- flatten-data [data]
-  (let [data (map #(flatten-row %) data)]
+  (let [data (map flatten-row data)]
     data))
 
 (defrecord QueryResult [total size data])
