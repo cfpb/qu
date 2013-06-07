@@ -19,6 +19,7 @@
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]
+            [cfpb.qu.query.concepts :as concepts]            
             [cfpb.qu.query.validation :refer [valid? validate-field]]))
 
 (declare match project group sort post-validate)
@@ -78,6 +79,9 @@ and :group provisions of the original query."
   [query]
   (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
+          columns (map (comp keyword #(if (coll? %)
+                                       (str concepts/prefix (name (first %)))
+                                       %)) columns)
           id (into {} (map #(vector % (str "$" (name %))) columns))
           aggregations (->> (select/parse (str (:select query)))
                             (filter :aggregation)
@@ -97,6 +101,10 @@ and :group provisions of the original query."
                              (if (= dir :ASC)
                                [field 1]
                                [field -1])))
+                      (map (fn [[alias dir]]
+                             (if-let [field (get-in query [:aliases (keyword alias)])]
+                               [field dir]
+                               [alias dir])))
                       flatten
                       (apply sorted-map))]
         (assoc-in query [:mongo :sort] sort))
@@ -112,23 +120,24 @@ and :group provisions of the original query."
        flatten
        (filter keyword?)))
 
-(defn- validate-match-fields [query column-set]
+(defn- validate-match-fields [query metadata slice]
   (let [fields (match-fields (get-in query [:mongo :match]))]
-    (reduce #(validate-field %1 :where column-set %2) query fields)))
+    (reduce #(validate-field %1 :where %2) query fields)))
 
-(defn- validate-order-fields [query column-set]
-  (let [order-fields (keys (get-in query [:mongo :sort]))
+(defn- validate-order-fields [query metadata slice]
+  (let [order-fields (map (fn [field]
+                            (if-let [match (re-find #"^__(.*?)\." (name field))]
+                              (keyword (second match))
+                              field)) (keys (get-in query [:mongo :sort])))
         group (get-in query [:mongo :group])]
     (if (str/blank? (:group query))
-      (reduce #(validate-field %1 :orderBy column-set %2) query order-fields)
+      (reduce #(validate-field %1 :orderBy %2) query order-fields)
       query)))
 
 (defn post-validate [query]
-  (let [slicedef (:slicedef query)
-        dimensions (:dimensions slicedef)
-        metrics (:metrics slicedef)
-        column-set (set (concat dimensions metrics))]
+  (let [metadata (:metadata query)
+        slice (:slice query)]
     (-> query
-        (validate-match-fields column-set)
-        (validate-order-fields column-set))))
+        (validate-match-fields metadata slice)
+        (validate-order-fields metadata slice))))
 

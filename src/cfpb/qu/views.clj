@@ -57,10 +57,10 @@
   (if select
     (map :select (select/parse select))))
 
-(defn- columns-for-view [resource slicedef]
-  (let [select (get-in resource [:properties :query :select])]
+(defn- columns-for-view [query slicedef]
+  (let [select (:select query)]
     (if (or (str/blank? select)
-            (seq (get-in resource [:properties :errors])))
+            (seq (:errors query)))
       (data/slice-columns slicedef)
       (map name (select-fields select)))))
 
@@ -72,8 +72,12 @@
   "Each dataset has a list of concepts. A concept is a definition of a
   type of data in the dataset. This function retrieves the name
   of the concept."
-  [metadata concept]
-  (get-in metadata [:concepts (keyword concept) :name] (name concept)))
+  [metadata query concept]
+  (let [concept (keyword concept)
+        concept-name (get-in metadata [:concepts concept :name])]
+    (name (or concept-name
+              (get-in query [:reverse-aliases concept])
+              concept))))
 
 (defn concept-description
   "Each dataset has a list of concepts. A concept is a definition of a
@@ -186,8 +190,8 @@
                     :href (href-for-page resource total-pages)}])))
     []))
 
-(defmethod slice "text/html" [_ resource {:keys [metadata slicedef headers dimensions]}]
-  (let [desc (partial concept-name metadata)
+(defmethod slice "text/html" [_ resource {:keys [query metadata slicedef headers dimensions]}]
+  (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
         query (get-in resource [:properties :query])
@@ -208,7 +212,7 @@
                      (map #(assoc-in % [:errors] (get-in resource
                                                          [:properties :errors (keyword (:key %))]))))
         data (get-in resource [:properties :results])
-        columns (columns-for-view resource slicedef)
+        columns (columns-for-view query slicedef)
         data (data/get-data-table data columns)
         columns (map desc columns)
         start (-> (get-in resource [:properties :query :offset])
@@ -235,10 +239,10 @@
                    :pagination pagination
                    :data data}))))
 
-(defmethod slice "text/csv" [_ resource {:keys [slicedef]}]
+(defmethod slice "text/csv" [_ resource {:keys [query slicedef]}]
   (let [table (:table slicedef)
         data (get-in resource [:properties :results])
-        columns (columns-for-view resource slicedef)
+        columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)]
     (let [links (reduce conj
                         [{:href (:href resource) :rel "self"}]

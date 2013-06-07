@@ -1,15 +1,36 @@
 (ns cfpb.qu.query.validation
   (:require [clojure.set :as set]
+            [clojure.string :as str]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
-            [cfpb.qu.util :refer [->int]]
+            [cfpb.qu.util :refer [->int first-or-identity]]
+            [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
-            [cfpb.qu.query.parser :as parser]))
+            [cfpb.qu.query.parser :as parser]
+            [cfpb.qu.query.concepts :as concepts]))
 
 (defn valid? [query]
   (or (not (:errors query))
       (zero? (reduce + (map count (:errors query))))))
+
+(defn valid-field? [{:keys [metadata slice]} field]
+  (let [concept-regex (concepts/regex false)
+        [concept property] (if-let [match (re-matches concept-regex field)]
+                                     [(nth match 1) (nth match 2)]
+                                     [field nil])
+        columns (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
+                     (map name)
+                     set)
+        concept-properties (->> (get-in metadata [:concepts (keyword concept) :properties])
+                                keys
+                                (map name)
+                                set)
+        concept-in-columns (contains? columns concept)
+        property-nil (nil? property)
+        property-in-properties (contains? concept-properties property)]
+    (and concept-in-columns
+         (or property-nil property-in-properties))))
 
 (defn- add-error
   [query field message]
@@ -17,19 +38,19 @@
              (fnil #(conj % message) (vector))))
 
 (defn validate-field
-  [query clause column-set field]
+  [query clause field]
   (let [field (name field)]
-    (if (contains? column-set field)
+    (if (valid-field? query field)
       query
       (add-error query clause (str "\"" field "\" is not a valid field.")))))
 
 
 (defn- validate-select-fields
-  [query column-set select]
-  (let [fields (map (comp name #(if (:aggregation %)
-                                  (second (:aggregation %))
-                                  (:select %))) select)]
-    (reduce #(validate-field %1 :select column-set %2) query fields)))
+  [query select]
+  (let [fields (map (comp name #(cond
+                                 (:aggregation %) (second (:aggregation %))
+                                 :default (:select %))) select)]
+    (reduce #(validate-field %1 :select %2) query fields)))
 
 (defn- validate-select-no-aggregations-without-group
   [query select]
@@ -44,8 +65,12 @@
 (defn- validate-select-no-non-aggregated-fields
   [query select]
   (if (:group query)
-    (let [group-fields (set (parse parser/group-expr (:group query)))
-          non-aggregated-fields (set (map :select (remove :aggregation select)))
+    (let [convert-group (fn [group]
+                          (if (coll? group)
+                            (str (name (first group)) "." (name (second group)))
+                            (name group)))
+          group-fields (set (map convert-group (parse parser/group-expr (:group query))))
+          non-aggregated-fields (set (map (comp name :alias) (remove :aggregation select)))
           invalid-fields (set/difference non-aggregated-fields group-fields)]
       (reduce #(add-error %1 :select
                           (str "\"" (name %2)
@@ -54,11 +79,11 @@
     query))
 
 (defn- validate-select
-  [query column-set]
+  [query]
   (try
     (let [select (select/parse (str (:select query)))]
       (-> query
-          (validate-select-fields column-set select)
+          (validate-select-fields select)
           (validate-select-no-aggregations-without-group select)
           (validate-select-no-non-aggregated-fields select)))
     (catch Exception e
@@ -70,30 +95,37 @@
     query
     (add-error query :group "You must have a select clause to use grouping.")))
 
+(defn- convert-group-to-mongo-form
+  [group]
+  (if (coll? group)
+    (apply concepts/db-name group)
+    group))
+
 (defn- validate-group-fields
-  [query group column-set]
-  (reduce #(validate-field %1 :group column-set %2) query group))
+  [query group]
+  (let [group (map convert-group-to-mongo-form group)]
+    (reduce #(validate-field %1 :group %2) query group)))
 
 (defn- validate-group-only-group-dimensions
-  [query group dimensions]
-  (let [dimensions (set dimensions)]
+  [{:keys [slicedef] :as query} group]
+  (let [dimensions (set (:dimensions slicedef))]
     (reduce
      (fn [query field]
        (let [field (name field)]
          (if (contains? dimensions field)
            query
            (add-error query :group (str "\"" field "\" is not a dimension.")))))
-     query group)))
+     query (map first-or-identity group))))
 
 (defn- validate-group
-  [query column-set dimensions]
+  [query]
   (if-let [group (:group query)]
     (try
-      (let [group (parse parser/group-expr (str group))]
+      (let [group (parse parser/group-expr group)]
         (-> query
             validate-group-requires-select
-            (validate-group-fields group column-set)
-            (validate-group-only-group-dimensions group dimensions)))
+            (validate-group-fields group)
+            (validate-group-only-group-dimensions group)))
       (catch Exception e
         (add-error query :group "Could not parse this clause.")))
     query))
@@ -148,15 +180,14 @@
 (defn validate
   "Check the query for any errors."
   [query]
-  (if (:slicedef query)
-    (let [slicedef (:slicedef query)
-          dimensions (:dimensions slicedef)
-          metrics (:metrics slicedef)
-          column-set (set (concat dimensions metrics))]
+  (if-let [metadata (:metadata query)]
+    (let [slice (:slice query)
+          slicedef (get-in metadata [:slices (:slice query)])
+          dimensions (:dimensions slicedef)]
       (-> query
           (assoc :errors {})
-          (validate-select column-set)
-          (validate-group column-set dimensions)
+          validate-select
+          validate-group
           validate-where
           validate-order-by
           validate-limit

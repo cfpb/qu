@@ -5,10 +5,19 @@
   },
   "concepts": {
     "state_abbr": {
-      "description": "State Abbreviation"
+      "name": "State Abbreviation",
+      "type": "string",
+      "table": "states",
+      "properties": {
+        "name": {
+          "name": "Name",
+          "description": "The name of the state",
+          "type": "string"
+        }
+      }        
     },
     "county": {
-      "description": "County"
+      "description": "County"      
     },
     "tax_returns": {
       "description": "Total Number of Tax Returns"
@@ -32,6 +41,19 @@
     }
   },  
   "tables": {
+    "states": {
+      "sources": [
+        "states.csv"
+      ],
+      "columns": {
+        "state": {
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        }
+      }
+    },          
     "incomes": {
       "sources": [
         "test_data.csv"

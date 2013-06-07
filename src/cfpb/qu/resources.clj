@@ -131,10 +131,11 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
-                     query (params->Query (:params request) slicedef)
+                     query (params->Query (:params request) metadata slice)
                      query (query/execute dataset slice query)
                      resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
+                               :query query
                                :metadata metadata
                                :slicedef slicedef
                                :headers headers

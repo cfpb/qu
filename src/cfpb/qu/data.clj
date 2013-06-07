@@ -3,7 +3,9 @@
 MongoDB, including creating queries and light manipulation of the data
 after retrieval."
   (:require [taoensso.timbre :as log]
+            [clojure.string :as str]
             [environ.core :refer [env]]
+            [cfpb.qu.query.concepts :as concepts]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -53,6 +55,23 @@ stored in a Mongo database called 'metadata'."
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
 
+(defn- flatten-row [row]
+  (if (not-any? (fn [[k v]] (map? v)) row)
+    row
+    (reduce (fn [row [concept value]]
+              (if (map? value)
+                (let [submap (reduce
+                              (fn [submap [field subvalue]]
+                                (assoc submap
+                                  (keyword (concepts/field-name concept field))
+                                  subvalue)) {} value)]
+                  (merge row submap))
+                (assoc row concept value))) {} row)))
+
+(defn- flatten-data [data]
+  (let [data (map #(flatten-row %) data)]
+    data))
+
 (defrecord QueryResult [total size data])
 
 (defn get-find
@@ -71,7 +90,10 @@ stored in a Mongo database called 'metadata'."
       (->QueryResult
        (.count cursor)
        (.size cursor)
-       (strip-id (map (fn [x] (conv/from-db-object x true)) cursor))))))
+       (->> cursor
+            (map (fn [x] (conv/from-db-object x true)))
+            strip-id
+            flatten-data)))))
 
 (defn get-aggregation
   "Given a collection and a Mongo aggregation, return a QueryResult of the form:
@@ -82,7 +104,7 @@ stored in a Mongo database called 'metadata'."
   (log/info (str "Mongo aggregation: " aggregation))
 
   (with-db (get-db database)
-    (let [data (strip-id (coll/aggregate collection aggregation))
+    (let [data (flatten-data (strip-id (coll/aggregate collection aggregation)))
           size (count data)]
       (->QueryResult size size data))))
 

@@ -4,8 +4,9 @@
             [monger.collection :as coll]
             [cfpb.qu.data :as data]
             [cfpb.qu.query.mongo :as mongo]
+            [cfpb.qu.query.select :as select]
             [cfpb.qu.query.validation :as validation]
-            [cfpb.qu.util :refer [->int]]
+            [cfpb.qu.util :refer [->int ->num]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]))
 
@@ -24,9 +25,10 @@
       (zero? (reduce + (map count (:errors query))))))
 
 (defn params->Query
-  "Convert params from a web request plus a slice definition into a Query record."
-  [params slicedef]
-  (let [{:keys [dimensions clauses]} (parse-params params slicedef)
+  "Convert params from a web request plus a dateset definition and a slice name into a Query record."
+  [params metadata slice]
+  (let [slicedef (get-in metadata [:slices slice])
+        {:keys [dimensions clauses]} (parse-params params slicedef)
         {select :$select
          group :$group
          orderBy :$orderBy
@@ -46,6 +48,8 @@
                  :orderBy orderBy
                  :callback callback
                  :dimensions dimensions
+                 :metadata metadata
+                 :slice slice
                  :slicedef slicedef})))
 
 (defn is-aggregation? [query]
@@ -75,11 +79,29 @@
                             :limit limit
                             :page 1}))))
 
+(defn build-aliases
+  "Build a map of aliases to internal names for the query."
+  [query]
+  (try
+    (let [columns (->> (or (:select query) "")
+                       select/parse
+                       (map (juxt (comp keyword :alias) (comp keyword :select))))
+          reverse-aliases (apply hash-map (->> columns
+                                               (map (juxt second first))
+                                               flatten))
+          aliases (apply hash-map (flatten columns))]
+      (-> query
+          (assoc :aliases aliases)
+          (assoc :reverse-aliases reverse-aliases)))
+    (catch Exception e
+      query)))
+
 (defn execute
   "Execute the query against the provided collection."
   [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (-> query
+                  build-aliases
                   validation/validate
                   resolve-limit-and-offset
                   mongo/process)
@@ -96,7 +118,8 @@
 
 (defn- cast-value [value type]
   (case type
-    "integer" (Integer/parseInt value)
+    "integer" (->int value)
+    "number" (->num value)
     value))
 
 (defn- cast-dimensions
