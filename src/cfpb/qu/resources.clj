@@ -39,7 +39,7 @@ functions to return the resource that will be presented later."
                                       (hal/new-resource (urls/dataset-path (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
-                 (views/index (:media-type representation) resource))))
+                 (views/index request (:media-type representation) resource))))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
@@ -72,7 +72,7 @@ functions to return the resource that will be presented later."
                                           (get-in info [:info :name] (name slice)))
                                          (hal/add-properties info))) (:slices metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
-                 (views/dataset (:media-type representation) resource))))
+                 (views/dataset request (:media-type representation) resource))))
 
 (defn- templated-url
   "Build the templated URL for slice queries."
@@ -141,7 +141,8 @@ functions to return the resource that will be presented later."
                                :headers headers
                                :dimensions (:dimensions query)
                                :callback (:callback query)}
-                     response-body (views/slice (:media-type representation)
+                     response-body (views/slice request
+                                                (:media-type representation)
                                                 resource
                                                 view-map)]
                  (if (query/valid? query)

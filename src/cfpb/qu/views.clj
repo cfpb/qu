@@ -93,25 +93,25 @@
     "text/plain"
     (str "Format not found: " format "."))))
 
-(defmulti index (fn [format _]
+(defmulti index (fn [_ format _]
                   format))
 
-(defmethod index "text/html" [_ resource]
+(defmethod index "text/html" [request _ resource]
   (layout-html resource
                (render-file "templates/index" {:datasets (map second (:embedded resource))})))
 
-(defmethod index "application/json" [_ resource]
+(defmethod index "application/json" [request _ resource]
   (hal/resource->representation resource :json))
 
-(defmethod index "application/xml" [_ resource]
+(defmethod index "application/xml" [request _ resource]
   (hal/resource->representation resource :xml))
 
-(defmethod index :default [format _]
+(defmethod index :default [request format _]
   (format-not-found format))
 
-(defmulti dataset (fn [format _] format))
+(defmulti dataset (fn [_ format _] format))
 
-(defmethod dataset "text/html" [_ resource]
+(defmethod dataset "text/html" [request _ resource]
   (layout-html resource
                (render-file "templates/dataset"
                             {:resource resource
@@ -119,16 +119,16 @@
                              :slices (map second (:embedded resource))
                              :definition (with-out-str (pprint (:properties resource)))})))
 
-(defmethod dataset "application/json" [_ resource]
+(defmethod dataset "application/json" [request _ resource]
   (hal/resource->representation resource :json))
 
-(defmethod dataset "application/xml" [_ resource]
+(defmethod dataset "application/xml" [request _ resource]
   (hal/resource->representation resource :xml))
 
-(defmethod dataset :default [format _]
+(defmethod dataset :default [_ format _]
   (format-not-found format))
 
-(defmulti slice (fn [format _ _]
+(defmulti slice (fn [_ format _ _]
                   format))
 
 (def clauses
@@ -144,11 +144,11 @@
   (let [clauses (->> (get-in resource [:properties :query])
                      (into [])
                      (map (fn [[k v]]
-                            (str+ "$" k "=" v))))
+                            (str "$" (name k) "=" v))))
         dimensions (->> (get-in resource [:properties :dimensions])
                         (into [])
                         (map (fn [[k v]]
-                               (str+ k "=" v))))
+                               (str (name k) "=" v))))
         query (str/join "&" (concat clauses dimensions))]
     (url/mutate-query (:href resource) query)))
 
@@ -190,7 +190,7 @@
                     :href (href-for-page resource total-pages)}])))
     []))
 
-(defmethod slice "text/html" [_ resource {:keys [query metadata slicedef headers dimensions]}]
+(defmethod slice "text/html" [request _ resource {:keys [query metadata slicedef headers dimensions]}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
@@ -239,7 +239,7 @@
                    :pagination pagination
                    :data data}))))
 
-(defmethod slice "text/csv" [_ resource {:keys [query slicedef]}]
+(defmethod slice "text/csv" [request _ resource {:keys [query slicedef]}]
   (let [table (:table slicedef)
         data (get-in resource [:properties :results])
         columns (columns-for-view query slicedef)
@@ -252,17 +252,17 @@
            (response/content-type "text/csv; charset=utf-8")
            (response/set-headers {"Link" (str/join ", " links)})))))
 
-(defmethod slice "application/json" [_ resource _]
+(defmethod slice "application/json" [request _ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod slice "text/javascript" [_ resource {:keys [callback]}]
+(defmethod slice "text/javascript" [request _ resource {:keys [callback]}]
   (let [callback (if (str/blank? callback) "callback" callback)]
     (str callback "("
          (hal/resource->representation resource :json)
          ");")))
 
-(defmethod slice "application/xml" [_ resource _]
+(defmethod slice "application/xml" [request _ resource _]
   (hal/resource->representation resource :xml))
 
-(defmethod slice :default [format _ _]
+(defmethod slice :default [request format _ _]
   (format-not-found format))
