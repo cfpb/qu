@@ -1,12 +1,13 @@
 (ns cfpb.qu.query.concepts
   (:require [clojure.string :as str]
+            [cfpb.qu.util :refer :all]
             [cfpb.qu.query.parser :as parser]))
 
 (def prefix "__")
 
 (defn field-name
   [concept field]
-  (str (name concept) "." (name field)))
+  (str+ concept "." field))
 
 (defn db-name
   [concept field]

@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
-            [cfpb.qu.util :refer [->int first-or-identity]]
+            [cfpb.qu.util :refer :all]
             [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
@@ -67,7 +67,7 @@
   (if (:group query)
     (let [convert-group (fn [group]
                           (if (coll? group)
-                            (str (name (first group)) "." (name (second group)))
+                            (str+ (first group) "." (second group))
                             (name group)))
           group-fields (set (map convert-group (parse parser/group-expr (:group query))))
           non-aggregated-fields (set (map (comp name :alias) (remove :aggregation select)))

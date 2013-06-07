@@ -4,6 +4,7 @@
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [clj-time.core :as time]
+   [cfpb.qu.util :refer :all]
    [protoflex.parse :as p
     :refer [expr eval-expr-tree
             any attempt multi* series
@@ -158,7 +159,7 @@ turn it into a tree built in proper precedence order."
 (defn- concept-select
   []
   (let [[concept field] (concept-identifier)
-        alias (str (name concept) "." (name field))]
+        alias (str+ concept "." field)]
     {:select (keyword (str "__" alias))
      :alias alias
      :concept concept
@@ -175,9 +176,9 @@ turn it into a tree built in proper precedence order."
   []
   (let [aggregation (aggregation)
         column (parens identifier)
-        alias (keyword (str (str/lower-case (name aggregation))
-                            "_"
-                            (str/join "_" (map name (flatten (vector column))))))]
+        alias (keyword (str/lower-case (str+ aggregation
+                                             "_"
+                                             (str/join "_" (map name (flatten (vector column)))))))]
     {:aggregation [aggregation column]
      :select alias
      :alias alias}))

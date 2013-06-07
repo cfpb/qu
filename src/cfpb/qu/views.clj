@@ -13,7 +13,7 @@
    monger.json
    [halresource.resource :as hal]
    [cfpb.qu.project :refer [project]]
-   [cfpb.qu.util :refer [->int]]
+   [cfpb.qu.util :refer :all]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
    [cfpb.qu.query.select :as select]
@@ -144,11 +144,11 @@
   (let [clauses (->> (get-in resource [:properties :query])
                      (into [])
                      (map (fn [[k v]]
-                            (str "$" (name k) "=" v))))
+                            (str+ "$" k "=" v))))
         dimensions (->> (get-in resource [:properties :dimensions])
                         (into [])
                         (map (fn [[k v]]
-                               (str (name k) "=" v))))
+                               (str+ k "=" v))))
         query (str/join "&" (concat clauses dimensions))]
     (url/mutate-query (:href resource) query)))
 

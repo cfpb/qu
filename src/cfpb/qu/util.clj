@@ -2,6 +2,10 @@
   "Utility functions for use throughout Qu."
   (:require [clojure.string :as str]))
 
+(defn str+
+  [& xs]
+  (apply str (map name xs)))
+
 (defn ->int
   "Convert strings and integers to integers. A blank string or
 anything but a string or integer will return the default value, which

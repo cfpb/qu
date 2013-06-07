@@ -17,7 +17,7 @@ transforming the data within."
     [query :as q]
     [collection :as coll]
     [joda-time]]
-   [cfpb.qu.util :refer [->int ->num]]
+   [cfpb.qu.util :refer :all]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.query.concepts :as concepts]
    [cfpb.qu.data :refer :all])
@@ -173,13 +173,13 @@ associated tables."
         group-id (apply merge
                         (map #(hash-map % (str "$" %)) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
-                    {agg-metric {(str "$" (name agg))
-                                 (str "$" (name metric))}}) aggregations)
+                    {agg-metric {(str+ "$" agg)
+                                 (str+ "$" metric)}}) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
-                            {dimension (str "$_id." (name dimension))}) dimensions)
+                            {dimension (str+ "$_id." dimension)}) dimensions)
         project-aggs (map (fn [[agg-metric _]]
-                            {agg-metric (str "$" (name agg-metric))}) aggregations)
+                            {agg-metric (str+ "$" agg-metric)}) aggregations)
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation dataset from-collection aggregation)
@@ -212,7 +212,7 @@ associated tables."
     (doseq [row (:data query-result)]
       (coll/update (name slice)
                    {concept (concept row)}
-                   {"$set" {(keyword (str concepts/prefix (name concept))) row}}
+                   {"$set" {(keyword (str+ concepts/prefix concept)) row}}
                    :multi true))))
 
 (defn- load-concept

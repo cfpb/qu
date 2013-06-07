@@ -16,6 +16,7 @@
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
             [lonocloud.synthread :as ->]
+            [cfpb.qu.util :refer :all]            
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]
@@ -70,8 +71,8 @@ this namespace."
   (if (= agg :COUNT)
     {alias {"$sum" 1}}
     {alias
-     {(str "$" (str/lower-case (name agg)))
-      (str "$" (name column))}}))
+     {(str/lower-case (str+ "$" agg))
+      (str+ "$" column)}}))
 
 (defn group
   "Add the :group provision of the Mongo query, using both the :select
@@ -80,9 +81,9 @@ and :group provisions of the original query."
   (if-let [group (str (:group query))]
     (let [columns (parse parser/group-expr group)
           columns (map (comp keyword #(if (coll? %)
-                                       (str concepts/prefix (name (first %)))
+                                       (str+ concepts/prefix (first %))
                                        %)) columns)
-          id (into {} (map #(vector % (str "$" (name %))) columns))
+          id (into {} (map #(vector % (str+ "$" %)) columns))
           aggregations (->> (select/parse (str (:select query)))
                             (filter :aggregation)
                             (map select-to-agg))
