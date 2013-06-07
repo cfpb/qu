@@ -5,6 +5,7 @@
 /lib
 /classes
 /checkouts
+/src/user.clj
 pom.xml
 report.xml
 *.jar
