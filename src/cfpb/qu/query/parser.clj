@@ -4,6 +4,7 @@
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [clj-time.core :as time]
+   [taoensso.timbre :as log]
    [protoflex.parse :as p
     :refer [expr eval-expr-tree
             any attempt multi* series
