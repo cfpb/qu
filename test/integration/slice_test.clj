@@ -17,7 +17,9 @@
   (facts "about querying a slice that does not exist"
          (fact "it returns a 404"
                (app (request :get "/data/bad-dataset/bad-slice"))
-               => (contains {:status 404})
+               => (contains {:status 404
+                             :headers {"Content-Type" "text/html;charset=UTF-8"
+                                       "Vary" "Accept"}})
 
                ;; TODO why is this Content-Type different
                (app (request :get "/data/bad-dataset/bad-slice.xml"))
