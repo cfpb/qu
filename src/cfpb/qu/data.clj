@@ -20,11 +20,11 @@ after retrieval."
     (mongo/connect! address options)))
 
 (defn disconnect-mongo []
-  (mongo/disconnect!))
+  (when (bound? #'mongo/*mongodb-connection*)
+    (mongo/disconnect!)))
 
 (defn ensure-mongo-connection []
-  (when-not (bound? #'mongo/*mongodb-connection*)
-    (connect-mongo)))
+  (connect-mongo))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is

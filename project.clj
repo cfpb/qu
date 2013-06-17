@@ -44,7 +44,6 @@ serve their public data sets."
                  ;; provisional
                  [slingshot "0.10.3"]
                  ]
-  :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init
          :destroy cfpb.qu.handler/destroy
@@ -54,12 +53,16 @@ serve their public data sets."
           :output-dir "doc/codox"}
   :configleaf {:namespace cfpb.qu.project}
   :profiles {:dev
-             {:env {:mongo-host "127.0.0.1"
+             {:source-paths ["dev"]
+              :env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
               :embongo {:version "2.4.3"}
               :dependencies [[ring-mock "0.1.3"]
                              [midje "1.6-alpha2"]
-                             [midje-junit-formatter "0.1.0-SNAPSHOT"]]}
+                             [midje-junit-formatter "0.1.0-SNAPSHOT"]
+                             [org.clojure/tools.namespace "0.2.3"]
+                             [org.clojure/java.classpath "0.2.0"]
+                             [alembic "0.1.0"]]}
              :integration [:dev
               {:env {:mongo-port 37017
                      :integration true}
