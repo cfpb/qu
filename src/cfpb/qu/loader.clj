@@ -203,17 +203,6 @@ associated tables."
 (defn- concept-collection [concept]
   (str "concept__" (name concept)))
 
-(defn- add-concept-to-slice
-  [dataset slice concept]
-  #_(let [collection (concept-collection concept)
-        query (q/partial-query (q/fields {}))
-        query-result (get-find dataset collection query)]
-    (doseq [row (:data query-result)]
-      (coll/update (name slice)
-                   {concept (concept row)}
-                   {"$set" {(keyword (str concepts/prefix (name concept))) row}}
-                   :multi true))))
-
 (defn- load-concept
   "Go through each slice and replace any dimensions that match a
 concept where the concept is backed by a table with the relevant row
@@ -224,11 +213,33 @@ from that table."
           tabledef ((keyword table) tables)
           collection (concept-collection concept)]
       (log/info "Loading table-backed concept" concept)
-      (load-collection collection tabledef dir)
-      (doseq [[slice slicedef] slices]
-        (when (contains? (set (slice-columns slicedef)) (name concept))
-          (log/info "Matching concept" concept "in" slice)
-          (add-concept-to-slice dataset slice concept))))))
+      (load-collection collection tabledef dir))))
+
+(defn- set-reference-column
+  [dataset slice column columndef concepts]
+  (let [concept (keyword (:concept columndef))
+        concept-def (concepts concept)
+        collection (concept-collection concept)
+        value (keyword (:value columndef))
+        concept-data (->> (coll/find-maps collection)
+                          (map (fn [row]
+                                 [(concept row)
+                                  (value row)])))]
+    (doseq [[key value] concept-data]
+      (coll/update (name slice)
+                   {(keyword (:column columndef)) key}
+                   {"$set" {(keyword column) value}}
+                   :multi true))))
+
+(defn- add-concept-data
+  "Go through each slice and add any dimensions that are references to
+  concept data."
+  [dataset slice slicedef concepts]
+  (when-let [references (:references slicedef)]
+    (log/info "Loading reference columns for" slice)
+    (doseq [[column columndef] references]
+      (log/info "Loading reference column" column)
+      (set-reference-column dataset slice column columndef concepts))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -264,12 +275,13 @@ from that table."
       (drake/run-workflow drakefile :targetv ["=..."]))
     
     (with-db (get-db dataset)
-      (doseq [slice slice-load-order]
-        (log/info "Loading slice" (name slice) "for dataset" dataset)
-        (load-slice dataset slice (slices slice) tables dir))
       (doseq [[concept definition] concepts]
         (log/info "Loading concept" concept)        
         (load-concept dataset concept definition slices tables dir))
+      (doseq [slice slice-load-order]
+        (log/info "Loading slice" (name slice) "for dataset" dataset)
+        (load-slice dataset slice (slices slice) tables dir)
+        (add-concept-data dataset slice (slices slice) concepts))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
         (set-indexes slice (:dimensions definition))))))

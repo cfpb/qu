@@ -6,10 +6,14 @@
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
             [midje.repl :refer :all]
+            [taoensso.timbre :as log]
             [cfpb.qu.core :as core]
-            [cfpb.qu.handler :as handler :refer [boot]]))
+            [cfpb.qu.handler :as handler :refer [boot]]
+            [cfpb.qu.data :as data :refer [ensure-mongo-connection]]
+            [cfpb.qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
+(log/set-level! :info)
 
 (def system nil)
 
