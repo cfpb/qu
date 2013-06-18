@@ -56,7 +56,7 @@ serve their public data sets."
              {:source-paths ["dev"]
               :env {:mongo-host "127.0.0.1"
                     :mongo-port 27017}
-              :embongo {:version "2.4.3"}
+              :embongo {:version "2.4.4"}
               :dependencies [[ring-mock "0.1.3"]
                              [midje "1.6-alpha2"]
                              [midje-junit-formatter "0.1.0-SNAPSHOT"]

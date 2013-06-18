@@ -7,30 +7,17 @@
             [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
-            [cfpb.qu.query.parser :as parser]
-            [cfpb.qu.query.concepts :as concepts]))
+            [cfpb.qu.query.parser :as parser]))
 
 (defn valid? [query]
   (or (not (:errors query))
       (zero? (reduce + (map count (:errors query))))))
 
 (defn valid-field? [{:keys [metadata slice]} field]
-  (let [concept-regex (concepts/regex false)
-        [concept property] (if-let [match (re-matches concept-regex field)]
-                                     [(nth match 1) (nth match 2)]
-                                     [field nil])
-        columns (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
+  (let [fields (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
                      (map name)
-                     set)
-        concept-properties (->> (get-in metadata [:concepts (keyword concept) :properties])
-                                keys
-                                (map name)
-                                set)
-        concept-in-columns (contains? columns concept)
-        property-nil (nil? property)
-        property-in-properties (contains? concept-properties property)]
-    (and concept-in-columns
-         (or property-nil property-in-properties))))
+                     set)]
+    (contains? fields field)))
 
 (defn- add-error
   [query field message]
@@ -47,9 +34,10 @@
 
 (defn- validate-select-fields
   [query select]
-  (let [fields (map (comp name #(cond
-                                 (:aggregation %) (second (:aggregation %))
-                                 :default (:select %))) select)]
+  (let [fields (map (comp name #(if (:aggregation %)
+                                  (second (:aggregation %))
+                                  (:select %)))
+                    select)]
     (reduce #(validate-field %1 :select %2) query fields)))
 
 (defn- validate-select-no-aggregations-without-group
@@ -65,12 +53,8 @@
 (defn- validate-select-no-non-aggregated-fields
   [query select]
   (if (:group query)
-    (let [convert-group (fn [group]
-                          (if (coll? group)
-                            (str (name (first group)) "." (name (second group)))
-                            (name group)))
-          group-fields (set (map convert-group (parse parser/group-expr (:group query))))
-          non-aggregated-fields (set (map (comp name :alias) (remove :aggregation select)))
+    (let [group-fields (set (map name (parse parser/group-expr (:group query))))
+          non-aggregated-fields (set (map (comp name :select) (remove :aggregation select)))
           invalid-fields (set/difference non-aggregated-fields group-fields)]
       (reduce #(add-error %1 :select
                           (str "\"" (name %2)
@@ -95,16 +79,9 @@
     query
     (add-error query :group "You must have a select clause to use grouping.")))
 
-(defn- convert-group-to-mongo-form
-  [group]
-  (if (coll? group)
-    (apply concepts/db-name group)
-    group))
-
 (defn- validate-group-fields
   [query group]
-  (let [group (map convert-group-to-mongo-form group)]
-    (reduce #(validate-field %1 :group %2) query group)))
+  (reduce #(validate-field %1 :group %2) query group))
 
 (defn- validate-group-only-group-dimensions
   [{:keys [slicedef] :as query} group]
@@ -115,7 +92,7 @@
          (if (contains? dimensions field)
            query
            (add-error query :group (str "\"" field "\" is not a dimension.")))))
-     query (map first-or-identity group))))
+     query group)))
 
 (defn- validate-group
   [query]

@@ -19,7 +19,6 @@ transforming the data within."
     [joda-time]]
    [cfpb.qu.util :refer [->int ->num]]
    [cfpb.qu.query.where :as where]
-   [cfpb.qu.query.concepts :as concepts]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]
            [com.mongodb MapReduceCommand$OutputType MapReduceOutput]))
@@ -206,7 +205,7 @@ associated tables."
 
 (defn- add-concept-to-slice
   [dataset slice concept]
-  (let [collection (concept-collection concept)
+  #_(let [collection (concept-collection concept)
         query (q/partial-query (q/fields {}))
         query-result (get-find dataset collection query)]
     (doseq [row (:data query-result)]

@@ -52,26 +52,13 @@ numeric expressions, strings, and booleans."
   (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]
     (keyword op)))
 
-(defn- simple-identifier
-  []
-  (let [ident (regex identifier-regex)]
-    (keyword ident)))
-
-(defn- concept-identifier
-  "Parse function for identifiers that look inside a concept."
-  []
-  (let [concept (simple-identifier)
-        _ (chr \.)
-        ident (simple-identifier)]
-    [concept ident]))
-
 (defn identifier
   "Parse function for identifiers in WHERE queries. Valid identifiers
 begin with a letter and are made up of letters, numbers, dashes, and
-underscores. Identifiers can have one period in them to denote nested
-identifiers."
+underscores."
   []
-  (any concept-identifier simple-identifier))
+  (let [ident (regex identifier-regex)]
+    (keyword ident)))
 
 (defn- comparison-normal []
   (let [[identifier op value]
@@ -152,17 +139,7 @@ turn it into a tree built in proper precedence order."
 (defn- simple-select
   []
   (let [column (identifier)]
-    {:select column
-     :alias column}))
-
-(defn- concept-select
-  []
-  (let [[concept field] (concept-identifier)
-        alias (str (name concept) "." (name field))]
-    {:select (keyword (str "__" alias))
-     :alias alias
-     :concept concept
-     :field field}))
+    {:select column}))
 
 (defn- aggregation []
   (let [agg (any #(ci-string "SUM")
@@ -179,13 +156,11 @@ turn it into a tree built in proper precedence order."
                             "_"
                             (str/join "_" (map name (flatten (vector column))))))]
     {:aggregation [aggregation column]
-     :select alias
-     :alias alias}))
+     :select alias}))
 
 (defn- select
   []
   (any aggregation-select
-       concept-select
        simple-select))
 
 (defn select-expr
@@ -213,10 +188,7 @@ turn it into a tree built in proper precedence order."
   []
   (let [mod-expr #(regex #"(?i)ASC|DESC")
         column (identifier)
-        modifier (attempt mod-expr)
-        column (if (coll? column)
-                 (str/join "." (map name column))
-                 column)]
+        modifier (attempt mod-expr)]
     [column (keyword (str/upper-case (or modifier "ASC")))]))
 
 (defn order-by-expr

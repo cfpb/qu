@@ -10,18 +10,17 @@
                        :concepts {:county {:properties {:population {:type "number"}
                                                         :state {:type "string"}}}}}
              q (fn [& {:as query}]
-                 (query/build-aliases
-                  (merge {:slicedef slicedef
-                          :slice :county_taxes
-                          :metadata metadata}
-                         query)))
+                 (merge {:slicedef slicedef
+                         :slice :county_taxes
+                         :metadata metadata}
+                        query))
              errors (comp :errors validate)]
 
          (fact "it errors when it cannot parse SELECT"
                (errors (q :select "what what")) =>
                (contains {:select anything}))
 
-         (fact "it errors when you have an aggregation in SELECT without a GROUP"
+         (fact "it errors when you have an aggregation in SELECT without a GROUP"               
                (let [query (q :select "state_abbr, SUM(tax_returns)")]
                  (errors query) => (contains {:select anything})
 
@@ -35,10 +34,6 @@
 
                  (errors (assoc query :group "state_abbr, county"))
                  =not=> (contains {:select anything})))
-
-         (fact "it does not error if you reference concept data on an existing field"
-               (errors (q :select "county.population"))
-               =not=> (contains {:select anything}))
 
          (fact "it errors if you reference a field that is not in the slice"
                (errors (q :select "foo"))
@@ -54,12 +49,7 @@
          (fact "it errors if it cannot parse GROUP"
                (errors (q :select "state_abbr"
                           :group "what what"))
-               => (contains {:group anything}))
-
-         (fact "it does not error if you group by concept data on an existing field"
-               (errors (q :select "county.state"
-                          :group "county.state"))
-               =not=> (contains {:group anything}))      
+               => (contains {:group anything}))      
 
          (fact "it errors if you use GROUP without SELECT"
                (let [query (q :group "state_abbr")]
