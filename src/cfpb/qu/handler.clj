@@ -15,14 +15,16 @@
     [keyword-params :refer [wrap-keyword-params]]
     [logging :refer [wrap-with-logging]]]))
 
-(defn init []
-  (data/ensure-mongo-connection)
-  (when (env :debug)
-    (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
-  (log/set-config! [:prefix-fn]
-                   (fn [{:keys [level timestamp hostname ns]}]
-                     (str timestamp " " (-> level name str/upper-case)
-                          " [" ns "]"))))
+(defn init
+  ([] (init (env :debug)))
+  ([debug]
+     (data/ensure-mongo-connection)
+     (when debug
+       (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
+     (log/set-config! [:prefix-fn]
+                      (fn [{:keys [level timestamp hostname ns]}]
+                        (str timestamp " " (-> level name str/upper-case)
+                             " [" ns "]")))))
 
 (defn destroy []
   (data/disconnect-mongo))
@@ -41,5 +43,5 @@
 
 (defn boot
   "Start our web API on the specified port."
-  [port]
-  (run-jetty #'app {:port port}))
+  ([port] (run-jetty #'app {:port port}))
+  ([port join?] (run-jetty #'app {:port port :join? join?})))

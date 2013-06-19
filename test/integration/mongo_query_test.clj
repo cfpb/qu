@@ -70,25 +70,17 @@
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
-        first-doc => (contains {:tax_returns 1 :county "County 1" :state_abbr "NC"})
+        first-doc => (contains {:tax_returns 1 :county "County 1" :state_abbr "NC" :state_name "North Carolina"})
         (> (:total query_result) 0) => true
         (> (:size query_result) 0) => true))
 
     (fact "returns only fields in $select, if specified"
-      (let [q (params->Query {:$select "state_abbr,county,tax_returns" :state_abbr "NC"}
+      (let [q (params->Query {:$select "state_name,county,tax_returns" :state_abbr "NC"}
                              metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)
             first-doc (first (:data query_result))]
-        first-doc => {:tax_returns 1 :county "County 1" :state_abbr "NC"}))
-
-    (fact "returns concept data if specified in $select"
-      (let [q (params->Query {:$select "state_abbr.name,county,tax_returns" :state_abbr "NC"}
-                             metadata :incomes)
-            result (query/execute db coll q)
-            query_result (:result result)
-            first-doc (first (:data query_result))]
-        first-doc => {:tax_returns 1 :county "County 1" :__state_abbr.name "North Carolina"}))
+        first-doc => {:tax_returns 1 :county "County 1" :state_name "North Carolina"}))
 
     (fact "limits number of returned documents if $limit is specified"
       (let [limit 10

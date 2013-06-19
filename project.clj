@@ -17,7 +17,7 @@ serve their public data sets."
             [lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
             [lein-ring "0.8.2"]
-            [lein-embongo "0.2.0"]
+            [lein-embongo "0.2.1"]
             [configleaf "0.4.6"]]
   :hooks [configleaf.hooks]  
   :dependencies [[org.clojure/clojure "1.5.1"]
@@ -44,7 +44,6 @@ serve their public data sets."
                  ;; provisional
                  [slingshot "0.10.3"]
                  ]
-  :main cfpb.qu.core
   :ring {:handler cfpb.qu.handler/app
          :init cfpb.qu.handler/init
          :destroy cfpb.qu.handler/destroy
@@ -53,16 +52,17 @@ serve their public data sets."
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
   :configleaf {:namespace cfpb.qu.project}
-  :profiles {:dev
-             {:env {:mongo-host "127.0.0.1"
-                    :mongo-port 27017}
-              :embongo {:version "2.4.3"}
-              :dependencies [[ring-mock "0.1.3"]
-                             [midje "1.6-alpha2"]
-                             [midje-junit-formatter "0.1.0-SNAPSHOT"]]}
-             :integration [:dev
-              {:env {:mongo-port 37017
-                     :integration true}
-               :dependencies [[clojure-complete "0.2.3"]
-                              [org.clojure/tools.nrepl "0.2.3"]]
-               :embongo {:port 37017}}]})
+  :profiles {:dev {:source-paths ["dev"]
+                   :env {:mongo-host "127.0.0.1"
+                         :mongo-port 27017}
+                   :embongo {:version "2.4.3"}
+                   :dependencies [[ring-mock "0.1.3"]
+                                  [midje "1.6-alpha2"]
+                                  [midje-junit-formatter "0.1.0-SNAPSHOT"]
+                                  [org.clojure/tools.namespace "0.2.3"]
+                                  [org.clojure/java.classpath "0.2.0"]
+                                  [alembic "0.1.0"]]}
+             :integration [:default
+                           {:env {:mongo-port 37017
+                                  :integration true}
+                            :embongo {:port 37017}}]})

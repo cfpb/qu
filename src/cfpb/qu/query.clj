@@ -79,29 +79,11 @@
                             :limit limit
                             :page 1}))))
 
-(defn build-aliases
-  "Build a map of aliases to internal names for the query."
-  [query]
-  (try
-    (let [columns (->> (or (:select query) "")
-                       select/parse
-                       (map (juxt (comp keyword :alias) (comp keyword :select))))
-          reverse-aliases (apply hash-map (->> columns
-                                               (map (juxt second first))
-                                               flatten))
-          aliases (apply hash-map (flatten columns))]
-      (-> query
-          (assoc :aliases aliases)
-          (assoc :reverse-aliases reverse-aliases)))
-    (catch Exception e
-      query)))
-
 (defn execute
   "Execute the query against the provided collection."
   [dataset collection query]
   (let [_ (log/info (str "Raw query: " (into {} query)))
         query (-> query
-                  build-aliases
                   validation/validate
                   resolve-limit-and-offset
                   mongo/process)

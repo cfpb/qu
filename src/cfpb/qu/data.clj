@@ -5,7 +5,6 @@ after retrieval."
   (:require [taoensso.timbre :as log]
             [clojure.string :as str]
             [environ.core :refer [env]]
-            [cfpb.qu.query.concepts :as concepts]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -20,11 +19,11 @@ after retrieval."
     (mongo/connect! address options)))
 
 (defn disconnect-mongo []
-  (mongo/disconnect!))
+  (when (bound? #'mongo/*mongodb-connection*)
+    (mongo/disconnect!)))
 
 (defn ensure-mongo-connection []
-  (when-not (bound? #'mongo/*mongodb-connection*)
-    (connect-mongo)))
+  (connect-mongo))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
@@ -55,23 +54,6 @@ stored in a Mongo database called 'metadata'."
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
 
-(defn- flatten-row [row]
-  (if (not-any? (fn [[k v]] (map? v)) row)
-    row
-    (reduce (fn [row [concept value]]
-              (if (map? value)
-                (let [submap (reduce
-                              (fn [submap [field subvalue]]
-                                (assoc submap
-                                  (keyword (concepts/field-name concept field))
-                                  subvalue)) {} value)]
-                  (merge row submap))
-                (assoc row concept value))) {} row)))
-
-(defn- flatten-data [data]
-  (let [data (map #(flatten-row %) data)]
-    data))
-
 (defrecord QueryResult [total size data])
 
 (defn get-find
@@ -92,8 +74,7 @@ stored in a Mongo database called 'metadata'."
        (.size cursor)
        (->> cursor
             (map (fn [x] (conv/from-db-object x true)))
-            strip-id
-            flatten-data)))))
+            strip-id)))))
 
 (defn get-aggregation
   "Given a collection and a Mongo aggregation, return a QueryResult of the form:
@@ -104,7 +85,7 @@ stored in a Mongo database called 'metadata'."
   (log/info (str "Mongo aggregation: " aggregation))
 
   (with-db (get-db database)
-    (let [data (flatten-data (strip-id (coll/aggregate collection aggregation)))
+    (let [data (strip-id (coll/aggregate collection aggregation))
           size (count data)]
       (->QueryResult size size data))))
 

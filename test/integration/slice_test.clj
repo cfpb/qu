@@ -2,9 +2,11 @@
   (:require [midje.sweet :refer :all]
             [ring.mock.request :refer :all]
             [cfpb.qu.handler :refer [app]]
+            [cfpb.qu.loader :as loader]
             [cfpb.qu.data :as data]))
 
-(with-state-changes [(before :facts (data/connect-mongo))
+(with-state-changes [(before :facts (do (data/connect-mongo)
+                                        (loader/load-dataset "integration_test")))
                      (after :facts (data/disconnect-mongo))]
 
   (facts "about querying a slice with no parameters"

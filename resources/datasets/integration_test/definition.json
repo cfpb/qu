@@ -31,13 +31,20 @@
       "type": "table",
       "table": "incomes",
       "dimensions": [
-        "state_abbr", "county"
+        "state_abbr", "state_name", "county"
       ],
       "metrics": [
         "tax_returns",
         "adjusted_gross_income",
         "date_observed"
-      ]
+      ],
+      "references": {
+        "state_name": {
+          "column": "state_abbr",
+          "concept": "state_abbr",
+          "value": "name"
+        }
+      }
     }
   },  
   "tables": {

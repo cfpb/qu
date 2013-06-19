@@ -48,7 +48,14 @@
         "wages_and_salaries_income",
         "dividend_income",
         "interest_income"
-      ]
+      ],
+      "references": {
+        "state_name": {
+          "column": "state",
+          "concept": "state",
+          "value": "name"
+        }
+      }
     },
     "incomes_by_state": {
       "type": "derived",
