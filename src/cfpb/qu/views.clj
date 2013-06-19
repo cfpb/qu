@@ -55,7 +55,10 @@
   from that string."
   [select]
   (if select
-    (map :select (select/parse select))))
+    (try
+      (map :select (select/parse select))
+      (catch Exception e
+        nil))))
 
 (defn- columns-for-view [query slicedef]
   (let [select (:select query)]
@@ -223,6 +226,7 @@
                 (+ start)
                 dec)
         total (get-in resource [:properties :total])
+        has-data? (> (- end start) 0)
         pagination (create-pagination resource)]
     (layout-html resource
                  (slice-html
@@ -237,6 +241,7 @@
                    :end end
                    :total total
                    :pagination pagination
+                   :has-data? has-data?
                    :data data}))))
 
 (defmethod slice "text/csv" [_ resource {:keys [query slicedef]}]
