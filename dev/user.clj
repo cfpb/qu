@@ -6,6 +6,7 @@
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
             [midje.repl :refer :all]
+            [environ.core :refer [env]]            
             [taoensso.timbre :as log]
             [cfpb.qu.core :as core]
             [cfpb.qu.handler :as handler :refer [boot]]
@@ -13,7 +14,9 @@
             [cfpb.qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
-(log/set-level! :info)
+
+(when-not (env :integration)
+  (log/set-level! :info))
 
 (def system nil)
 
