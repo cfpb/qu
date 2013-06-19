@@ -62,8 +62,7 @@ serve their public data sets."
                                   [org.clojure/tools.namespace "0.2.3"]
                                   [org.clojure/java.classpath "0.2.0"]
                                   [alembic "0.1.0"]]}
-             :integration [:dev
-                           {:repl-options {:timeout 120000}
-                            :env {:mongo-port 37017
+             :integration [:default
+                           {:env {:mongo-port 37017
                                   :integration true}
                             :embongo {:port 37017}}]})
