@@ -98,6 +98,7 @@
   </div>
 </form>
 
+{{#has-data?}}
 <div>
   <h2>Query Results ({{start}}-{{end}} of {{total}})</h2>
 
@@ -124,6 +125,5 @@
   </table>
 
   {{> templates/pagination}}
-  
 </div>
-
+{{/has-data?}}
