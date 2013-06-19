@@ -2,10 +2,12 @@
   (:require [midje.sweet :refer :all]
             [ring.mock.request :refer :all]
             [cfpb.qu.handler :refer [app]]
+            [cfpb.qu.loader :as loader]
             [cfpb.qu.data :as data]
             [monger.core :as mongo]))
 
-(with-state-changes [(before :facts (data/connect-mongo))
+(with-state-changes [(before :facts (do (data/connect-mongo)
+                                        (loader/load-dataset "integration_test")))
                      (after :facts (data/disconnect-mongo))]
   
   (fact "the index URL redirects to /data"
