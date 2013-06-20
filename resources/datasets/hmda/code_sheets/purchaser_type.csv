@@ -1,0 +1,11 @@
+id,purchaser_type
+0,Loan was not originated or was not sold in calendar year covered by register
+1,Fannie Mae (FNMA)
+2,Ginnie Mae (GNMA)
+3,Freddie Mac (FHLMC)
+4,Farmer Mac (FAMC)
+5,Private securitization
+6,"Commercial bank, savings bank or savings association"
+7,"Life insurance company, credit union, mortgage bank, or finance company"
+8,Affiliate institution
+9,Other type of purchaser

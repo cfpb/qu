@@ -1,4 +1,4 @@
-SAMPLE_SIZE:=0.1
+SAMPLE_SIZE:=0.01
 
 add_headers_and_unzip()
   cp headers.csv $OUTPUT

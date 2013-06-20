@@ -1,4 +1,4 @@
-*.csv
 *.zip
+hmd*.csv
 !headers.csv
 .drake
