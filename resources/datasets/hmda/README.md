@@ -1,10 +1,10 @@
 ### HMDA Datase
 
-To load data first use make to retrieve the dataset from the [FFIEC website](http://www.ffiec.gov/hmda/hmdaproducts.htm).
+To load data, first use make to retrieve the datasets from the [FFIEC website](http://www.ffiec.gov/hmda/hmdaproducts.htm).
 
 
 
-To load all data from 2009-2011:
+To load all data from 2007-2011:
 ```
 make
 ```
