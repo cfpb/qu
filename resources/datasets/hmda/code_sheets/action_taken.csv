@@ -1,0 +1,9 @@
+id,action_taken
+1,Loan originated
+2,Application approved but not accepted
+3,Application denied by financial institution
+4,Application withdrawn by applicant
+5,File closed for incompleteness
+6,Loan purchased by the institution
+7,Preapproval request denied by financial institution
+8,Preapproval request approved but not accepted

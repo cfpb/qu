@@ -53,7 +53,8 @@
         "states.csv"
       ],
       "columns": {
-        "state": {
+        "state_abbr": {
+          "name": "_id",
           "type": "string"
         },
         "name": {

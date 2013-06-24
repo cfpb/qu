@@ -223,7 +223,7 @@ from that table."
         value (keyword (:value columndef))
         concept-data (->> (coll/find-maps collection)
                           (map (fn [row]
-                                 [(concept row)
+                                 [(:_id row)
                                   (value row)])))]
     (doseq [[key value] concept-data]
       (coll/update (name slice)
@@ -276,7 +276,6 @@ from that table."
     
     (with-db (get-db dataset)
       (doseq [[concept definition] concepts]
-        (log/info "Loading concept" concept)        
         (load-concept dataset concept definition slices tables dir))
       (doseq [slice slice-load-order]
         (log/info "Loading slice" (name slice) "for dataset" dataset)
@@ -284,7 +283,6 @@ from that table."
         (add-concept-data dataset slice (slices slice) concepts))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
-        (set-indexes slice (:dimensions definition))))))
+        (set-indexes slice (or (:index_only definition)
+                               (:dimensions definition)))))))
 
-;; (ensure-mongo-connection)
-;; (with-out-str (time (load-dataset "county_taxes")))
