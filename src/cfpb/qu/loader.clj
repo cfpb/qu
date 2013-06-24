@@ -283,8 +283,6 @@ from that table."
         (add-concept-data dataset slice (slices slice) concepts))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
-        (set-indexes slice (or (:only-index definition)
+        (set-indexes slice (or (:index_only definition)
                                (:dimensions definition)))))))
 
-;; (ensure-mongo-connection)
-;; (with-out-str (time (load-dataset "county_taxes")))

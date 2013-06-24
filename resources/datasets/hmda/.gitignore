@@ -1,4 +1,5 @@
 *.zip
 hmd*.csv
+gaz_counties.csv
 !headers.csv
 .drake

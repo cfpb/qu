@@ -19,17 +19,41 @@ sample_keep_headers() [python]
   input.close()
   output.close()
 
+add_fips_column() [python]
+  import csv
+  with open("$[INPUT]", 'rb') as input:
+    with open("$[OUTPUT]", 'wb') as output:
+      csvin = csv.reader(input)
+      csvout = csv.writer(output)
+      headers = csvin.next()
+      headers.append('FIPS')
+      csvout.writerow(headers)
+      for row in csvin:
+        fips_codes = row[11:13]
+        row.append(''.join(fips_codes))
+        csvout.writerow(row)
+
 link()
   ln -f $INPUT $OUTPUT
+
+gaz_counties.zip <- [-timecheck]
+  curl http://www.census.gov/geo/maps-data/data/docs/gazetteer/Gaz_counties_national.zip > $OUTPUT
+
+gaz_counties.csv <- gaz_counties.zip
+  unzip -p $INPUT | iconv -f ISO-8859-2 -t UTF-8 | perl -lpe 's/\s*$//;s/\t/,/g' > $OUTPUT
 
 hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip <- [-timecheck]
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT0
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT1
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT2
 
-hmda_lar_all_2011.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip]
-hmda_lar_all_2010.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
-hmda_lar_all_2009.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
+hmda_lar_all_2011_no_fips.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip]
+hmda_lar_all_2010_no_fips.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
+hmda_lar_all_2009_no_fips.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
+
+hmda_lar_all_2011.csv <- hmda_lar_all_2011_no_fips.csv [method:add_fips_column]
+hmda_lar_all_2010.csv <- hmda_lar_all_2010_no_fips.csv [method:add_fips_column]
+hmda_lar_all_2009.csv <- hmda_lar_all_2009_no_fips.csv [method:add_fips_column]
 
 hmda_lar_sample_2011.csv <- hmda_lar_all_2011.csv [method:sample_keep_headers]
 hmda_lar_sample_2010.csv <- hmda_lar_all_2010.csv [method:sample_keep_headers]
