@@ -1,0 +1,5 @@
+id,lien_status
+1,Secured by a first lien
+2,Secured by a subordinate lien
+3,Not secured by a lien
+4,Not applicable
