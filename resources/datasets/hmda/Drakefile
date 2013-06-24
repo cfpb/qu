@@ -2,7 +2,7 @@ SAMPLE_SIZE:=0.1
 
 add_headers_and_unzip()
   cp headers.csv $OUTPUT
-  unzip -p $INPUT | perl -p -e 's/na| //gi' >> $OUTPUT
+  7z x $INPUT -so | perl -p -e 's/na| //gi' >> $OUTPUT
 
 sample_keep_headers() [python]
   import random
@@ -22,19 +22,27 @@ sample_keep_headers() [python]
 link()
   ln -f $INPUT $OUTPUT
 
-hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip <- [-timecheck]
+hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip, hmda_lar_2008.zip, hmda_lar_2007.zip <- [-timecheck]
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT0
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT1
   curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT2
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2008HMDALAR%20-%20National.zip > $OUTPUT3
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2007HMDALAR%20-%20National.zip > $OUTPUT4
 
 hmda_lar_all_2011.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip]
 hmda_lar_all_2010.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
 hmda_lar_all_2009.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
+hmda_lar_all_2008.csv <- hmda_lar_2008.zip [method:add_headers_and_unzip]
+hmda_lar_all_2007.csv <- hmda_lar_2007.zip [method:add_headers_and_unzip]
 
 hmda_lar_sample_2011.csv <- hmda_lar_all_2011.csv [method:sample_keep_headers]
 hmda_lar_sample_2010.csv <- hmda_lar_all_2010.csv [method:sample_keep_headers]
 hmda_lar_sample_2009.csv <- hmda_lar_all_2009.csv [method:sample_keep_headers]
+hmda_lar_sample_2008.csv <- hmda_lar_all_2008.csv [method:sample_keep_headers]
+hmda_lar_sample_2007.csv <- hmda_lar_all_2007.csv [method:sample_keep_headers]
 
 hmda_lar_2011.csv <- hmda_lar_sample_2011.csv [method:link]
 hmda_lar_2010.csv <- hmda_lar_sample_2010.csv [method:link]
 hmda_lar_2009.csv <- hmda_lar_sample_2009.csv [method:link]
+hmda_lar_2008.csv <- hmda_lar_sample_2008.csv [method:link]
+hmda_lar_2007.csv <- hmda_lar_sample_2007.csv [method:link]
