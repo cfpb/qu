@@ -86,6 +86,8 @@ MongoDB connection.
 
 ### Configuration
 
+#### MongoDB
+
 In development mode, the application will connect to your local MongoDB server. In production, or if you want to connect to a different Mongo server in dev, you will have to specify the Mongo host and port.
 
 You can do this via setting environment variables:
@@ -101,6 +103,25 @@ You can also do this via setting Java system properties:
 java -jar qu.jar -Dmongo.host=192.168.21.98 -Dmongo.port=27017
 ```
 
+#### APP URL
+
+To control the HREF of the links that are created for data slices, you can set the APP_URL environment variable.
+
+For example, given a slice at `/data/a_resource/a_slice`, setting the APP_URL variable like so
+
+```sh
+APP_URL=https://my.data.platform/data-api
+```
+
+will create links such as
+
+```sh
+_links":[{"rel":"self","href":"https://my.data.platform/data-api/data/a_resource/a_slice.json? ....
+```
+
+when emitted in JSON, JSONP, XML, and so on.
+
+If the variable is not set, then absolute HREFs such as `/data/a_resource/a_slice.json` are used. This variable is most useful in production hosting situations where an application server is behind a proxy, and you wish to granularly control the HREFs that are created independent of how the application server sees the request URI.
 
 ### Loading data
 

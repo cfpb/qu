@@ -15,6 +15,7 @@ functions to return the resource that will be presented later."
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
    [clojurewerkz.urly.core :as url :refer [url-like]]
+   [cfpb.qu.project :refer [project]]
    [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
    [cfpb.qu.views :as views]
@@ -74,6 +75,12 @@ functions to return the resource that will be presented later."
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
                  (views/dataset (:media-type representation) resource))))
 
+(defn- base-url
+  "Derive a base URL from the APP_URL environment variable and either the path-info or uri value from the request scope"
+  [request]
+  (str (:app-url project) (or (:path-info request)
+                              (:uri request))))
+
 (defn- templated-url
   "Build the templated URL for slice queries."
   [base-href clauses]
@@ -86,7 +93,7 @@ functions to return the resource that will be presented later."
 (defn- slice-resource
   "Build a HAL resource for a slice."
   [dataset slice request query]
-  (let [base-href (:uri request)
+  (let [base-href (base-url request)
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
                          base-href))
@@ -129,6 +136,7 @@ functions to return the resource that will be presented later."
                           "text/html" (not-found message)
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
+
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) metadata slice)
