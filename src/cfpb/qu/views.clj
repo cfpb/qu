@@ -19,7 +19,8 @@
    [cfpb.qu.query.select :as select]
    [cheshire.generate :refer [add-encoder encode-str]]
    [clojurewerkz.urly.core :as url]
-   [lonocloud.synthread :as ->])
+   [lonocloud.synthread :as ->]
+   [liberator.representation :refer [ring-response]])
   (:import [clojurewerkz.urly UrlLike]))
 
 ;; Allow for encoding of UrlLike's in JSON.
@@ -255,7 +256,8 @@
           links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)]
       (->> (str (write-csv (vector columns)) (write-csv rows))
            (response/content-type "text/csv; charset=utf-8")
-           (response/set-headers {"Link" (str/join ", " links)})))))
+           (response/set-headers {"Link" (str/join ", " links)})
+           (ring-response)))))
 
 (defmethod slice "application/json" [_ resource _]
   (hal/resource->representation resource :json))
