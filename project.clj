@@ -2,6 +2,7 @@
 (def build-url (System/getenv "BUILD_URL"))
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
+(def app-url (or (System/getenv "APP_URL") ""))
 
 (defproject qu "0.1.0-SNAPSHOT"
   :description "qu is an **in-progress** data platform created by the CFPB to
