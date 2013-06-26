@@ -935,7 +935,7 @@
         },
         "Action Type": {
           "type": "integer", 
-          "name": "action_type"
+          "name": "action_taken"
         },
         "MSA/MD": {
           "type": "string", 
@@ -967,31 +967,31 @@
         }, 
         "Applicant Race 2": {
           "type": "integer", 
-          "name": "applicant_race_5"
+          "name": "applicant_race_2"
         }, 
         "Applicant Race 3": {
           "type": "integer", 
-          "name": "applicant_race_4"
+          "name": "applicant_race_3"
         }, 
         "Applicant Race 4": {
           "type": "integer", 
-          "name": "applicant_race_3"
+          "name": "applicant_race_4"
         }, 
         "Applicant Race 5": {
           "type": "integer", 
-          "name": "applicant_race_2"
+          "name": "applicant_race_5"
         }, 
         "Co Applicant Race 1": {
           "type": "integer", 
-          "name": "co_applicant_race_2"
+          "name": "co_applicant_race_1"
         }, 
         "Co Applicant Race 2": {
           "type": "integer", 
-          "name": "co_applicant_race_3"
+          "name": "co_applicant_race_2"
         }, 
         "Co Applicant Race 3": {
           "type": "integer", 
-          "name": "co_applicant_race_1"
+          "name": "co_applicant_race_3"
         },         
         "Co Applicant Race 4": {
           "type": "integer", 
