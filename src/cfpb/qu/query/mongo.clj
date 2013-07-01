@@ -98,7 +98,7 @@ and :group provisions of the original query."
                                [field 1]
                                [field -1])))
                       flatten
-                      (apply sorted-map))]
+                      (apply array-map))]
         (assoc-in query [:mongo :sort] sort))
       query)))
 
