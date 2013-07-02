@@ -12,12 +12,14 @@ transforming the data within."
    [drake.core :as drake]
    [clj-time.core :refer [default-time-zone]]
    [clj-time.format :as time]
+   [lonocloud.synthread :as ->]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
     [collection :as coll]
-    [joda-time]]
-   [cfpb.qu.util :refer [->int ->num]]
+    [joda-time]
+    [db :as db]]
+   [cfpb.qu.util :refer [->int ->num convert-keys ->print]]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]
@@ -50,14 +52,20 @@ value into the correct type."
 (defn- cast-data
   "Given the data from a CSV file and the definition of the data's columns,
 transform that data into the data that will be saved in the database."
-  [definition data]
-  (into {}
-        (remove nil?
-                (for [[column value] data]
-                  (let [columndef (definition column)]
-                    (when-not (:skip columndef)
-                      (vector (or (:name columndef) column)
-                              (cast-value value columndef))))))))
+  [data definition & {:keys [only]}]
+  (let [only (when (seq only)
+               (set (map keyword only)))
+        data (into {}
+                   (remove nil?
+                           (for [[column value] data]
+                             (let [columndef (definition column)]
+                               (when (and (seq columndef)
+                                          (not (:skip columndef))
+                                          (or (not (seq only))
+                                              (contains? only (keyword column))))
+                                 (vector (or (:name columndef) column)
+                                         (cast-value value columndef)))))))]
+    data))
 
 (defn- set-indexes
   "Given a table name and a seq of indexes, create those indexes for the table."
@@ -120,22 +128,24 @@ associated tables."
   3. We split the data into chunks of 100, and in parallel,
      transform each of those chunks into a map.
   4. We insert each of those chunks into the DB in a batch load."
-  [collection file columns]
+  [collection file columns & {:keys [only keyfn]}]
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
           headers (map keyword (first data))
-          chunks (->> (rest data)
-                      (partition-all *chunk-size*)
-                      (map (fn [chunk]
-                             (doall
-                              (map #(->> %
-                                         (zipmap headers)
-                                         (cast-data columns)) chunk)))))]
+          data (map
+                (fn [row]
+                  (-> (zipmap headers row)
+                      (cast-data columns :only only)
+                      (->/when keyfn
+                        (convert-keys keyfn))
+                      ))
+                (rest data))
+          chunks (partition-all *chunk-size* data)]
       (doseq [chunk chunks]
         (coll/insert-batch collection chunk)))))
 
 (defn- load-collection
-  [collection tabledef dir]
+  [collection tabledef dir & opts]
   (coll/drop collection)  
   (let [sources (:sources tabledef)
         columns (:columns tabledef)
@@ -149,36 +159,50 @@ associated tables."
                     sources)]
     (doseq [agent agents]
       (send-off agent (fn [file]
-                        (load-csv-file collection (str dir "/" file) columns))))
+                        (apply load-csv-file
+                               collection
+                               (str dir "/" file)
+                               columns
+                               opts))))
     (apply await agents)))
 
 (defn- load-table-slice
-  [dataset slice slicedef tables dir]
-  (let [table (:table slicedef)
-        tabledef ((keyword table) tables)
-        collection (name slice)]
+  [dataset slice definition dir]
+  (let [slicedef (get-in definition [:slices (keyword slice)])
+        table (:table slicedef)
+        tabledef (get-in definition [:tables (keyword table)])
+        collection (name slice)
+        zipfn (field-zip-fn slicedef)]
     (log/info "Loading table-backed slice" slice)
-    (load-collection collection tabledef dir)))
+    (load-collection collection tabledef dir
+                     :keyfn zipfn
+                     :only (slice-columns slicedef))))
 
 (defn- load-derived-slice
-  [dataset slice slicedef]
-  (let [dimensions (:dimensions slicedef)
+  [dataset slice definition]
+  (let [slicedef (get-in definition [:slices (keyword slice)])
+        dimensions (:dimensions slicedef)
         aggregations (:aggregations slicedef)
         from-collection (:slice slicedef)
         to-collection slice
+        from-zip-fn (field-zip-fn (get-in definition [:slices (keyword from-collection)]))
+        from-unzip-fn (field-unzip-fn (get-in definition [:slices (keyword from-collection)]))        
+        zip-fn (field-zip-fn slicedef)
         match (if-let [where (:where slicedef)]
                 (where/mongo-eval (where/parse where))
                 {})        
         group-id (apply merge
-                        (map #(hash-map % (str "$" %)) dimensions))
+                        (map #(hash-map % (str "$" (name (from-zip-fn %)))) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
                     {agg-metric {(str "$" (name agg))
-                                 (str "$" (name metric))}}) aggregations)
+                                 (str "$" (name (from-zip-fn metric)))}}) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
-                            {dimension (str "$_id." (name dimension))}) dimensions)
+                            {(zip-fn dimension)
+                             (str "$_id." (name dimension))}) dimensions)
         project-aggs (map (fn [[agg-metric _]]
-                            {agg-metric (str "$" (name agg-metric))}) aggregations)
+                            {(zip-fn agg-metric)
+                             (str "$" (name agg-metric))}) aggregations)
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation dataset from-collection aggregation)
@@ -191,13 +215,12 @@ associated tables."
       (coll/insert-batch to-collection chunk))))
 
 (defn- load-slice
-  [dataset slice slicedef tables dir]
-  (let [dimensions (:dimensions slicedef)
-        type (keyword (:type slicedef))]
+  [dataset slice definition dir]
+  (let [type (keyword (get-in definition [:slices (keyword slice) :type]))]
     (log/info "Dropping slice" slice)
     (case type
-      :table (load-table-slice dataset slice slicedef tables dir)
-      :derived (load-derived-slice dataset slice slicedef)
+      :table (load-table-slice dataset slice definition dir)
+      :derived (load-derived-slice dataset slice definition)
       (log/error "Cannot load slice" slice "with type" type))))
 
 (defn- concept-collection [concept]
@@ -216,7 +239,7 @@ from that table."
       (load-collection collection tabledef dir))))
 
 (defn- set-reference-column
-  [dataset slice column columndef concepts]
+  [dataset slice column columndef concepts keyfn]
   (let [concept (keyword (:concept columndef))
         concept-def (concepts concept)
         collection (concept-collection concept)
@@ -227,8 +250,8 @@ from that table."
                                   (value row)])))]
     (doseq [[key value] concept-data]
       (coll/update (name slice)
-                   {(keyword (:column columndef)) key}
-                   {"$set" {(keyword column) value}}
+                   {(keyfn (name (:column columndef))) key}
+                   {"$set" {(keyfn column) value}}
                    :multi true))))
 
 (defn- add-concept-data
@@ -237,9 +260,10 @@ from that table."
   [dataset slice slicedef concepts]
   (when-let [references (:references slicedef)]
     (log/info "Loading reference columns for" slice)
-    (doseq [[column columndef] references]
-      (log/info "Loading reference column" column)
-      (set-reference-column dataset slice column columndef concepts))))
+    (let [keyfn (field-zip-fn slicedef)]
+      (doseq [[column columndef] references]
+        (log/info "Loading reference column" column)
+        (set-reference-column dataset slice column columndef concepts keyfn)))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -275,14 +299,16 @@ from that table."
       (drake/run-workflow drakefile :targetv ["=..."]))
     
     (with-db (get-db dataset)
+      (log/info "Drop old database for" dataset)
+      (db/drop-db)
       (doseq [[concept definition] concepts]
         (load-concept dataset concept definition slices tables dir))
       (doseq [slice slice-load-order]
-        (log/info "Loading slice" (name slice) "for dataset" dataset)
-        (load-slice dataset slice (slices slice) tables dir)
-        (add-concept-data dataset slice (slices slice) concepts))
+        (let [slicedef (slices slice)]
+          (log/info "Loading slice" (name slice) "for dataset" dataset)
+          (load-slice dataset slice definition dir)
+          (add-concept-data dataset slice slicedef concepts)))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
         (set-indexes slice (or (:index_only definition)
                                (:dimensions definition)))))))
-

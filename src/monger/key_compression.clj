@@ -37,7 +37,7 @@
 (defn compression-map
   "Create a map of shortened unique field names from a list of fields."
   [field-list]
-  (let [field-list (map name field-list)
+  (let [field-list (remove #(= % "_id") (map name field-list))
         field-trie (trie-add {} field-list)]
     (into {}
           (map

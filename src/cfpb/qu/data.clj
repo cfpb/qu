@@ -10,6 +10,7 @@ after retrieval."
              [query :as q]
              [collection :as coll]
              [conversion :as conv]
+             [key-compression :as mzip]
              joda-time
              json]))
 
@@ -50,6 +51,20 @@ stored in a Mongo database called 'metadata'."
   columns, both dimensions and metrics."
   [slicedef]
   (concat (:dimensions slicedef) (:metrics slicedef)))
+
+(defn field-zip-fn
+  [slicedef]
+  "Given a slice definition, return a function that will compress
+  field names."
+  (let [fields (slice-columns slicedef)]
+    (mzip/compression-fn fields)))
+
+(defn field-unzip-fn
+  [slicedef]
+  "Given a slice definition, return a function that will compress
+  field names."
+  (let [fields (slice-columns slicedef)]
+    (mzip/decompression-fn fields)))
 
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
