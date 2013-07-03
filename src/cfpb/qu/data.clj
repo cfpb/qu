@@ -98,7 +98,20 @@ stored in a Mongo database called 'metadata'."
               [k v]))]
     (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) group)))
 
+(defn compress-fields
+  [fields zipfn]
+  (convert-keys fields zipfn))
+
 (defrecord QueryResult [total size data])
+
+(defn compress-find
+  [database collection find-map]
+  (let [zipfn (field-zip-fn database collection)]
+    (-> find-map
+        (update-in [:query] compress-where zipfn)
+        (update-in [:fields] convert-keys zipfn)
+        (update-in [:sort] convert-keys zipfn))
+    ))
 
 (defn get-find
   "Given a collection and a Mongo find map, return a QueryResult of the form:
@@ -107,18 +120,22 @@ stored in a Mongo database called 'metadata'."
    :data - Seq of maps with the IDs stripped out"
   [database collection find-map]
   (log/info (str "Mongo find: " find-map))
-
-  (with-db (get-db database)
-    (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
-                         (.limit (:limit find-map 0))
-                         (.skip (:skip find-map 0))
-                         (.sort (conv/to-db-object (:sort find-map))))]
-      (->QueryResult
-       (.count cursor)
-       (.size cursor)
-       (->> cursor
-            (map (fn [x] (conv/from-db-object x true)))
-            strip-id)))))
+  (let [find-map (compress-find database collection find-map)
+        unzipfn (field-unzip-fn database collection)]
+    (log/info "Post-compress Mongo find: " find-map)
+    (with-db (get-db database)
+      (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
+                           (.limit (:limit find-map 0))
+                           (.skip (:skip find-map 0))
+                           (.sort (conv/to-db-object (:sort find-map))))]
+        (->QueryResult
+         (.count cursor)
+         (.size cursor)
+         (->> cursor
+              (map (fn [x] (-> x
+                               (conv/from-db-object true)
+                               (convert-keys unzipfn))))
+              strip-id))))))
 
 (defn compress-aggregation
   [database collection aggregation]
