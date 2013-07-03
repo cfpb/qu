@@ -3,6 +3,10 @@
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk]]))
 
+(defn str+
+  [& args]
+  (apply str (map name args)))
+
 (defn ->int
   "Convert strings and integers to integers. A blank string or
 anything but a string or integer will return the default value, which

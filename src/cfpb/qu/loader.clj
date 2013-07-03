@@ -54,17 +54,17 @@ value into the correct type."
 transform that data into the data that will be saved in the database."
   [data definition & {:keys [only]}]
   (let [only (when (seq only)
-               (set (map keyword only)))
+               (set (map keyword only)))        
         data (into {}
                    (remove nil?
                            (for [[column value] data]
-                             (let [columndef (definition column)]
+                             (let [columndef (definition column)
+                                   column (keyword (or (:name columndef) column))]
                                (when (and (seq columndef)
                                           (not (:skip columndef))
                                           (or (not (seq only))
                                               (contains? only (keyword column))))
-                                 (vector (or (:name columndef) column)
-                                         (cast-value value columndef)))))))]
+                                 (vector column (cast-value value columndef)))))))]
     data))
 
 (defn- set-indexes
@@ -185,30 +185,29 @@ associated tables."
         aggregations (:aggregations slicedef)
         from-collection (:slice slicedef)
         to-collection slice
-        from-zip-fn (field-zip-fn (get-in definition [:slices (keyword from-collection)]))
-        from-unzip-fn (field-unzip-fn (get-in definition [:slices (keyword from-collection)]))        
-        zip-fn (field-zip-fn slicedef)
+        zipfn (field-zip-fn slicedef)
         match (if-let [where (:where slicedef)]
                 (where/mongo-eval (where/parse where))
                 {})        
         group-id (apply merge
-                        (map #(hash-map % (str "$" (name (from-zip-fn %)))) dimensions))
+                        (map #(hash-map % (str "$" (name %))) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
                     {agg-metric {(str "$" (name agg))
-                                 (str "$" (name (from-zip-fn metric)))}}) aggregations)
+                                 (str "$" (name metric))}}) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
-                            {(zip-fn dimension)
+                            {dimension
                              (str "$_id." (name dimension))}) dimensions)
         project-aggs (map (fn [[agg-metric _]]
-                            {(zip-fn agg-metric)
+                            {agg-metric
                              (str "$" (name agg-metric))}) aggregations)
         project (apply merge (concat project-dims project-aggs))
-        aggregation [{"$group" group} {"$project" project} {"$match" match}]
+        aggregation [{"$match" match} {"$group" group} {"$project" project}]
         query-result (get-aggregation dataset from-collection aggregation)
-        chunks (->> query-result
-                    :data
-                    (partition-all *chunk-size*))]
+        data (-> query-result
+                 :data
+                 (convert-keys zipfn))        
+        chunks (partition-all *chunk-size* data)]
     (coll/drop to-collection)
     (log/info "Loading derived slice" slice)
     (doseq [chunk chunks]
