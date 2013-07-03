@@ -309,5 +309,5 @@ from that table."
           (add-concept-data dataset slice slicedef concepts)))
       (doseq [[slice definition] slices]
         (log/info "Indexing slice" slice)
-        (set-indexes slice (or (:index_only definition)
-                               (:dimensions definition)))))))
+        (set-indexes slice (map (field-zip-fn definition) (or (:index_only definition)
+                                                              (:dimensions definition))))))))
