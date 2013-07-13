@@ -105,13 +105,15 @@ in MongoDB."
   "Given the data from a CSV file and the definition of the data's columns,
 transform that data into the form we want."
   [data columns]
-  (into {}
-        (remove nil?
-                (for [[column value] data]
-                  (let [cdef (columns column)]
-                    (when-not (:skip cdef)
-                      (vector (or (:name cdef) column)
-                              (cast-value value cdef))))))))
+  (reduce (fn [acc [column value]]
+            (let [cdef (columns column)]
+              (if (:skip cdef)
+                acc
+                (assoc acc
+                  (keyword (or (:name cdef) column))
+                  (cast-value value cdef)))))
+          {} data))
+
 
 (defn read-csv-file
   [file]
@@ -195,7 +197,7 @@ transform that data into the form we want."
         rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
     (->> left
          (map (fn [row]
-                (assoc row lval (get rmap (get lkey row))))))))
+                (assoc row lval (get rmap (get row lkey))))))))
 
 (defn load-slice
   [slice concepts definition]
