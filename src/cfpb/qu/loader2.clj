@@ -128,10 +128,11 @@ transform that data into the form we want."
         dir (:dir definition)
         sources (:sources tdef)
         columns (:columns tdef)
-        raw-data (->> sources
+        file-data (->> sources
                       (map #(read-csv-file (str dir "/" %)))
-                      (apply concat []))]
-    (map #(cast-data % columns) raw-data)))
+                      (map (fn [d]
+                             (map #(cast-data % columns) d))))]
+    (apply concat [] file-data)))
 
 (defn read-concept-data
   [concept definition]
@@ -147,17 +148,57 @@ transform that data into the form we want."
               (assoc acc concept (read-concept-data concept definition)))
             {} (keys concepts))))
 
-(defmulti read-slice
-  (fn [slice definition]
+(defn- join-maps
+  "Join two vectors of maps on a key."
+  [left lkey lval right rkey rval]
+  (let [lkey (keyword lkey)
+        lval (keyword lval)
+        rkey (keyword rkey)
+        rval (keyword rval)
+        rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
+    (->> left
+         (map (fn [row]
+                (assoc row lval (get rmap (get row lkey))))))))
+
+(defn load-csv-file
+  [file collection transform-fn]
+  (with-open [in-file (io/reader (io/resource file))]
+    (let [data (csv/read-csv in-file)
+          headers (map keyword (first data))
+          data (map (partial zipmap headers) (rest data))
+          data (transform-fn data)
+          chunks (partition-all *chunk-size* data)]
+      (doseq [chunk chunks]
+        (coll/insert-batch collection chunk)))))
+
+(defn load-table
+  [table collection concepts references definition]
+  (let [tdef (get-in definition [:tables (keyword table)])
+        dir (:dir definition)
+        sources (:sources tdef)
+        columns (:columns tdef)
+        cast-data (partial map #(cast-data % columns))
+        add-concepts (fn [data]
+                       (reduce (fn [data [column cdef]]
+                                 (join-maps
+                                  data (:column cdef) column
+                                  (get concepts (keyword (:concept cdef))) :_id (:value cdef)))
+                               data references))]
+    (doseq [file sources]
+      (load-csv-file (str dir "/" file) collection (comp add-concepts cast-data)))))
+
+(defmulti load-slice
+  (fn [slice _ definition]
     (get-in definition [:slices (keyword slice) :type])))
 
-(defmethod read-slice "table"
-  [slice definition]
-  (let [table (get-in definition [:slices (keyword slice) :table])]
-    (read-table table definition)))
+(defmethod load-slice "table"
+  [slice concepts definition]
+  (let [table (get-in definition [:slices (keyword slice) :table])
+        references (get-in definition [:slices (keyword slice) :references])]
+    (load-table table slice concepts references definition)))
 
-(defmethod read-slice "derived"
-  [slice definition]
+(defmethod load-slice "derived"
+  [slice concepts definition]
   (let [database (:database definition)
         sdef (get-in definition [:slices (keyword slice)])
         from-collection (:slice sdef)        
@@ -179,38 +220,16 @@ transform that data into the form we want."
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation database from-collection aggregation)
-        data (:data query-result)]
-    (:data query-result)))
-
-(defmethod read-slice :default
-  [slice definition]
-  (let [type (get-in definition [:slices (keyword slice) :type])]
-    (log/error "Cannot load slice" slice "with type" type)))
-
-(defn- join-maps
-  "Join two vectors of maps on a key."
-  [left lkey lval right rkey rval]
-  (let [lkey (keyword lkey)
-        lval (keyword lval)
-        rkey (keyword rkey)
-        rval (keyword rval)
-        rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
-    (->> left
-         (map (fn [row]
-                (assoc row lval (get rmap (get row lkey))))))))
-
-(defn load-slice
-  [slice concepts definition]
-  (let [data (read-slice slice definition)
-        references (get-in definition [:slices (keyword slice) :references])
-        data (reduce (fn [data [column cdef]]
-                       (join-maps data (:column cdef) column
-                                  (get concepts (keyword (:concept cdef))) :_id (:value cdef)))
-                     data references)
+        data (:data query-result)
         chunks (partition-all *chunk-size* data)]
     (doseq [chunk chunks]
       (coll/insert-batch slice chunk))))
-  
+
+(defmethod load-slice :default
+  [slice concepts definition]
+  (let [type (get-in definition [:slices (keyword slice) :type])]
+    (log/error "Cannot load slice" slice "with type" type)))
+
 (defn load-slices
   [definition]
   (log/info "Loading concepts")  
