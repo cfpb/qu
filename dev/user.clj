@@ -11,8 +11,7 @@
             [cfpb.qu.core :as core]
             [cfpb.qu.handler :as handler :refer [boot]]
             [cfpb.qu.data :as data :refer [ensure-mongo-connection]]
-            [cfpb.qu.loader :as loader :refer [load-dataset]]
-            [cfpb.qu.loader2 :as loader2]))
+            [cfpb.qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
 
