@@ -7,6 +7,7 @@ transforming the data within."
    [clojure.string :as str]
    [clojure.java.io :as io]
    [clojure.data.csv :as csv]
+   [clojure.core.reducers :as r]
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
    [drake.core :as drake]
@@ -27,7 +28,8 @@ transforming the data within."
 (def default-date-parser (time/formatter (default-time-zone)
                                          "YYYY-MM-dd" "YYYY/MM/dd" "YYYYMMdd"))
 
-(defn- run-drakefile
+(defn run-drakefile
+  "Run all tasks in a Drakefile."
   [drakefile]
   (log/info "Running Drakefile" drakefile)
   ;; The following is Dark Drake Magic.
@@ -45,7 +47,7 @@ in MongoDB."
     "number" "number"
     "string"))
 
-(defn- save-dataset-definition
+(defn save-dataset-definition
   "Save the definition of a dataset into the 'metadata' database."
   [name definition]
   (with-db (get-db "metadata")
@@ -105,17 +107,20 @@ in MongoDB."
   "Given the data from a CSV file and the definition of the data's columns,
 transform that data into the form we want."
   [data columns]
-  (reduce (fn [acc [column value]]
-            (let [cdef (columns column)]
-              (if (:skip cdef)
-                acc
-                (assoc acc
-                  (keyword (or (:name cdef) column))
-                  (cast-value value cdef)))))
-          {} data))
+  (into {}
+        (r/remove nil?
+                (r/map (fn [[column value]]
+                       (let [cdef (columns column)]
+                         (when-not (:skip cdef)
+                           [(keyword (or (:name cdef) column))
+                            (cast-value value cdef)]))) data))))
 
 
 (defn read-csv-file
+  "Reads an entire CSV file into memory as a seq of maps.
+  The seq is fully realized because we have to in order to
+  close the CSV. Therefore, this can suck up a lot of memory
+  and is only recommended for small CSV files."
   [file]
   (with-open [in-file (io/reader (io/resource file))]
     (let [data (csv/read-csv in-file)
@@ -129,10 +134,10 @@ transform that data into the form we want."
         sources (:sources tdef)
         columns (:columns tdef)
         file-data (->> sources
-                      (map #(read-csv-file (str dir "/" %)))
-                      (map (fn [d]
-                             (map #(cast-data % columns) d))))]
-    (apply concat [] file-data)))
+                       (map #(read-csv-file (str dir "/" %)))
+                       (map (fn [d]
+                              (map #(cast-data % columns) d))))]
+    (reduce concat file-data)))
 
 (defn read-concept-data
   [concept definition]
@@ -156,9 +161,8 @@ transform that data into the form we want."
         rkey (keyword rkey)
         rval (keyword rval)
         rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
-    (->> left
-         (map (fn [row]
-                (assoc row lval (get rmap (get row lkey))))))))
+    (map (fn [row]
+             (assoc row lval (get rmap (get row lkey)))) left)))
 
 (defn load-csv-file
   [file collection transform-fn]
@@ -176,7 +180,7 @@ transform that data into the form we want."
   (let [tdef (get-in definition [:tables (keyword table)])
         dir (:dir definition)
         sources (:sources tdef)
-        columns (:columns tdef)
+        columns (:columns tdef)        
         cast-data (partial map #(cast-data % columns))
         add-concepts (fn [data]
                        (reduce (fn [data [column cdef]]
@@ -230,6 +234,16 @@ transform that data into the form we want."
   (let [type (get-in definition [:slices (keyword slice) :type])]
     (log/error "Cannot load slice" slice "with type" type)))
 
+(defn index-slice
+  "Given a slice name and a dataset definition, create indexes for the slice."
+  [slice definition]
+  (log/info "Indexing slice" slice)
+  (let [sdef (get-in definition [:slices (keyword slice)])
+        indexes (or (:index_only sdef)
+                    (:dimensions sdef))]
+    (doseq [index indexes]
+      (coll/ensure-index slice {(keyword index) 1}))))
+
 (defn load-slices
   [definition]
   (log/info "Loading concepts")  
@@ -244,23 +258,8 @@ transform that data into the form we want."
         (log/info "Dropping slice" slice)
         (coll/drop slice)
         (log/info "Loading slice" slice)
-        (load-slice slice concepts definition))))
-
-(defn index-slice
-  "Given a slice name and a dataset definition, create indexes for the slice."
-  [slice definition]
-  (log/info "Indexing slice" slice)
-  (let [sdef (get-in definition [:slices (keyword slice)])
-        indexes (or (:index_only sdef)
-                    (:dimensions sdef))]
-    (doseq [index indexes]
-      (coll/ensure-index slice {(keyword index) 1}))))
-
-(defn index-slices
-  [definition]
-  (let [slices (:slices definition)]
-    (doseq [slice (keys slices)]
-      (index-slice slice definition))))
+        (load-slice slice concepts definition)
+        (index-slice slice definition))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
