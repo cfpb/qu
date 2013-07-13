@@ -138,19 +138,9 @@ associated tables."
   [collection tabledef dir]
   (coll/drop collection)  
   (let [sources (:sources tabledef)
-        columns (:columns tabledef)
-        agent-error-handler (fn [agent exception]
-                              (log/error "Error in table loading agent"
-                                         (.getMessage exception)))
-        agents (map (fn [source]
-                      (agent source
-                             :error-mode :continue
-                             :error-handler agent-error-handler))
-                    sources)]
-    (doseq [agent agents]
-      (send-off agent (fn [file]
-                        (load-csv-file collection (str dir "/" file) columns))))
-    (apply await agents)))
+        columns (:columns tabledef)]
+    (doseq [file sources]
+      (load-csv-file collection (str dir "/" file) columns))))
 
 (defn- load-table-slice
   [dataset slice slicedef tables dir]
