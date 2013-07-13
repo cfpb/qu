@@ -267,7 +267,8 @@ transform that data into the form we want."
   directory containing a definition.json and a set of CSV files.
 
   These files are loaded in parallel."
-  [dataset]
+  [dataset & {:keys [delete]}]
+  (log/info "Loading dataset" dataset)
   (let [dataset (name dataset)
         dir (str "datasets/" dataset)
         drakefile (-> (str dir "/Drakefile")
@@ -279,8 +280,9 @@ transform that data into the form we want."
                        (json/parse-string true)
                        (assoc :dir dir)
                        (assoc :database dataset))]
-
-    (log/info "Loading dataset" dataset)
+    (when delete
+      (log/info "Dropping old dataset" dataset)
+      (mongo/drop-db dataset))
 
     (log/info "Saving definition for" dataset)
     (save-dataset-definition dataset definition)
@@ -290,5 +292,4 @@ transform that data into the form we want."
     
     (with-db (get-db dataset)
       (log/info "Loading slices for dataset" dataset)
-      (load-slices definition)
-      (index-slices definition))))
+      (load-slices definition))))
