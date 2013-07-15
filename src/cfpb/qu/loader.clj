@@ -19,7 +19,7 @@ transforming the data within."
     [query :as q]
     [collection :as coll]
     [joda-time]]
-   [cfpb.qu.util :refer [->int ->num]]
+   [cfpb.qu.util :refer :all]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]))
@@ -108,12 +108,11 @@ transform that data into the form we want."
   [data columns]
   (into {}
         (r/remove nil?
-                (r/map (fn [[column value]]
-                       (let [cdef (columns column)]
-                         (when-not (:skip cdef)
-                           [(keyword (or (:name cdef) column))
-                            (cast-value value cdef)]))) data))))
-
+                  (r/map (fn [[column value]]
+                           (let [cdef (columns column)]
+                             (when (and (seq cdef) (not (:skip cdef)))
+                               [(keyword (or (:name cdef) column))
+                                (cast-value value cdef)]))) data))))
 
 (defn read-csv-file
   "Reads an entire CSV file into memory as a seq of maps.
@@ -166,16 +165,17 @@ transform that data into the form we want."
 (defn load-csv-file
   [file collection transform-fn]
   (with-open [in-file (io/reader (io/resource file))]
-    (let [data (csv/read-csv in-file)
-          headers (map keyword (first data))
-          data (map (partial zipmap headers) (rest data))
-          data (transform-fn data)
+    (let [csv (csv/read-csv in-file)
+          headers (map keyword (first csv))
+          data (->> (rest csv)
+                    (map (partial zipmap headers))
+                    transform-fn)
           chunks (partition-all *chunk-size* data)]
       (doseq [chunk chunks]
         (coll/insert-batch collection chunk)))))
 
 (defn load-table
-  [table collection concepts references definition]
+  [table collection concepts references definition & {:keys [keyfn]}]
   (let [tdef (get-in definition [:tables (keyword table)])
         dir (:dir definition)
         sources (:sources tdef)
@@ -185,10 +185,17 @@ transform that data into the form we want."
                        (reduce (fn [data [column cdef]]
                                  (join-maps
                                   data (:column cdef) column
-                                  (get concepts (keyword (:concept cdef))) :_id (:value cdef)))
-                               data references))]
+                                  (get concepts (keyword (:concept cdef)))
+                                  :_id (:value cdef)))
+                               data references))
+        transform-keys (if keyfn
+                         (partial map #(convert-keys % keyfn))
+                         identity)]
     (doseq [file sources]
-      (load-csv-file (str dir "/" file) collection (comp add-concepts cast-data)))))
+      (load-csv-file
+       (str dir "/" file)
+       collection
+       (comp transform-keys add-concepts cast-data)))))
 
 (defmulti load-slice
   (fn [slice _ definition]
@@ -196,15 +203,17 @@ transform that data into the form we want."
 
 (defmethod load-slice "table"
   [slice concepts definition]
-  (let [table (get-in definition [:slices (keyword slice) :table])
-        references (get-in definition [:slices (keyword slice) :references])]
-    (load-table table slice concepts references definition)))
+  (let [sdef (get-in definition [:slices (keyword slice)])
+        table (:table sdef)
+        references (:references sdef)
+        zipfn (field-zip-fn sdef)]
+    (load-table table slice concepts references definition :keyfn zipfn)))
 
 (defmethod load-slice "derived"
   [slice concepts definition]
   (let [database (:database definition)
         sdef (get-in definition [:slices (keyword slice)])
-        from-collection (:slice sdef)        
+        from-collection (:slice sdef)
         dimensions (:dimensions sdef)
         aggregations (:aggregations sdef)
         match (if-let [where (:where sdef)]
@@ -225,7 +234,9 @@ transform that data into the form we want."
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation database from-collection aggregation)
-        data (:data query-result)
+        data (-> query-result
+                 :data
+                 (convert-keys (field-zip-fn sdef)))
         chunks (partition-all *chunk-size* data)]
     (doseq [chunk chunks]
       (coll/insert-batch slice chunk))))
