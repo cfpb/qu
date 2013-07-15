@@ -86,6 +86,7 @@
       ],
       "columns": {
         "state": {
+          "name": "_id",
           "type": "string"
         },
         "name": {
