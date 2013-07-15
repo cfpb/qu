@@ -276,65 +276,6 @@
     }
   },
   "slices": {
-    "hmda_lar_raw": {
-      "info": {
-        "name": "HMDA LAR Raw Data",
-        "description": "The data just as we get it from the HMDA site, with no modifications."
-      },
-      "type": "table",
-      "table": "hmda_lar",
-      "dimensions": [
-        "action_taken",        
-        "agency_code",
-        "applicant_ethnicity",
-        "applicant_race_1",
-        "applicant_race_2",
-        "applicant_race_3",
-        "applicant_race_4",
-        "applicant_race_5",
-        "applicant_sex",
-        "application_date_indicator",
-        "as_of_year",
-        "census_tract_number",        
-        "co_applicant_ethnicity",
-        "co_applicant_race_1",
-        "co_applicant_race_2",
-        "co_applicant_race_3",
-        "co_applicant_race_4",
-        "co_applicant_race_5",
-        "co_applicant_sex",
-        "county_code",
-        "denial_reason_1",
-        "denial_reason_2",
-        "denial_reason_3",        
-        "edit_status",
-        "hoepa_status",
-        "lien_status",
-        "loan_purpose",
-        "loan_type",        
-        "minority_population",
-        "msamd",
-        "owner_occupancy",
-        "preapproval",
-        "property_type",
-        "purchaser_type",
-        "respondent_id",        
-        "sequence_number",
-        "state_code"
-      ],
-      "metrics": [
-        "applicant_income_000s",        
-        "co_applicant_income_000s",
-        "hud_median_family_income",
-        "loan_amount_000s",
-        "number_of_1_to_4_family_units",
-        "number_of_owner_occupied_units",
-        "minority_population",        
-        "population",
-        "rate_spread",
-        "tract_to_msamd_income"
-      ]
-    },    
     "hmda_lar": {
       "info": {
         "name": "HMDA LAR with code sheets",
