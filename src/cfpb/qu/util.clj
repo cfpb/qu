@@ -1,6 +1,11 @@
 (ns cfpb.qu.util
   "Utility functions for use throughout Qu."
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.walk :refer [postwalk]]))
+
+(defn str+
+  [& args]
+  (apply str (map name args)))
 
 (defn ->int
   "Convert strings and integers to integers. A blank string or
@@ -35,3 +40,15 @@ is nil unless specified."
   (if (coll? thing)
     (first thing)
     thing))
+
+(defn convert-keys
+  "Recursively transforms all map keys using the provided function."
+  [m fun]
+  (let [f (fn [[k v]] [(fun k) v])]
+    ;; only apply to maps
+    (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
+
+(defn ->print
+  [x]
+  (println (str x))
+  x)
