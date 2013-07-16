@@ -82,7 +82,8 @@ in MongoDB."
   (->num value))
 
 (defmethod cast-value "dollars" [value _]
-  (->num (str/replace value #"^\$(-?\d+)" "$1")))
+  (when-not (str/blank? value)
+    (->num (str/replace value #"^\$(-?\d+)" "$1"))))
 
 (defmethod cast-value "boolean" [value _]
   (cond
@@ -91,13 +92,15 @@ in MongoDB."
    :default true))
 
 (defmethod cast-value "date" [value {:keys [format]}]
-  (if format
-    (time/parse (time/formatter format) value)
-    (time/parse default-date-parser value)))
+  (cond
+   (str/blank? value) nil
+   format (time/parse (time/formatter format) value)
+   :default (time/parse default-date-parser value)))
 
 (defmethod cast-value "lookup" [value {:keys [lookup]}]
-  ;; Have to call keyword on value because Cheshire turns keys into keywords  
-  (lookup (keyword value)))
+  ;; Have to call keyword on value because Cheshire turns keys into keywords
+  (when-not (str/blank? value)
+    (lookup (keyword value))))
 
 (defmethod cast-value :default [value _]
   value)
@@ -110,7 +113,8 @@ transform that data into the form we want."
         (r/remove nil?
                   (r/map (fn [[column value]]
                            (let [cdef (columns column)]
-                             (when (and (seq cdef) (not (:skip cdef)))
+                             (when-not (or (nil? cdef)
+                                           (:skip cdef))
                                [(keyword (or (:name cdef) column))
                                 (cast-value value cdef)]))) data))))
 
@@ -190,12 +194,17 @@ transform that data into the form we want."
                                data references))
         transform-keys (if keyfn
                          (partial map #(convert-keys % keyfn))
-                         identity)]
+                         identity)
+        remove-nils (fn [data]
+                      (map
+                       (fn [row]
+                         (into {} (remove (fn [[k v]] (nil? v)) row)))
+                       data))]
     (doseq [file sources]
       (load-csv-file
        (str dir "/" file)
        collection
-       (comp transform-keys add-concepts cast-data)))))
+       (comp remove-nils transform-keys add-concepts cast-data)))))
 
 (defmulti load-slice
   (fn [slice _ definition]
