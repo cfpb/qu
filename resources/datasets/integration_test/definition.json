@@ -45,6 +45,19 @@
           "value": "name"
         }
       }
+    },
+    "incomes_by_state": {
+      "type": "derived",
+      "slice": "incomes",
+      "dimensions": [
+        "state_abbr"
+      ],
+      "metrics": [
+        "tax_returns"
+      ],
+      "aggregations": {
+        "tax_returns": ["sum", "tax_returns"]
+      }
     }
   },  
   "tables": {

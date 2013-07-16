@@ -13,12 +13,13 @@ transforming the data within."
    [drake.core :as drake]
    [clj-time.core :refer [default-time-zone]]
    [clj-time.format :as time]
+   [lonocloud.synthread :as ->]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
     [collection :as coll]
     [joda-time]]
-   [cfpb.qu.util :refer [->int ->num]]
+   [cfpb.qu.util :refer :all]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
   (:import [org.bson.types ObjectId]))
@@ -81,7 +82,8 @@ in MongoDB."
   (->num value))
 
 (defmethod cast-value "dollars" [value _]
-  (->num (str/replace value #"^\$(-?\d+)" "$1")))
+  (when-not (str/blank? value)
+    (->num (str/replace value #"^\$(-?\d+)" "$1"))))
 
 (defmethod cast-value "boolean" [value _]
   (cond
@@ -90,13 +92,15 @@ in MongoDB."
    :default true))
 
 (defmethod cast-value "date" [value {:keys [format]}]
-  (if format
-    (time/parse (time/formatter format) value)
-    (time/parse default-date-parser value)))
+  (cond
+   (str/blank? value) nil
+   format (time/parse (time/formatter format) value)
+   :default (time/parse default-date-parser value)))
 
 (defmethod cast-value "lookup" [value {:keys [lookup]}]
-  ;; Have to call keyword on value because Cheshire turns keys into keywords  
-  (lookup (keyword value)))
+  ;; Have to call keyword on value because Cheshire turns keys into keywords
+  (when-not (str/blank? value)
+    (lookup (keyword value))))
 
 (defmethod cast-value :default [value _]
   value)
@@ -107,12 +111,12 @@ transform that data into the form we want."
   [data columns]
   (into {}
         (r/remove nil?
-                (r/map (fn [[column value]]
-                       (let [cdef (columns column)]
-                         (when-not (:skip cdef)
-                           [(keyword (or (:name cdef) column))
-                            (cast-value value cdef)]))) data))))
-
+                  (r/map (fn [[column value]]
+                           (let [cdef (columns column)]
+                             (when-not (or (nil? cdef)
+                                           (:skip cdef))
+                               [(keyword (or (:name cdef) column))
+                                (cast-value value cdef)]))) data))))
 
 (defn read-csv-file
   "Reads an entire CSV file into memory as a seq of maps.
@@ -165,16 +169,17 @@ transform that data into the form we want."
 (defn load-csv-file
   [file collection transform-fn]
   (with-open [in-file (io/reader (io/resource file))]
-    (let [data (csv/read-csv in-file)
-          headers (map keyword (first data))
-          data (map (partial zipmap headers) (rest data))
-          data (transform-fn data)
+    (let [csv (csv/read-csv in-file)
+          headers (map keyword (first csv))
+          data (->> (rest csv)
+                    (map (partial zipmap headers))
+                    transform-fn)
           chunks (partition-all *chunk-size* data)]
       (doseq [chunk chunks]
         (coll/insert-batch collection chunk)))))
 
 (defn load-table
-  [table collection concepts references definition]
+  [table collection concepts references definition & {:keys [keyfn]}]
   (let [tdef (get-in definition [:tables (keyword table)])
         dir (:dir definition)
         sources (:sources tdef)
@@ -184,10 +189,22 @@ transform that data into the form we want."
                        (reduce (fn [data [column cdef]]
                                  (join-maps
                                   data (:column cdef) column
-                                  (get concepts (keyword (:concept cdef))) :_id (:value cdef)))
-                               data references))]
+                                  (get concepts (keyword (:concept cdef)))
+                                  :_id (:value cdef)))
+                               data references))
+        transform-keys (if keyfn
+                         (partial map #(convert-keys % keyfn))
+                         identity)
+        remove-nils (fn [data]
+                      (map
+                       (fn [row]
+                         (into {} (remove (fn [[k v]] (nil? v)) row)))
+                       data))]
     (doseq [file sources]
-      (load-csv-file (str dir "/" file) collection (comp add-concepts cast-data)))))
+      (load-csv-file
+       (str dir "/" file)
+       collection
+       (comp remove-nils transform-keys add-concepts cast-data)))))
 
 (defmulti load-slice
   (fn [slice _ definition]
@@ -195,34 +212,40 @@ transform that data into the form we want."
 
 (defmethod load-slice "table"
   [slice concepts definition]
-  (let [table (get-in definition [:slices (keyword slice) :table])
-        references (get-in definition [:slices (keyword slice) :references])]
-    (load-table table slice concepts references definition)))
+  (let [sdef (get-in definition [:slices (keyword slice)])
+        table (:table sdef)
+        references (:references sdef)
+        zipfn (field-zip-fn sdef)]
+    (load-table table slice concepts references definition :keyfn zipfn)))
 
 (defmethod load-slice "derived"
   [slice concepts definition]
   (let [database (:database definition)
         sdef (get-in definition [:slices (keyword slice)])
-        from-collection (:slice sdef)        
+        from-collection (:slice sdef)
         dimensions (:dimensions sdef)
         aggregations (:aggregations sdef)
         match (if-let [where (:where sdef)]
                 (where/mongo-eval (where/parse where))
                 {})        
         group-id (apply merge
-                        (map #(hash-map % (str "$" %)) dimensions))
+                        (map #(hash-map % (str "$" (name %))) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
                     {agg-metric {(str "$" (name agg))
                                  (str "$" (name metric))}}) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
-                            {dimension (str "$_id." (name dimension))}) dimensions)
+                            {dimension
+                             (str "$_id." (name dimension))}) dimensions)
         project-aggs (map (fn [[agg-metric _]]
-                            {agg-metric (str "$" (name agg-metric))}) aggregations)
+                            {agg-metric
+                             (str "$" (name agg-metric))}) aggregations)
         project (apply merge (concat project-dims project-aggs))
         aggregation [{"$group" group} {"$project" project} {"$match" match}]
         query-result (get-aggregation database from-collection aggregation)
-        data (:data query-result)
+        data (-> query-result
+                 :data
+                 (convert-keys (field-zip-fn sdef)))
         chunks (partition-all *chunk-size* data)]
     (doseq [chunk chunks]
       (coll/insert-batch slice chunk))))
@@ -238,9 +261,10 @@ transform that data into the form we want."
   (log/info "Indexing slice" slice)
   (let [sdef (get-in definition [:slices (keyword slice)])
         indexes (or (:index_only sdef)
-                    (:dimensions sdef))]
+                    (:dimensions sdef))
+        zipfn (field-zip-fn sdef)]
     (doseq [index indexes]
-      (coll/ensure-index slice {(keyword index) 1}))))
+      (coll/ensure-index slice {(zipfn index) 1}))))
 
 (defn load-slices
   [definition]

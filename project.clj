@@ -29,6 +29,7 @@ serve their public data sets."
                  [com.stuartsierra/dependency "0.1.1"]                 
                  [com.taoensso/timbre "2.0.1"]
                  [compojure "1.1.3"]
+                 [digest "1.3.0"]
                  [environ "0.4.0"]
                  [factual/drake "0.1.4-SNAPSHOT"]
                  [halresource "0.1.0-SNAPSHOT"]
