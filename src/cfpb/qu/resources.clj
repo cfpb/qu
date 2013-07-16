@@ -42,6 +42,18 @@ functions to return the resource that will be presented later."
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
                  (views/index (:media-type representation) resource))))
 
+(defn- concept-data
+  "Build the concept data for a dataset from its metadata."
+  [{concepts :concepts dataset :name}]
+  (let [concepts (->> concepts
+                      (map (fn [[concept data]]
+                             (let [concept (name concept)]
+                               [concept
+                                (-> data
+                                    (assoc :url (urls/concept-path dataset concept))
+                                    (dissoc :table))]))))]
+    (into {} concepts)))
+
 (defresource
   ^{:doc "Resource for an individual dataset."}
   dataset
@@ -57,14 +69,14 @@ functions to return the resource that will be presented later."
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
                         (case (:media-type representation)
-                          "text/html" (not-found message)
+                          "text/html" (ring-response (not-found message))
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
                                   (hal/add-link :rel "up" :href (urls/index-path))
                                   (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata))
-                                  (hal/add-property :concepts (:concepts metadata)))
+                                  (hal/add-property :concepts (concept-data metadata)))
                      embedded (map (fn [[slice info]]
                                      (-> (hal/new-resource (urls/slice-path dataset (name slice)))
                                          (hal/add-property :id (name slice))
@@ -133,7 +145,7 @@ functions to return the resource that will be presented later."
                             slice (get-in request [:params :slice])
                             message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)
-                          "text/html" (not-found message)
+                          "text/html" (ring-response (not-found message))
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
 

@@ -54,6 +54,9 @@ stored in a Mongo database called 'metadata'."
   [slicedef]
   (concat (:dimensions slicedef) (:metrics slicedef)))
 
+(defn concept-collection [concept]
+  (str "concept__" (name concept)))
+
 (defn field-zip-fn
   "Given a slice definition, return a function that will compress
   field names."
@@ -110,8 +113,7 @@ stored in a Mongo database called 'metadata'."
     (-> find-map
         (update-in [:query] compress-where zipfn)
         (update-in [:fields] convert-keys zipfn)
-        (update-in [:sort] convert-keys zipfn))
-    ))
+        (update-in [:sort] convert-keys zipfn))))
 
 (defn get-find
   "Given a collection and a Mongo find map, return a QueryResult of the form:

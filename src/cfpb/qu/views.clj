@@ -116,12 +116,16 @@
 (defmulti dataset (fn [format _] format))
 
 (defmethod dataset "text/html" [_ resource]
-  (layout-html resource
-               (render-file "templates/dataset"
-                            {:resource resource
-                             :dataset (get-in resource [:properties :id])
-                             :slices (map second (:embedded resource))
-                             :definition (with-out-str (pprint (:properties resource)))})))
+  (let [concepts (->> (get-in resource [:properties :concepts])
+                      (map (fn [[concept data]]
+                             (assoc data :concept concept))))]
+    (layout-html resource
+                 (render-file "templates/dataset"
+                              {:resource resource
+                               :dataset (get-in resource [:properties :id])
+                               :slices (map second (:embedded resource))
+                               :concepts concepts
+                               :definition (with-out-str (pprint (:properties resource)))}))))
 
 (defmethod dataset "application/json" [_ resource]
   (hal/resource->representation resource :json))

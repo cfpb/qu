@@ -5,7 +5,7 @@
   },
   "concepts": {
     "state_abbr": {
-      "name": "State Abbreviation",
+      "description": "State Abbreviation",
       "type": "string",
       "table": "states",
       "properties": {
