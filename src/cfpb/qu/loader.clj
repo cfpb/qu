@@ -252,9 +252,10 @@ transform that data into the form we want."
   (log/info "Indexing slice" slice)
   (let [sdef (get-in definition [:slices (keyword slice)])
         indexes (or (:index_only sdef)
-                    (:dimensions sdef))]
+                    (:dimensions sdef))
+        zipfn (field-zip-fn sdef)]
     (doseq [index indexes]
-      (coll/ensure-index slice {(keyword index) 1}))))
+      (coll/ensure-index slice {(zipfn index) 1}))))
 
 (defn load-slices
   [definition]
