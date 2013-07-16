@@ -1,5 +1,6 @@
 (ns monger.key-compression
-  (:require [clojure.set :refer [map-invert]]))
+  (:require [clojure.set :refer [map-invert]]
+            digest))
 
 (def select (comp first filter))
 
@@ -7,7 +8,8 @@
   [trie words]
   (reduce
    (fn [trie word]
-     (assoc-in trie (concat word [::val]) word))
+     (let [word (digest/md5 word)]
+       (assoc-in trie (concat word [::val]) word)))
    trie
    words))
 
@@ -29,7 +31,8 @@
 
 (defn- get-unique-prefix
   [field trie]
-  (let [prefixes (get-prefixes field)]
+  (let [field (digest/md5 field)
+        prefixes (get-prefixes field)]
     (select (fn [prefix] (or (= 1 (count (trie-matches trie prefix)))
                              (= prefix field)))
             prefixes)))
