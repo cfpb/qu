@@ -17,6 +17,8 @@ through Jetty, not through another web server."
   (GET "/data" [] resources/index)
   (GET "/data/:dataset.:extension" [dataset] resources/dataset)
   (GET "/data/:dataset" [dataset] resources/dataset)
+  (GET "/data/:dataset/concept/:concept.:extension" [dataset concept] resources/concept)    
+  (GET "/data/:dataset/concept/:concept" [dataset concept] resources/concept)
   (GET "/data/:dataset/:slice.:extension" [dataset slice] resources/slice)
   (GET "/data/:dataset/:slice" [dataset slice] resources/slice)
   (route/files "/static" {:root (.getPath (io/resource "static/"))})

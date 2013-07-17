@@ -91,14 +91,14 @@
   (get-in metadata [:concepts (keyword concept) :description] (name concept)))
 
 (defn format-not-found [format]
-  (response/status
-   406
-   (response/content-type
-    "text/plain"
-    (str "Format not found: " format "."))))
+  (ring-response
+   (response/status
+    406
+    (response/content-type
+     "text/plain"
+     (str "Format not found: " format ".")))))
 
-(defmulti index (fn [format _]
-                  format))
+(defmulti index (fn [format _] format))
 
 (defmethod index "text/html" [_ resource]
   (layout-html resource
@@ -116,12 +116,16 @@
 (defmulti dataset (fn [format _] format))
 
 (defmethod dataset "text/html" [_ resource]
-  (layout-html resource
-               (render-file "templates/dataset"
-                            {:resource resource
-                             :dataset (get-in resource [:properties :id])
-                             :slices (map second (:embedded resource))
-                             :definition (with-out-str (pprint (:properties resource)))})))
+  (let [concepts (->> (get-in resource [:properties :concepts])
+                      (map (fn [[concept data]]
+                             (assoc data :concept concept))))]
+    (layout-html resource
+                 (render-file "templates/dataset"
+                              {:resource resource
+                               :dataset (get-in resource [:properties :id])
+                               :slices (map second (:embedded resource))
+                               :concepts concepts
+                               :definition (with-out-str (pprint (:properties resource)))}))))
 
 (defmethod dataset "application/json" [_ resource]
   (hal/resource->representation resource :json))
@@ -130,6 +134,34 @@
   (hal/resource->representation resource :xml))
 
 (defmethod dataset :default [format _]
+  (format-not-found format))
+
+(defmulti concept (fn [format _] format))
+
+(defmethod concept "text/html" [_ resource]
+  (let [properties (:properties resource)
+        table (:table properties)
+        columns (map name (concat [:_id] (keys (:properties properties {}))))]
+    (layout-html resource
+                 (render-file "templates/concept"
+                              {:resource resource
+                               :dataset (:dataset properties)
+                               :concept (:id properties)
+                               :columns columns
+                               :table (data/get-data-table table columns)                               
+                               :has-table? (not (empty? table))}))))
+
+(defmethod concept "application/json" [_ resource]
+  (hal/resource->representation resource :json))
+
+(defmethod concept "application/xml" [_ resource]
+  (let [table (get-in resource [:properties :table])
+        resource (if (empty? table)
+                   (update-in resource [:properties] dissoc :table)
+                   (assoc-in resource [:properties :table] {:data table}))]
+    (hal/resource->representation resource :xml)))
+
+(defmethod concept :default [format _]
   (format-not-found format))
 
 (defmulti slice (fn [format _ _]

@@ -1,0 +1,41 @@
+<h1>Concept:
+  <a class="index" href="/data">/data</a>/<a class="dataset" href="/data/{{dataset}}">{{dataset}}</a>/concepts/{{concept}}
+</h1>
+
+{{#resource.properties}}
+  <h2>Properties</h2>
+  <dl>
+    {{#description}}
+      <dt>Description</dt>
+      <dd>{{description}}</dd>
+    {{/description}}
+    {{#type}}
+      <dt>Type</dt>
+      <dd>{{type}}</dd>
+    {{/type}}    
+  </dl>
+{{/resource.properties}}
+
+{{#has-table?}}
+  <h2>Table</h2>
+
+    <table class="table table-hover table-bordered" id="query-results">
+    <thead>
+      <tr>
+        {{#columns}}
+          <th>{{.}}</th>
+        {{/columns}}
+      </tr>
+    </thead>
+
+    <tbody>
+      {{#table}}
+        <tr>
+          {{#.}}
+            <td>{{.}}</td>
+          {{/.}}
+        </tr>
+      {{/table}}
+    </tbody>
+  </table>
+{{/has-table?}}
