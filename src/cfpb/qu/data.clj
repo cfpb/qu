@@ -57,6 +57,12 @@ stored in a Mongo database called 'metadata'."
 (defn concept-collection [concept]
   (str "concept__" (name concept)))
 
+(defn concept-data
+  "Get the data table for a concept."
+  [dataset concept]
+  (with-db (get-db dataset)
+    (coll/find-maps (concept-collection concept))))
+
 (defn field-zip-fn
   "Given a slice definition, return a function that will compress
   field names."

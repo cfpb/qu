@@ -93,6 +93,36 @@ functions to return the resource that will be presented later."
   (str (:app-url project) (or (:path-info request)
                               (:uri request))))
 
+(defresource
+  ^{:doc "Resource for an individual concept."}
+  concept
+  :available-media-types ["text/html" "application/json" "application/xml"]
+  :method-allowed? (request-method-in :get)
+  :exists? (fn [{:keys [request]}]
+             (let [dataset (get-in request [:params :dataset])
+                   concept (get-in request [:params :concept])
+                   metadata (data/get-metadata dataset)
+                   cdata (get-in metadata [:concepts (keyword concept)])]
+               (if cdata
+                 {:dataset dataset
+                  :metadata metadata
+                  :concept concept
+                  :cdata cdata}
+                 [false {:dataset dataset :concept concept}])))
+  :handle-not-found (fn [{:keys [dataset concept request representation]}]
+                      (let [message (str "No such concept " concept " in dataset " dataset)]
+                        (case (:media-type representation)
+                          "text/html" (ring-response (not-found message))
+                          message)))
+  :handle-ok (fn [{:keys [dataset concept cdata request representation]}]
+               (let [resource (-> (hal/new-resource (:uri request))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-property :id concept)
+                                  (hal/add-property :dataset dataset)
+                                  (hal/add-properties (dissoc cdata :table))
+                                  (hal/add-property :table (data/concept-data dataset concept)))]
+                 (views/concept (:media-type representation) resource))))
+
 (defn- templated-url
   "Build the templated URL for slice queries."
   [base-href clauses]
