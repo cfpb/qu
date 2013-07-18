@@ -12,3 +12,7 @@
 (defn slice-path
   ([dataset slice] (str/join "/" ["/data" dataset slice]))
   ([dataset slice ext] (str (slice-path dataset slice) "." ext)))
+
+(defn concept-path
+  ([dataset concept] (str/join "/" ["/data" dataset "concept" concept]))
+  ([dataset concept ext] (str (concept-path dataset concept) "." ext)))

@@ -267,21 +267,30 @@ transform that data into the form we want."
       (coll/ensure-index slice {(zipfn index) 1}))))
 
 (defn load-slices
-  [definition]
-  (log/info "Loading concepts")  
-  (let [concepts (read-concepts definition)
-        slices (:slices definition)
-        slice-graph (reduce (fn [graph [slice slicedef]]
-                              (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
-                            (dep/graph)
-                            slices)
-        slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
-      (doseq [slice slice-load-order]
-        (log/info "Dropping slice" slice)
-        (coll/drop slice)
-        (log/info "Loading slice" slice)
-        (load-slice slice concepts definition)
-        (index-slice slice definition))))
+  ([definition]
+     (log/info "Loading concepts")
+     (load-slices (read-concepts definition) definition))  
+  ([concepts definition]
+     (let [slices (:slices definition)
+           slice-graph (reduce (fn [graph [slice slicedef]]
+                                 (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
+                               (dep/graph)
+                               slices)
+           slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
+       (doseq [slice slice-load-order]
+         (log/info "Dropping slice" slice)
+         (coll/drop slice)
+         (log/info "Loading slice" slice)
+         (load-slice slice concepts definition)
+         (index-slice slice definition)))))
+
+(defn write-concept-data
+  [concepts]
+  (doseq [[concept data] concepts]
+    (when (seq data)
+      (let [collection (concept-collection concept)]
+        (coll/drop collection)
+        (coll/insert-batch collection data)))))
 
 (defn load-dataset
   "Given the name of a dataset, load that dataset from disk into the
@@ -301,7 +310,8 @@ transform that data into the form we want."
                        slurp
                        (json/parse-string true)
                        (assoc :dir dir)
-                       (assoc :database dataset))]
+                       (assoc :database dataset))
+        concepts (read-concepts definition)]
     (when delete
       (log/info "Dropping old dataset" dataset)
       (mongo/drop-db dataset))
@@ -311,7 +321,9 @@ transform that data into the form we want."
 
     (when (and drakefile (.isFile drakefile))
       (run-drakefile drakefile))
-    
+
     (with-db (get-db dataset)
+      (log/info "Writing concept data")
+      (write-concept-data concepts)
       (log/info "Loading slices for dataset" dataset)
-      (load-slices definition))))
+      (load-slices concepts definition))))
