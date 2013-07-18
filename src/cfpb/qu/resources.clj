@@ -69,7 +69,7 @@ functions to return the resource that will be presented later."
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
                         (case (:media-type representation)
-                          "text/html" (ring-response (not-found message))
+                          "text/html"  (not-found message)
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
@@ -112,7 +112,7 @@ functions to return the resource that will be presented later."
   :handle-not-found (fn [{:keys [dataset concept request representation]}]
                       (let [message (str "No such concept " concept " in dataset " dataset)]
                         (case (:media-type representation)
-                          "text/html" (ring-response (not-found message))
+                          "text/html" (not-found message)
                           message)))
   :handle-ok (fn [{:keys [dataset concept cdata request representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
@@ -175,7 +175,7 @@ functions to return the resource that will be presented later."
                             slice (get-in request [:params :slice])
                             message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)
-                          "text/html" (ring-response (not-found message))
+                          "text/html" (not-found message)
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
 
