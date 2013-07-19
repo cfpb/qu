@@ -139,6 +139,10 @@ functions to return the resource that will be presented later."
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
                          base-href))
+        ;; If the query string is malformed, url-like will return nil.
+        ;; We prevent that by using the base-href in that case.
+        href (or href
+                 (url-like base-href))
         result (:result query)
         clauses (map (comp keyword :key) views/clauses)
         page (:page query)]
