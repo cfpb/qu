@@ -79,6 +79,16 @@
               :op :OR
               :right {:comparison [:name := "Pete"]}})
 
+       (fact "can parse a query with four parts"
+             (p/parse where-expr "as_of_year=2011 AND state_abbr=\"CA\" AND applicant_race_1=1 AND applicant_ethnicity=1") =>
+             {:left {:left {:left {:comparison [:as_of_year := 2011]}
+                            :op :AND
+                            :right {:comparison [:state_abbr := "CA"]}}
+                     :op :AND
+                     :right {:comparison [:applicant_race_1 := 1]}}
+              :op :AND
+              :right {:comparison [:applicant_ethnicity := 1]}})
+
        (fact "can have parentheses for precedence"
              (p/parse where-expr "(length > 3 AND height < 4.5)") =>
              {:left {:comparison [:length :> 3]}

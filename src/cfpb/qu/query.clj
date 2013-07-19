@@ -82,12 +82,12 @@
 (defn execute
   "Execute the query against the provided collection."
   [dataset collection query]
-  (let [_ (log/info (str "Raw query: " (into {} query)))
+  (let [_ (log/info (str "Raw query: " (into {} (dissoc query :metadata :slicedef))))
         query (-> query
                   validation/validate
                   resolve-limit-and-offset
                   mongo/process)
-        _ (log/info (str "Post-process query: " (into {} query)))]
+        _ (log/info (str "Post-process query: " (into {} (dissoc query :metadata :slicedef))))]
     (assoc query :result
            (cond
             (seq (:errors query)) []
