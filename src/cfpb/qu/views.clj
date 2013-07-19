@@ -17,6 +17,7 @@
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
    [cfpb.qu.query.select :as select]
+   [cfpb.qu.urls :as urls]
    [cheshire.generate :refer [add-encoder encode-str]]
    [clojurewerkz.urly.core :as url]
    [lonocloud.synthread :as ->]
@@ -136,32 +137,41 @@
 (defmethod dataset :default [format _]
   (format-not-found format))
 
-(defmulti concept (fn [format _] format))
+(defmulti concept (fn [format _ _] format))
 
-(defmethod concept "text/html" [_ resource]
+(defmethod concept "text/html" [_ resource _]
   (let [properties (:properties resource)
         table (:table properties)
+        dataset (:dataset properties)
+        concept (:id properties)
         columns (map name (concat [:_id] (keys (:properties properties {}))))]
     (layout-html resource
                  (render-file "templates/concept"
                               {:resource resource
-                               :dataset (:dataset properties)
-                               :concept (:id properties)
+                               :url (urls/concept-path dataset concept)
+                               :dataset dataset
+                               :concept concept
                                :columns columns
                                :table (data/get-data-table table columns)                               
                                :has-table? (not (empty? table))}))))
 
-(defmethod concept "application/json" [_ resource]
+(defmethod concept "application/json" [_ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod concept "application/xml" [_ resource]
+(defmethod concept "text/javascript" [_ resource {:keys [callback]}]
+  (let [callback (if (str/blank? callback) "callback" callback)]
+    (str callback "("
+         (hal/resource->representation resource :json)
+         ");")))
+
+(defmethod concept "application/xml" [_ resource _]
   (let [table (get-in resource [:properties :table])
         resource (if (empty? table)
                    (update-in resource [:properties] dissoc :table)
                    (assoc-in resource [:properties :table] {:data table}))]
     (hal/resource->representation resource :xml)))
 
-(defmethod concept :default [format _]
+(defmethod concept :default [format _ _]
   (format-not-found format))
 
 (defmulti slice (fn [format _ _]
