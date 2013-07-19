@@ -2,6 +2,13 @@
   <a class="index" href="/data">/data</a>/<a class="dataset" href="/data/{{dataset}}">{{dataset}}</a>/concepts/{{concept}}
 </h1>
 
+<h2>Formats</h2>
+<ul class="inline">
+  <li><a href="{{url}}.json">JSON</a></li>
+  <li><a href="{{url}}.jsonp">JSONP</a></li>
+  <li><a href="{{url}}.xml">XML</a></li>
+</ul>
+
 {{#resource.properties}}
   <h2>Properties</h2>
   <dl>
@@ -18,7 +25,6 @@
 
 {{#has-table?}}
   <h2>Table</h2>
-
     <table class="table table-hover table-bordered" id="query-results">
     <thead>
       <tr>
