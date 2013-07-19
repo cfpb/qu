@@ -121,8 +121,8 @@ turn it into a tree built in proper precedence order."
     (if (= nc 3)
       {:left (nth nodes 0) :op (nth nodes 1) :right (nth nodes 2)}
       {:left (build-boolean-tree (take (- nc 2) nodes))
-       :op (nodes (- nc 2))
-       :right (nodes (- nc 1))})))
+       :op (nth nodes (- nc 2))
+       :right (nth nodes (- nc 1))})))
 
 (defn where-expr
   "The parse function for valid WHERE expressions."
