@@ -54,7 +54,8 @@ serve their public data sets."
   :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
           :src-linenum-anchor-prefix "L"
           :output-dir "doc/codox"}
-  :configleaf {:namespace cfpb.qu.project}
+  :configleaf {:namespace cfpb.qu.project
+               :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]
                    :env {:mongo-host "127.0.0.1"
                          :mongo-port 27017}
