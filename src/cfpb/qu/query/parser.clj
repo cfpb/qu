@@ -19,7 +19,7 @@
 (defn- ci-string
   "Match case insensitive strings."
   [string]
-  (regex (re-pattern (str "(?i)" string))))
+  (regex (re-pattern (str "(?i)\\Q" string "\\E"))))
 
 (defn- string-literal []
   (any dq-str sq-str))
@@ -149,6 +149,11 @@ turn it into a tree built in proper precedence order."
                  #(ci-string "AVG"))]
     (keyword (str/upper-case agg))))
 
+(defn- count-select []
+  (let [_ (ci-string "COUNT()")]
+    {:aggregation [:COUNT :_id]
+     :select :count}))
+
 (defn- aggregation-select
   []
   (let [aggregation (aggregation)
@@ -162,6 +167,7 @@ turn it into a tree built in proper precedence order."
 (defn- select
   []
   (any aggregation-select
+       count-select
        simple-select))
 
 (defn select-expr
