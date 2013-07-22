@@ -94,7 +94,9 @@
       (assoc query :result
              (cond
               (seq (:errors query))
-               (sd/increment "qu.queries.invalid")
+               (do
+                 (sd/increment "qu.queries.invalid")
+                 [])
 
               (is-aggregation? query)
               (data/get-aggregation dataset collection (mongo-aggregation query))
