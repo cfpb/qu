@@ -13,8 +13,8 @@
 (defn- is-aggregation? [ast]
   (some :aggregation ast))
 
-(defn mongo-eval [ast]
-  (if (is-aggregation? ast)
+(defn mongo-eval [ast & {:keys [aggregation]}]
+  (if (or aggregation (is-aggregation? ast))
     (mongo-eval-aggregation ast)
     (->> ast
          (map :select)

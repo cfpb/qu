@@ -19,7 +19,7 @@
 (defn- ci-string
   "Match case insensitive strings."
   [string]
-  (regex (re-pattern (str "(?i)" string))))
+  (regex (re-pattern (str "(?i)\\Q" string "\\E"))))
 
 (defn- string-literal []
   (any dq-str sq-str))
@@ -121,8 +121,8 @@ turn it into a tree built in proper precedence order."
     (if (= nc 3)
       {:left (nth nodes 0) :op (nth nodes 1) :right (nth nodes 2)}
       {:left (build-boolean-tree (take (- nc 2) nodes))
-       :op (nodes (- nc 2))
-       :right (nodes (- nc 1))})))
+       :op (nth nodes (- nc 2))
+       :right (nth nodes (- nc 1))})))
 
 (defn where-expr
   "The parse function for valid WHERE expressions."
@@ -145,8 +145,14 @@ turn it into a tree built in proper precedence order."
   (let [agg (any #(ci-string "SUM")
                  #(ci-string "COUNT")
                  #(ci-string "MAX")
-                 #(ci-string "MIN"))]
+                 #(ci-string "MIN")
+                 #(ci-string "AVG"))]
     (keyword (str/upper-case agg))))
+
+(defn- count-select []
+  (let [_ (ci-string "COUNT()")]
+    {:aggregation [:COUNT :_id]
+     :select :count}))
 
 (defn- aggregation-select
   []
@@ -161,6 +167,7 @@ turn it into a tree built in proper precedence order."
 (defn- select
   []
   (any aggregation-select
+       count-select
        simple-select))
 
 (defn select-expr

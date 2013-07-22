@@ -57,7 +57,8 @@ this namespace."
   the origin query."
   [query]
   (if-let [select (str (:select query))]
-    (let [project (select/mongo-eval (select/parse select))]
+    (let [project (select/mongo-eval (select/parse select)
+                                     :aggregation (:group query false))]
       (assoc-in query [:mongo :project] project))
     query))
 

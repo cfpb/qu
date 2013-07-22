@@ -15,8 +15,9 @@
 
 (defn valid-field? [{:keys [metadata slice]} field]
   (let [fields (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
-                     (map name)
-                     set)]
+                     (map name)                     
+                     set)
+        fields (conj fields "_id")]
     (contains? fields field)))
 
 (defn- add-error

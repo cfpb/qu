@@ -29,7 +29,7 @@
                              " [" ns "]")))
 
      (when (:statsd-host project)
-       (println "Configuring Statsd")
+       (log/info (str "Configuring statsd: " (:statsd-host project) ":" (:statsd-port project)))
        (sd/setup (:statsd-host project) (:statsd-port project)))))
 
 (defn destroy []

@@ -1,5 +1,6 @@
 (ns cfpb.qu.middleware.logging
   (:require [clojure.string :as str]
+            [clj-statsd :as sd]
             [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
 
 (defn- log-request-msg
@@ -30,24 +31,26 @@
 
 (defn- log-exception
   [req ex total]
+  (sd/increment "qu.request.exception")
   (error (str (log-request-msg "Exception on " req)
               " in " total " ms."))
   (error ex "--- END STACKTRACE ---"))
 
 (defn wrap-with-logging
   [handler]
-  (fn [request]
-    (let [start (System/currentTimeMillis)]
-      (try
-        (log-request request)
-        (let [response (handler request)
-              finish (System/currentTimeMillis)
-              total  (- finish start)]
-          (log-response request response total)
-          response)
-        (catch Throwable ex
-          (let [finish (System/currentTimeMillis)
-                total (- finish start)]
-            (log-exception request ex total))
-          (throw ex))))))
+    (fn [request]
+      (sd/with-timing "qu.request.time"
+      (let [start (System/currentTimeMillis)]
+        (try
+          (log-request request)
+          (let [response (handler request)
+                finish (System/currentTimeMillis)
+                total  (- finish start)]
+            (log-response request response total)
+            response)
+          (catch Throwable ex
+            (let [finish (System/currentTimeMillis)
+                  total (- finish start)]
+              (log-exception request ex total))
+            (throw ex)))))))
 

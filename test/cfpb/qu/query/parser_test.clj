@@ -79,6 +79,16 @@
               :op :OR
               :right {:comparison [:name := "Pete"]}})
 
+       (fact "can parse a query with four parts"
+             (p/parse where-expr "as_of_year=2011 AND state_abbr=\"CA\" AND applicant_race_1=1 AND applicant_ethnicity=1") =>
+             {:left {:left {:left {:comparison [:as_of_year := 2011]}
+                            :op :AND
+                            :right {:comparison [:state_abbr := "CA"]}}
+                     :op :AND
+                     :right {:comparison [:applicant_race_1 := 1]}}
+              :op :AND
+              :right {:comparison [:applicant_ethnicity := 1]}})
+
        (fact "can have parentheses for precedence"
              (p/parse where-expr "(length > 3 AND height < 4.5)") =>
              {:left {:comparison [:length :> 3]}
@@ -106,6 +116,17 @@
              [{:select :state}
               {:aggregation [:SUM :population]
                :select :sum_population}])
+
+       (fact "COUNT aggregations do not need an identifier"
+             (p/parse select-expr "state, COUNT()") =>
+             [{:select :state}
+              {:aggregation [:COUNT :_id]
+               :select :count}]
+
+             (p/parse select-expr "state, count()") =>
+             [{:select :state}
+              {:aggregation [:COUNT :_id]
+               :select :count}])
 
        (fact "aggregations are case-insensitive"
              (p/parse select-expr "state, sum(population)") =>
