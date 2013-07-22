@@ -7,6 +7,7 @@ after retrieval."
             [clojure.walk :refer [postwalk]]
             [cfpb.qu.util :refer :all]
             [environ.core :refer [env]]
+            [clj-statsd :as sd]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -71,8 +72,10 @@ stored in a Mongo database called 'metadata'."
            slicedef (get-in metadata [:slices (keyword slice)])]
        (field-zip-fn slicedef)))
   ([slicedef]
-     (let [fields (slice-columns slicedef)]
-       (mzip/compression-fn fields))))
+
+    (let [fields (slice-columns slicedef)]
+      (sd/with-timing "qu.queries.fields.zip"
+       (mzip/compression-fn fields)))))
 
 (defn field-unzip-fn
   "Given a slice definition, return a function that will compress
@@ -83,7 +86,8 @@ stored in a Mongo database called 'metadata'."
        (field-unzip-fn slicedef)))
   ([slicedef]
      (let [fields (slice-columns slicedef)]
-       (mzip/decompression-fn fields))))
+       (sd/with-timing "qu.queries.fields.unzip"
+        (mzip/decompression-fn fields)))))
 
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
