@@ -117,6 +117,17 @@
               {:aggregation [:SUM :population]
                :select :sum_population}])
 
+       (fact "COUNT aggregations do not need an identifier"
+             (p/parse select-expr "state, COUNT()") =>
+             [{:select :state}
+              {:aggregation [:COUNT :_id]
+               :select :count}]
+
+             (p/parse select-expr "state, count()") =>
+             [{:select :state}
+              {:aggregation [:COUNT :_id]
+               :select :count}])
+
        (fact "aggregations are case-insensitive"
              (p/parse select-expr "state, sum(population)") =>
              [{:select :state}
