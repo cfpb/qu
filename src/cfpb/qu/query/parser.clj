@@ -145,7 +145,8 @@ turn it into a tree built in proper precedence order."
   (let [agg (any #(ci-string "SUM")
                  #(ci-string "COUNT")
                  #(ci-string "MAX")
-                 #(ci-string "MIN"))]
+                 #(ci-string "MIN")
+                 #(ci-string "AVG"))]
     (keyword (str/upper-case agg))))
 
 (defn- aggregation-select
