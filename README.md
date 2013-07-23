@@ -16,7 +16,7 @@ The goals of this platform are to:
 [dataset-inspired]: https://github.com/cfpb/qu/wiki/Dataset-publishing-format
 [soda]: http://dev.socrata.com/consumers/getting-started/
 
-## Getting Started
+## Getting started
 
 ### Prerequisites
 
