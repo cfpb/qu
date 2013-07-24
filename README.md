@@ -34,7 +34,7 @@ installed:
 [Node.js]: http://nodejs.org/
 [Leiningen]: http://leiningen.org/
 [Grunt]: http://gruntjs.com/
-[Bower]: http://twitter.github.com/bower/
+[Bower]: http://bower.io/
 [MongoDB]: http://www.mongodb.org/
 
 ### Setup
