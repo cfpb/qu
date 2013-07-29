@@ -8,7 +8,8 @@
             [cfpb.qu.query.validation :as validation]
             [cfpb.qu.util :refer [->int ->num]]
             [lonocloud.synthread :as ->]
-            [taoensso.timbre :as log]))
+            [taoensso.timbre :as log]
+            [clj-statsd :as sd]))
 
 (def default-limit 100)
 (def default-aggregation-limit 10000)
@@ -82,21 +83,27 @@
 (defn execute
   "Execute the query against the provided collection."
   [dataset collection query]
-  (let [_ (log/info (str "Raw query: " (into {} (dissoc query :metadata :slicedef))))
-        query (-> query
-                  validation/validate
-                  resolve-limit-and-offset
-                  mongo/process)
-        _ (log/info (str "Post-process query: " (into {} (dissoc query :metadata :slicedef))))]
-    (assoc query :result
-           (cond
-            (seq (:errors query)) []
 
-            (is-aggregation? query)
-            (data/get-aggregation dataset collection (mongo-aggregation query))
+  (sd/with-timing "qu.queries.execute"
+    (let [_ (log/info (str "Raw query: " (into {} (dissoc query :metadata :slicedef))))
+          query (-> query
+                    validation/validate
+                    resolve-limit-and-offset
+                    mongo/process)
+          _ (log/info (str "Post-process query: " (into {} (dissoc query :metadata :slicedef))))]
+      (assoc query :result
+             (cond
+              (seq (:errors query))
+               (do
+                 (sd/increment "qu.queries.invalid")
+                 [])
 
-            :default
-            (data/get-find dataset collection (mongo-find query))))))
+              (is-aggregation? query)
+              (data/get-aggregation dataset collection (mongo-aggregation query))
+
+              :default
+              (data/get-find dataset collection (mongo-find query)))))))
+
 
 (defn- cast-value [value type]
   (case type

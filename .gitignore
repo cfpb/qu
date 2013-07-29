@@ -27,3 +27,4 @@ resources/datasets/hmda_lar/*.zip
 src/cfpb/qu/project.clj
 dev/cfpb/qu/project.clj
 .drake
+.sly
