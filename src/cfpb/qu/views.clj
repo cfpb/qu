@@ -114,27 +114,36 @@
 (defmethod index :default [format _]
   (format-not-found format))
 
-(defmulti dataset (fn [format _] format))
+(defmulti dataset (fn [format _ _] format))
 
-(defmethod dataset "text/html" [_ resource]
-  (let [concepts (->> (get-in resource [:properties :concepts])
-                      (map (fn [[concept data]]
-                             (assoc data :concept concept))))]
+(defmethod dataset "text/html" [_ resource _]
+  (let [dataset (get-in resource [:properties :id])]
     (layout-html resource
                  (render-file "templates/dataset"
                               {:resource resource
-                               :dataset (get-in resource [:properties :id])
-                               :slices (map second (:embedded resource))
-                               :concepts concepts
+                               :url (urls/dataset-path dataset)
+                               :dataset dataset
+                               :slices (->> (:embedded resource)
+                                            (filter #(= (first %) "slice"))
+                                            (map second))
+                               :concepts (->> (:embedded resource)
+                                              (filter #(= (first %) "concept"))
+                                              (map second))                               
                                :definition (with-out-str (pprint (:properties resource)))}))))
 
-(defmethod dataset "application/json" [_ resource]
+(defmethod dataset "application/json" [_ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod dataset "application/xml" [_ resource]
+(defmethod dataset "text/javascript" [_ resource {:keys [callback]}]
+  (let [callback (if (str/blank? callback) "callback" callback)]
+    (str callback "("
+         (hal/resource->representation resource :json)
+         ");")))
+
+(defmethod dataset "application/xml" [_ resource _]
   (hal/resource->representation resource :xml))
 
-(defmethod dataset :default [format _]
+(defmethod dataset :default [format _ _]
   (format-not-found format))
 
 (defmulti concept (fn [format _ _] format))
@@ -165,11 +174,7 @@
          ");")))
 
 (defmethod concept "application/xml" [_ resource _]
-  (let [table (get-in resource [:properties :table])
-        resource (if (empty? table)
-                   (update-in resource [:properties] dissoc :table)
-                   (assoc-in resource [:properties :table] {:data table}))]
-    (hal/resource->representation resource :xml)))
+  (hal/resource->representation resource :xml))
 
 (defmethod concept :default [format _ _]
   (format-not-found format))

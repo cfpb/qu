@@ -15,6 +15,7 @@ functions to return the resource that will be presented later."
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
    [clojurewerkz.urly.core :as url :refer [url-like]]
+   [lonocloud.synthread :as ->]
    [cfpb.qu.project :refer [project]]
    [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
@@ -57,7 +58,7 @@ functions to return the resource that will be presented later."
 (defresource
   ^{:doc "Resource for an individual dataset."}
   dataset
-  :available-media-types ["text/html" "application/json" "application/xml"]
+  :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
              (let [dataset (get-in request [:params :dataset])
@@ -75,17 +76,28 @@ functions to return the resource that will be presented later."
                (let [resource (-> (hal/new-resource (:uri request))
                                   (hal/add-link :rel "up" :href (urls/index-path))
                                   (hal/add-property :id dataset)
-                                  (hal/add-properties (:info metadata))
-                                  (hal/add-property :concepts (concept-data metadata)))
-                     embedded (map (fn [[slice info]]
+                                  (hal/add-properties (:info metadata)))
+                     slices (map (fn [[slice info]]
                                      (-> (hal/new-resource (urls/slice-path dataset (name slice)))
                                          (hal/add-property :id (name slice))
                                          (hal/add-property
                                           :name
                                           (get-in info [:info :name] (name slice)))
                                          (hal/add-properties info))) (:slices metadata))
-                     resource (reduce #(hal/add-resource %1 "slice" %2) resource embedded)]
-                 (views/dataset (:media-type representation) resource))))
+                     concepts (map (fn [[concept info]]
+                                     (let [table (data/concept-data dataset concept)]
+                                       (-> (hal/new-resource (urls/concept-path dataset (name concept)))
+                                           (hal/add-property :id (name concept))
+                                           (hal/add-properties (-> info
+                                                                   (dissoc :table)
+                                                                   (dissoc :properties)))
+                                           (->/when (not (empty? table))
+                                             (hal/add-property :table {:data table}))))) (:concepts metadata))
+                     resource (reduce #(hal/add-resource %1 "slice" %2) resource slices)
+                     resource (reduce #(hal/add-resource %1 "concept" %2) resource concepts)
+                     callback (get-in request [:params :$callback])
+                     view-map {:callback callback}]
+                 (views/dataset (:media-type representation) resource view-map))))
 
 (defn- base-url
   "Derive a base URL from the APP_URL environment variable and either the path-info or uri value from the request scope"
@@ -120,8 +132,11 @@ functions to return the resource that will be presented later."
                                   (hal/add-link :rel "up" :href (urls/dataset-path dataset))
                                   (hal/add-property :id concept)
                                   (hal/add-property :dataset dataset)
-                                  (hal/add-properties (dissoc cdata :table))
-                                  (hal/add-property :table (data/concept-data dataset concept)))
+                                  (hal/add-properties (dissoc cdata :table)))
+                     resource (let [table (data/concept-data dataset concept)]
+                                (if (empty? table)
+                                  resource
+                                  (hal/add-property resource :table {:data concept-data})))
                      view-map {:callback callback}]
                  (views/concept (:media-type representation) resource view-map))))
 

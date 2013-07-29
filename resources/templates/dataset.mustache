@@ -1,6 +1,14 @@
 <h1>Dataset:
   <a class="index" href="/data">/data</a>/{{dataset}}
 </h1>
+
+<h2>Formats</h2>
+<ul class="inline">
+  <li><a href="{{url}}.json">JSON</a></li>
+  <li><a href="{{url}}.jsonp">JSONP</a></li>
+  <li><a href="{{url}}.xml">XML</a></li>
+</ul>
+
 {{#resource.properties}}
   <h2>Properties</h2>
   <dl>
@@ -33,7 +41,7 @@
 <ul id="concepts">
   {{#concepts}}
     <li>
-      <a href="{{url}}">{{concept}}</a>
+      <a href="{{href}}">{{properties.id}}</a>
     </li>
   {{/concepts}}
 </ul>

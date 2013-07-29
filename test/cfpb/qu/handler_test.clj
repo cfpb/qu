@@ -22,7 +22,7 @@
                            :headers {"Content-Type" "application/xml;charset=UTF-8"
                                      "Vary" "Accept"}})))
 
-(facts "about /data/dataset"
+(facts "about /data/:dataset"
        (fact "it returns successfully when the dataset exists"
              (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {})
 
@@ -42,7 +42,8 @@
              (app (request :get "/data/bad-dataset"))
              => (contains {:status 404})))
 
-(facts "about /data/dataset/slice"
+
+(facts "about /data/:dataset/slice/:slice"
        (fact "it returns successfully when the dataset and slice exist"
              (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {:whoa {}}}
                            (#'cfpb.qu.query/execute "good-dataset" anything anything)
