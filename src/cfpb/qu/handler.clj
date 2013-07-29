@@ -8,9 +8,11 @@
     [mime-extensions :refer [wrap-convert-extension-to-accept-header]]]
    [environ.core :refer [env]]
    [taoensso.timbre :as log]
+   [clj-statsd :as sd]
    [cfpb.qu
     [data :as data]
-    [routes :refer [app-routes]]]
+    [routes :refer [app-routes]]
+    [project :refer [project]]]
    [cfpb.qu.middleware
     [keyword-params :refer [wrap-keyword-params]]
     [logging :refer [wrap-with-logging]]]))
@@ -24,7 +26,11 @@
      (log/set-config! [:prefix-fn]
                       (fn [{:keys [level timestamp hostname ns]}]
                         (str timestamp " " (-> level name str/upper-case)
-                             " [" ns "]")))))
+                             " [" ns "]")))
+
+     (when (:statsd-host project)
+       (log/info (str "Configuring statsd: " (:statsd-host project) ":" (:statsd-port project)))
+       (sd/setup (:statsd-host project) (:statsd-port project)))))
 
 (defn destroy []
   (data/disconnect-mongo))
