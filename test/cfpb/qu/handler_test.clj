@@ -48,12 +48,12 @@
                            (#'cfpb.qu.query/execute "good-dataset" anything anything)
                            => {:total 0 :size 0 :data []})
 
-             (app (request :get "/data/good-dataset/whoa"))
+             (app (request :get "/data/good-dataset/slice/whoa"))
              => (contains {:status 200
                            :headers {"Content-Type" "text/html;charset=UTF-8"
                                      "Vary" "Accept"}})
 
-             (app (request :get "/data/good-dataset/whoa.xml"))
+             (app (request :get "/data/good-dataset/slice/whoa.xml"))
              => (contains {:status 200
                            :headers {"Content-Type" "application/xml;charset=UTF-8"
                                      "Vary" "Accept"}}))
