@@ -14,11 +14,14 @@ We recommend that you read these guides, if possible, in this order:
 
 How to set up Qu.
 
+### [Qu API Endpoints](/qu/articles/endpoints.html)
+
+The list of all REST endpoints in the API and how to specify MIME types.
+
 ### [The Qu Query API](/qu/articles/queries.html)
 
 This guide covers:
 
- * REST endpoints
  * Writing queries
  * Data retrieval formats
  

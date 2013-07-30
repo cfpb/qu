@@ -3,25 +3,6 @@ title: "CFPB - Qu: Query API"
 layout: article
 ---
 
-## Query API
-
-### Endpoints
-
-The endpoint for getting all datasets is `/data`. For convenience, the root (`/`) also acts as this endpoint.
-
-Each dataset has an endpoint at `/data/<dataset-name>`. This endpoint gives all information about a dataset needed to query it. Each dataset has several _slices_ representing views of the dataset. These are analogous to tables in a relational database.
-
-Each slice has an endpoint at `/data/<dataset-name>/<slice-name>`.
-
-All endpoints can have an optional filename extension, so accessing a slice could use any of the following example URLs:
-
-```
-/data/census/population_estimates
-/data/census/population_estimates.html
-/data/census/population_estimates.csv
-```
-
-If the MIME type corresponding to the extension is available, it will be served. If an extension is not used, the request's Accept header will be used to determine what MIME type to serve.
 
 ## Query Language
 
@@ -36,7 +17,7 @@ Certain fields of a slice are _dimensions_. Dimensions are usually fields that h
 To perform an equality query on a dimension, use the dimension name as a GET parameter with your filter as the value. To query the census population estimates with a `state` of `Nebraska`, you would use this query:
 
 ```
-/data/census/population_estimates?state=Nebraska
+/data/census/slice/population_estimates?state=Nebraska
 ```
 
 ### Clauses
