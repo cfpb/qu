@@ -184,7 +184,13 @@
       "description": "Minority Population"
     },    
     "msamd": {
-      "description": "MSA/MD"
+      "description": "MSA/MD",
+      "table": "msamd",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
     },    
     "number_of_1_to_4_family_units": {
       "description": "Number of 1-to-4-Family Units"
@@ -378,6 +384,7 @@
         "loan_type",
         "loan_type_name",
         "msamd",
+        "msamd_name",
         "owner_occupancy",
         "owner_occupancy_name",
         "preapproval",
@@ -535,6 +542,11 @@
           "concept": "loan_type",
           "value": "name"
         },
+        "msamd_name": {
+          "column": "msamd",
+          "concept": "msamd",
+          "value": "name"
+        },
         "owner_occupancy_name": {
           "column": "owner_occupancy",
           "concept": "owner_occupancy",
@@ -690,6 +702,19 @@
         }
       }
     },
+    "msamd": {
+      "sources": ["code_sheets/msamd.csv"],
+      "columns": {
+        "_id": {
+          "type": "string",
+          "name": "_id"
+        },
+        "name": {
+          "type": "string",
+          "name": "name"
+        }
+      }
+    },    
     "owner_occupancy": {
       "sources": ["code_sheets/owner_occupancy.csv"],
       "columns": {
