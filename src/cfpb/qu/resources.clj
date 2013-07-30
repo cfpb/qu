@@ -140,6 +140,39 @@ functions to return the resource that will be presented later."
                      view-map {:callback callback}]
                  (views/concept (:media-type representation) resource view-map))))
 
+(defresource
+  ^{:doc "Resource for the metadata of an individual slice."}
+  slice-metadata
+  :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
+  :method-allowed? (request-method-in :get)
+  :exists? (fn [{:keys [request]}]
+             (let [dataset (get-in request [:params :dataset])
+                   metadata (data/get-metadata dataset)
+                   slice (get-in request [:params :slice])]
+               (if-let [slicedef (get-in metadata [:slices (keyword slice)])]
+                 {:dataset dataset
+                  :metadata metadata
+                  :slice slice                  
+                  :slicedef slicedef}
+                 [false {:dataset dataset :slice slice}])))
+  :handle-not-found (fn [{:keys [dataset slice request representation]}]
+                      (let [message (str "No such slice: " dataset "/" slice)]
+                        (case (:media-type representation)
+                          "text/html" (not-found message)
+                          message)))
+  :handle-ok (fn [{:keys [dataset slicedef slice request representation]}]
+               (let [callback (get-in request [:params :$callback])
+                     resource (-> (hal/new-resource (:uri request))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-property :id (str dataset "/" (name slice)))
+                                  (hal/add-property :dataset dataset)
+                                  (hal/add-property :slice slice)
+                                  (hal/add-properties (dissoc slicedef :table :type)))
+                     view-map {:callback callback}]
+                 (views/slice-metadata (:media-type representation)
+                                       resource
+                                       view-map))))
+
 (defn- templated-url
   "Build the templated URL for slice queries."
   [base-href clauses]
@@ -199,7 +232,6 @@ functions to return the resource that will be presented later."
                           "text/html" (not-found message)
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
-
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) metadata slice)
@@ -212,9 +244,9 @@ functions to return the resource that will be presented later."
                                :headers headers
                                :dimensions (:dimensions query)
                                :callback (:callback query)}
-                     response-body (views/slice (:media-type representation)
-                                                resource
-                                                view-map)]
+                     response-body (views/slice-query (:media-type representation)
+                                                      resource
+                                                      view-map)]
                  (if (query/valid? query)
                    response-body
                    (ring-response {:status 400 :body response-body})))))

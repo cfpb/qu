@@ -179,8 +179,45 @@
 (defmethod concept :default [format _ _]
   (format-not-found format))
 
-(defmulti slice (fn [format _ _]
-                  format))
+(defmulti slice-metadata (fn [format _ _] format))
+
+(defmethod slice-metadata "text/html" [_ resource _]
+  (let [properties (:properties resource)
+        dataset (:dataset properties)
+        slice (:slice properties)
+        types (map (fn [[column type]]
+                     {:column (name column) :type type})
+                   (:types properties))
+        references (map (fn [[column data]]
+                          {:column (name column) :data data})
+                        (:references properties))]
+    (layout-html resource
+                 (render-file "templates/slice-metadata"
+                              {:resource resource
+                               :url (urls/slice-metadata-path dataset slice)
+                               :dataset dataset
+                               :slice slice
+                               :dimensions (:dimensions properties)
+                               :metrics (:metrics properties)
+                               :types types
+                               :references references
+                               :has-references? (not (empty? references))}))))
+
+(defmethod slice-metadata "application/json" [_ resource _]
+  (hal/resource->representation resource :json))
+
+(defmethod slice-metadata "text/javascript" [_ resource {:keys [callback]}]
+  (let [callback (if (str/blank? callback) "callback" callback)]
+    (str callback "("
+         (hal/resource->representation resource :json)
+         ");")))
+
+(defmethod slice-metadata "application/xml" [_ resource _]
+  (hal/resource->representation resource :xml))
+
+(defmethod slice-metadata :default [format _ _]
+  (format-not-found format))
+
 
 (def clauses
   [{:key "select"   :label "Select (fields to return)" :placeholder "state,age,population_2010"}
@@ -241,14 +278,15 @@
                     :href (href-for-page resource total-pages)}])))
     []))
 
-(defmethod slice "text/html" [_ resource {:keys [query metadata slicedef headers dimensions]}]
+(defmulti slice-query (fn [format _ _]
+                        format))
+
+(defmethod slice-query "text/html" [_ resource {:keys [query metadata slicedef headers dimensions]}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
         query (get-in resource [:properties :query])
-        action (str "http://" (headers "host")
-                    "/data/" dataset
-                    "/" slice)
+        base-href (urls/slice-path dataset slice)        
         slice-metadata {:name (get-in slicedef [:info :name])
                         :description (get-in slicedef [:info :description])
                         :dimensions (str/join ", " (:dimensions slicedef))
@@ -278,7 +316,9 @@
         pagination (create-pagination resource)]
     (layout-html resource
                  (slice-html
-                  {:action action
+                  {:action (str "http://" (headers "host") base-href)
+                   :base-href base-href
+                   :metadata-href (urls/slice-metadata-path dataset slice)
                    :dataset dataset
                    :slice slice
                    :metadata slice-metadata
@@ -292,7 +332,7 @@
                    :has-data? has-data?
                    :data data}))))
 
-(defmethod slice "text/csv" [_ resource {:keys [query slicedef]}]
+(defmethod slice-query "text/csv" [_ resource {:keys [query slicedef]}]
   (let [table (:table slicedef)
         data (get-in resource [:properties :results])
         columns (columns-for-view query slicedef)
@@ -306,17 +346,17 @@
            (response/set-headers {"Link" (str/join ", " links)})
            (ring-response)))))
 
-(defmethod slice "application/json" [_ resource _]
+(defmethod slice-query "application/json" [_ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod slice "text/javascript" [_ resource {:keys [callback]}]
+(defmethod slice-query "text/javascript" [_ resource {:keys [callback]}]
   (let [callback (if (str/blank? callback) "callback" callback)]
     (str callback "("
          (hal/resource->representation resource :json)
          ");")))
 
-(defmethod slice "application/xml" [_ resource _]
+(defmethod slice-query "application/xml" [_ resource _]
   (hal/resource->representation resource :xml))
 
-(defmethod slice :default [format _ _]
+(defmethod slice-query :default [format _ _]
   (format-not-found format))
