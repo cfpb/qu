@@ -16,7 +16,3 @@
 (defn concept-path
   ([dataset concept] (str/join "/" ["/data" dataset "concept" concept]))
   ([dataset concept ext] (str (concept-path dataset concept) "." ext)))
-
-(defn concepts-path
-  ([dataset] (str/join "/" ["/data" dataset "concepts"]))
-  ([dataset ext] (str (concepts-path dataset) "." ext)))
