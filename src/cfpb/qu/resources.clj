@@ -179,8 +179,8 @@ functions to return the resource that will be presented later."
                              :results (:data result)}))))
 
 (defresource
-  ^{:doc "Resource for an individual slice."}
-  slice
+  ^{:doc "Resource for a query on an individual slice."}
+  slice-query
   :available-media-types ["text/html" "text/csv" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
