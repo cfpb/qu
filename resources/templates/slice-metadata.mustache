@@ -1,0 +1,69 @@
+<h1>Slice:
+  <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/<a class="slice" href="/data/{{dataset}}/slice/{{slice}}">{{slice}}</a>/metadata
+</h1>
+
+<h2>Formats</h2>
+<ul class="inline">
+  <li><a href="{{url}}.json">JSON</a></li>
+  <li><a href="{{url}}.jsonp">JSONP</a></li>
+  <li><a href="{{url}}.xml">XML</a></li>
+</ul>
+
+{{#resource.properties.info}}
+  <h2>Properties</h2>
+  <dl>
+    {{#name}}
+      <dt>Name</dt>
+      <dd>{{name}}</dd>
+    {{/name}}
+    {{#description}}
+      <dt>Description</dt>
+      <dd>{{description}}</dd>
+    {{/description}}
+  </dl>
+{{/resource.properties.info}}
+
+<h2>Dimensions</h2>
+<ul>
+  {{#dimensions}}
+    <li>{{.}}</li>
+  {{/dimensions}}
+</ul>
+
+<h2>Metrics</h2>
+<ul>
+  {{#metrics}}
+    <li>{{.}}</li>
+  {{/metrics}}
+</ul>
+
+<h2>Types</h2>
+<dl>
+  {{#types}}
+    <dt>{{column}}</dt>
+    <dd>{{type}}</dd>
+  {{/types}}
+</dl>
+
+{{#has-references?}}
+<h2>References</h2>
+<ul>
+  {{#references}}
+    <li>
+      <strong>{{column}}:</strong>
+      {{#data}}
+        <dd>
+          <dl>
+            <dt>Concept</dt>
+            <dd>{{concept}}</dd>
+            <dt>Column</dt>
+            <dd>{{column}}</dd>
+            <dt>Value</dt>
+            <dd>{{value}}</dd>
+          </dl>
+        </dd>
+      {{/data}}
+    </li>
+  {{/references}}
+</ul>
+{{/has-references?}}
