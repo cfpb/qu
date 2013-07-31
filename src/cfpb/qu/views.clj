@@ -161,7 +161,7 @@
                                :dataset dataset
                                :concept concept
                                :columns columns
-                               :table (data/get-data-table table columns)                               
+                               :table (data/get-data-table (:data table) columns)        
                                :has-table? (not (empty? table))}))))
 
 (defmethod concept "application/json" [_ resource _]

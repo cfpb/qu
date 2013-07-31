@@ -136,7 +136,7 @@ functions to return the resource that will be presented later."
                      resource (let [table (data/concept-data dataset concept)]
                                 (if (empty? table)
                                   resource
-                                  (hal/add-property resource :table {:data concept-data})))
+                                  (hal/add-property resource :table {:data table})))
                      view-map {:callback callback}]
                  (views/concept (:media-type representation) resource view-map))))
 
