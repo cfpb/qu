@@ -11,12 +11,15 @@
             [cfpb.qu.core :as core]
             [cfpb.qu.handler :as handler :refer [boot]]
             [cfpb.qu.data :as data :refer [ensure-mongo-connection]]
-            [cfpb.qu.loader :as loader :refer [load-dataset]]))
+            [cfpb.qu.loader :as loader :refer [load-dataset]]
+            stencil.loader))
 
 (set-refresh-dirs "src/" "dev/")
 
 (when-not (env :integration)
   (log/set-level! :info))
+
+(stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0))
 
 (def system nil)
 
