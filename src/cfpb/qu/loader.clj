@@ -199,12 +199,20 @@ transform that data into the form we want."
                       (map
                        (fn [row]
                          (into {} (remove (fn [[k v]] (nil? v)) row)))
-                       data))]
-    (doseq [file sources]
-      (load-csv-file
-       (str dir "/" file)
-       collection
-       (comp remove-nils transform-keys add-concepts cast-data)))))
+                       data))
+        transform-fn (comp remove-nils transform-keys add-concepts cast-data)
+        agent-error-handler (fn [agent exception]
+                              (log/error "Error in table loading agent"
+                                         (.getMessage exception)))
+        agents (map (fn [source]
+                      (agent source
+                             :error-mode :continue
+                             :error-handler agent-error-handler))
+                    sources)]
+    (doseq [agent agents]
+      (send-off agent (fn [file]
+                        (load-csv-file (str dir "/" file) collection transform-fn))))
+    (apply await agents)))
 
 (defmulti load-slice
   (fn [slice _ definition]
