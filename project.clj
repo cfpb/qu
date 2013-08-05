@@ -32,18 +32,18 @@ serve their public data sets."
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.6.0"]
                  [com.stuartsierra/dependency "0.1.1"]                 
-                 [com.taoensso/timbre "2.0.1"]
-                 [compojure "1.1.3"]
-                 [digest "1.3.0"]
+                 [com.taoensso/timbre "2.4.1"]
+                 [compojure "1.1.5"]
+                 [digest "1.4.3"]
                  [environ "0.4.0"]
                  [factual/drake "0.1.4-SNAPSHOT"]
                  [halresource "0.1.0-SNAPSHOT"]
-                 [lib-noir "0.6.0"]
+                 [lib-noir "0.6.6"]
                  [liberator "0.9.0"]
-                 [lonocloud/synthread "1.0.4"]
+                 [lonocloud/synthread "1.0.5"]
                  [org.clojure/data.csv "0.1.2"]
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
-                 [parse-ez "0.3.4"]
+                 [parse-ez "0.3.6"]
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring/ring-core "1.1.6"]
                  [ring/ring-jetty-adapter "1.1.6"]
@@ -65,13 +65,13 @@ serve their public data sets."
   :profiles {:dev {:source-paths ["dev"]
                    :env {:mongo-host "127.0.0.1"
                          :mongo-port 27017}
-                   :embongo {:version "2.4.3"}
-                   :dependencies [[ring-mock "0.1.3"]
+                   :embongo {:version "2.4.5"}
+                   :dependencies [[ring-mock "0.1.5"]
                                   [midje "1.6-alpha2"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
-                                  [org.clojure/tools.namespace "0.2.3"]
-                                  [org.clojure/java.classpath "0.2.0"]
-                                  [alembic "0.1.0"]]}
+                                  [org.clojure/tools.namespace "0.2.4"]
+                                  [org.clojure/java.classpath "0.2.1"]
+                                  [alembic "0.1.3"]]}
              :integration [:default
                            {:env {:mongo-port 37017
                                   :integration true}
