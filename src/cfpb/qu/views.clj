@@ -21,7 +21,9 @@
    [cheshire.generate :refer [add-encoder encode-str]]
    [clojurewerkz.urly.core :as url]
    [lonocloud.synthread :as ->]
-   [liberator.representation :refer [ring-response]])
+   [liberator.representation :refer [ring-response]]
+   [org.httpkit.server :refer :all]
+   [org.httpkit.timer :refer [schedule-task]])
   (:import [clojurewerkz.urly UrlLike]))
 
 ;; Allow for encoding of UrlLike's in JSON.
@@ -332,7 +334,7 @@
                    :has-data? has-data?
                    :data data}))))
 
-(defmethod slice-query "text/csv" [_ resource {:keys [query slicedef]}]
+(defmethod slice-query "text/csv" [_ resource {:keys [query slicedef request]}]
   (let [table (:table slicedef)
         data (get-in resource [:properties :results])
         columns (columns-for-view query slicedef)
@@ -340,11 +342,19 @@
     (let [links (reduce conj
                         [{:href (:href resource) :rel "self"}]
                         (:links resource))
-          links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)]
-      (->> (str (write-csv (vector columns)) (write-csv rows))
-           (response/content-type "text/csv; charset=utf-8")
-           (response/set-headers {"Link" (str/join ", " links)})
-           (ring-response)))))
+          links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
+          response (->> {:body ""}
+                        (response/content-type "text/csv; charset=utf-8")
+                        (response/set-headers {"Link" (str/join ", " links)}))]
+      (with-channel request channel
+        (on-close channel #(log/info "Channel closed:" %))
+        (send! channel (assoc response :body (write-csv (vector columns))) false)
+        (loop [spit-rows (take 100 rows)
+               next-rows (drop 100 rows)]
+          (send! channel (assoc response :body (write-csv spit-rows)) false)          
+          (if (empty? next-rows)
+            (close channel)
+            (recur (take 100 next-rows) (drop 100 next-rows))))))))
 
 (defmethod slice-query "application/json" [_ resource _]
   (hal/resource->representation resource :json))

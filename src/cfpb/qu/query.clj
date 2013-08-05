@@ -12,7 +12,6 @@
             [clj-statsd :as sd]))
 
 (def default-limit 100)
-(def default-aggregation-limit 10000)
 (def default-offset 0)
 
 (declare parse-params mongo-find mongo-aggregation)
