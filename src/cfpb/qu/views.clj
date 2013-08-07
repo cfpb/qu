@@ -33,7 +33,7 @@
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
 
-(def ^:dynamic *stream-size* *stream-size*)
+(def ^:dynamic *stream-size* 1024)
 
 (def footer-info {:qu_version (:version project)
                   :build_number (:build-number project)
@@ -389,11 +389,19 @@
     (send-stream request response in *stream-size*)
     (ring-response response)))
 
-(defmethod slice-query "text/javascript" [_ resource {:keys [callback]}]
-  (let [callback (if (str/blank? callback) "callback" callback)]
-    (str callback "("
-         (hal/resource->representation resource :json)
-         ");")))
+(defmethod slice-query "text/javascript" [_ resource {:keys [request callback]}]
+  (let [callback (if (str/blank? callback) "callback" callback)
+        resource (hal/json-representation resource)
+        response (response/content-type "text/json; charset=utf-8" {})      
+        in (PipedInputStream. *stream-size*)
+        out (PipedOutputStream. in)]
+    (future
+      (with-open [out (io/writer out)]
+        (.write out (str callback "("))
+        (json/generate-stream resource out)
+        (.write out ");")))
+    (send-stream request response in *stream-size*)
+    (ring-response response)))
 
 (defmethod slice-query "application/xml" [_ resource {:keys [request]}]
   (let [resource (hal/xml-representation resource)
