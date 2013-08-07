@@ -11,6 +11,7 @@
    [stencil.core :refer [render-file]]
    [noir.response :as response]
    [clojure.data.csv :as csv]
+   [clojure.data.xml :as xml]
    monger.json
    [halresource.resource :as hal]
    [cfpb.qu.project :refer [project]]
@@ -31,6 +32,8 @@
 
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
+
+(def ^:dynamic *stream-size* *stream-size*)
 
 (def footer-info {:qu_version (:version project)
                   :build_number (:build-number project)
@@ -362,37 +365,29 @@
                      false)          
               (recur (drop size rows)))))))))
 
-(defn slurp-binary
-  "Reads len bytes from InputStream is and returns a byte array."
-  [^java.io.InputStream is len]
-  (with-open [rdr is]
-    (let [buf (byte-array len)]
-      (.read rdr buf)
-      buf)))
-
 (defn send-stream
   [request response ^java.io.InputStream is len]
-  (let [buf (byte-array len)]
-    (with-open [reader is]
+  (let [buf (char-array len)]
+    (with-open [is (io/reader is)]
       (with-channel request channel
         (on-close channel #(log/info "Channel closed:" %))
         (loop [n (.read is buf)]
-          (let [string (apply str (map char (take n buf)))]
+          (let [string (apply str (take n buf))]
             (send! channel (assoc response :body string) false)
-            (if (> n 0)
-              (recur (.read is buf))
-              (close channel))))
+            (when-not (= n -1)
+              (recur (.read is buf)))))
         (close channel)))))
 
 (defmethod slice-query "application/json" [_ resource {:keys [request]}]
   (let [resource (hal/json-representation resource)
         response (response/content-type "text/json; charset=utf-8" {})      
-        in (PipedInputStream.)]
+        in (PipedInputStream. *stream-size*)
+        out (PipedOutputStream. in)]
     (future
-      (with-open [out (PipedOutputStream. in)]
-        (json/generate-stream resource (io/writer out))))
-    (send-stream request response in 1024)
-    (ring-response {})))
+      (with-open [out (io/writer out)]
+        (json/generate-stream resource out)))
+    (send-stream request response in *stream-size*)
+    (ring-response response)))
 
 (defmethod slice-query "text/javascript" [_ resource {:keys [callback]}]
   (let [callback (if (str/blank? callback) "callback" callback)]
@@ -400,8 +395,18 @@
          (hal/resource->representation resource :json)
          ");")))
 
-(defmethod slice-query "application/xml" [_ resource _]
-  (hal/resource->representation resource :xml))
+(defmethod slice-query "application/xml" [_ resource {:keys [request]}]
+  (let [resource (hal/xml-representation resource)
+        response (response/content-type "application/xml; charset=utf-8" {})
+        in (PipedInputStream. *stream-size*)
+        out (PipedOutputStream. in)]
+    (future
+      (with-open [out (io/writer out)]
+        (xml/emit (xml/sexp-as-element resource)
+                  out
+                  :encoding "UTF-8")))
+    (send-stream request response in *stream-size*)
+    (ring-response response)))
 
 (defmethod slice-query :default [format _ _]
   (format-not-found format))
