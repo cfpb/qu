@@ -380,7 +380,7 @@
 
 (defmethod slice-query "application/json" [_ resource {:keys [request]}]
   (let [resource (hal/json-representation resource)
-        response (response/content-type "text/json; charset=utf-8" {})      
+        response (response/content-type "application/json;charset=UTF-8" {})      
         in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
     (future
@@ -392,7 +392,7 @@
 (defmethod slice-query "text/javascript" [_ resource {:keys [request callback]}]
   (let [callback (if (str/blank? callback) "callback" callback)
         resource (hal/json-representation resource)
-        response (response/content-type "text/json; charset=utf-8" {})      
+        response (response/content-type "text/javascript;charset=UTF-8" {})      
         in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
     (future
@@ -405,7 +405,7 @@
 
 (defmethod slice-query "application/xml" [_ resource {:keys [request]}]
   (let [resource (hal/xml-representation resource)
-        response (response/content-type "application/xml; charset=utf-8" {})
+        response (response/content-type "application/xml;charset=UTF-8" {})
         in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
     (future

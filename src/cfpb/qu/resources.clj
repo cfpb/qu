@@ -229,7 +229,7 @@ functions to return the resource that will be presented later."
                             slice (get-in request [:params :slice])
                             message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)
-                          "text/html" (not-found message)
+                          "text/html" (ring-response (not-found message))
                           message)))
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [headers (:headers request)

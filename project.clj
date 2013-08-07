@@ -27,6 +27,7 @@ serve their public data sets."
   :hooks [configleaf.hooks]  
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.2.0"]
+                 [clj-statsd "0.3.9"]                 
                  [clj-time "0.5.1"]
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.6.0"]
@@ -47,7 +48,7 @@ serve their public data sets."
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring/ring-core "1.1.6"]
                  [stencil "0.3.2"]
-                 [clj-statsd "0.3.9"]]
+                 ]
   :configleaf {:namespace cfpb.qu.project
                :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]
@@ -55,11 +56,14 @@ serve their public data sets."
                          :mongo-port 27017
                          :dev true}
                    :embongo {:version "2.4.5"}
-                   :dependencies [[midje "1.6-alpha2"]
+                   :dependencies [[alembic "0.1.3"]
+                                  [clj-http "0.7.2"]                                  
+                                  [midje "1.6-alpha2"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
-                                  [alembic "0.1.3"]]}
+                                  [ring-mock "0.1.5"]                                  
+                                  ]}
              :integration [:default
                            {:env {:mongo-port 37017
                                   :integration true}
