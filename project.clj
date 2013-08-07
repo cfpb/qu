@@ -19,9 +19,7 @@ serve their public data sets."
   :min-lein-version "2.0.0"
   :source-paths ["src"]
   :main cfpb.qu.core
-  :plugins [[codox "0.6.4"]
-            [lein-cloverage "1.0.2"]
-            [lein-environ "0.4.0"]
+  :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
             [lein-embongo "0.2.1"]
             [configleaf "0.4.6"]]
@@ -47,20 +45,8 @@ serve their public data sets."
                  [parse-ez "0.3.6"]
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring/ring-core "1.1.6"]
-                 [ring/ring-jetty-adapter "1.1.6"]
                  [stencil "0.3.2"]
-                 [clj-statsd "0.3.9"]
-                 
-                 ;; provisional
-                 [slingshot "0.10.3"]
-                 ]
-  :ring {:handler cfpb.qu.handler/app
-         :init cfpb.qu.handler/init
-         :destroy cfpb.qu.handler/destroy
-         :war-exclusions [#"(^|/)\." #"datasets.*" #".*javax.servlet-2.5.0.*" #".*appengine-api-*" #".*aws-java-sdk-*"]}
-  :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
-          :src-linenum-anchor-prefix "L"
-          :output-dir "doc/codox"}
+                 [clj-statsd "0.3.9"]]
   :configleaf {:namespace cfpb.qu.project
                :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]

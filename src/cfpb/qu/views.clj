@@ -5,6 +5,7 @@
    [clojure
     [string :as str]
     [pprint :refer [pprint]]]
+   [clojure.java.io :as io]
    [compojure
     [response :refer [render]]]
    [stencil.core :refer [render-file]]
@@ -19,12 +20,14 @@
    [cfpb.qu.query.select :as select]
    [cfpb.qu.urls :as urls]
    [cheshire.generate :refer [add-encoder encode-str]]
+   [cheshire.core :as json]
    [clojurewerkz.urly.core :as url]
    [lonocloud.synthread :as ->]
    [liberator.representation :refer [ring-response]]
    [org.httpkit.server :refer :all]
    [org.httpkit.timer :refer [schedule-task]])
-  (:import [clojurewerkz.urly UrlLike]))
+  (:import [clojurewerkz.urly UrlLike]
+           [java.io PipedOutputStream PipedInputStream PipedWriter PipedReader]))
 
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
@@ -338,7 +341,8 @@
   (let [table (:table slicedef)
         data (get-in resource [:properties :results])
         columns (columns-for-view query slicedef)
-        rows (data/get-data-table data columns)]
+        rows (data/get-data-table data columns)
+        size 100]
     (let [links (reduce conj
                         [{:href (:href resource) :rel "self"}]
                         (:links resource))
@@ -349,15 +353,46 @@
       (with-channel request channel
         (on-close channel #(log/info "Channel closed:" %))
         (send! channel (assoc response :body (write-csv (vector columns))) false)
-        (loop [spit-rows (take 100 rows)
-               next-rows (drop 100 rows)]
-          (send! channel (assoc response :body (write-csv spit-rows)) false)          
-          (if (empty? next-rows)
+        (loop [rows rows]          
+          (if (empty? rows)
             (close channel)
-            (recur (take 100 next-rows) (drop 100 next-rows))))))))
+            (do
+              (send! channel
+                     (assoc response :body (write-csv (take size rows)))
+                     false)          
+              (recur (drop size rows)))))))))
 
-(defmethod slice-query "application/json" [_ resource _]
-  (hal/resource->representation resource :json))
+(defn slurp-binary
+  "Reads len bytes from InputStream is and returns a byte array."
+  [^java.io.InputStream is len]
+  (with-open [rdr is]
+    (let [buf (byte-array len)]
+      (.read rdr buf)
+      buf)))
+
+(defn send-stream
+  [request response ^java.io.InputStream is len]
+  (let [buf (byte-array len)]
+    (with-open [reader is]
+      (with-channel request channel
+        (on-close channel #(log/info "Channel closed:" %))
+        (loop [n (.read is buf)]
+          (let [string (apply str (map char (take n buf)))]
+            (send! channel (assoc response :body string) false)
+            (if (> n 0)
+              (recur (.read is buf))
+              (close channel))))
+        (close channel)))))
+
+(defmethod slice-query "application/json" [_ resource {:keys [request]}]
+  (let [resource (hal/json-representation resource)
+        response (response/content-type "text/json; charset=utf-8" {})      
+        in (PipedInputStream.)]
+    (future
+      (with-open [out (PipedOutputStream. in)]
+        (json/generate-stream resource (io/writer out))))
+    (send-stream request response in 100)
+    (ring-response {})))
 
 (defmethod slice-query "text/javascript" [_ resource {:keys [callback]}]
   (let [callback (if (str/blank? callback) "callback" callback)]

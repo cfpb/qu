@@ -318,8 +318,7 @@ transform that data into the form we want."
                        slurp
                        (json/parse-string true)
                        (assoc :dir dir)
-                       (assoc :database dataset))
-        concepts (read-concepts definition)]
+                       (assoc :database dataset))]
     (when delete
       (log/info "Dropping old dataset" dataset)
       (mongo/drop-db dataset))
@@ -330,8 +329,9 @@ transform that data into the form we want."
     (when (and drakefile (.isFile drakefile))
       (run-drakefile drakefile))
 
-    (with-db (get-db dataset)
-      (log/info "Writing concept data")
-      (write-concept-data concepts)
-      (log/info "Loading slices for dataset" dataset)
-      (load-slices concepts definition))))
+    (let [concepts (read-concepts definition)]
+      (with-db (get-db dataset)
+        (log/info "Writing concept data")
+        (write-concept-data concepts)
+        (log/info "Loading slices for dataset" dataset)
+        (load-slices concepts definition)))))
