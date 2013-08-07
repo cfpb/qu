@@ -19,6 +19,7 @@ serve their public data sets."
   :min-lein-version "2.0.0"
   :source-paths ["src"]
   :main cfpb.qu.core
+  :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
             [lein-embongo "0.2.1"]
@@ -54,8 +55,7 @@ serve their public data sets."
                          :mongo-port 27017
                          :dev true}
                    :embongo {:version "2.4.5"}
-                   :dependencies [[ring-mock "0.1.5"]
-                                  [midje "1.6-alpha2"]
+                   :dependencies [[midje "1.6-alpha2"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
