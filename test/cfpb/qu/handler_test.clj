@@ -43,7 +43,7 @@
              => (contains {:status 404})))
 
 
-(facts "about /data/:dataset/slice/:slice"
+#_(facts "about /data/:dataset/slice/:slice"
        (fact "it returns successfully when the dataset and slice exist"
              (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {:whoa {}}}
                            (#'cfpb.qu.query/execute "good-dataset" anything anything)
