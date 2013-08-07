@@ -391,7 +391,7 @@
     (future
       (with-open [out (PipedOutputStream. in)]
         (json/generate-stream resource (io/writer out))))
-    (send-stream request response in 100)
+    (send-stream request response in 1024)
     (ring-response {})))
 
 (defmethod slice-query "text/javascript" [_ resource {:keys [callback]}]
