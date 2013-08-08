@@ -3,62 +3,56 @@
             [ring.mock.request :refer :all]
             [cfpb.qu.handler :refer [app]]
             [cfpb.qu.loader :as loader]
-            [cfpb.qu.data :as data]))
+            [cfpb.qu.data :as data]
+            [cfpb.qu.test-util :refer :all]))
 
-(with-state-changes [(before :facts (do (data/connect-mongo)
+(with-server
+  (with-state-changes [(before :facts (do (data/connect-mongo)
                                         (loader/load-dataset "integration_test")))
-                     (after :facts (data/disconnect-mongo))]
+                       (after :facts (data/disconnect-mongo))]
+    (facts "about querying a slice with no parameters"
+           (fact "it returns successfully as text/html"
+                 (let [resp (GET "/data/integration_test/slice/incomes")]
+                   (:status resp) => 200
+                   (:headers resp) => (contains {:content-type "text/html;charset=UTF-8"
+                                                 :vary "Accept"}))))
 
-  (facts "about querying a slice with no parameters"
-       (fact "it returns successfully as text/html"
-             (app (request :get "/data/integration_test/slice/incomes"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"
-                                     "Vary" "Accept"}})))
+    (facts "about querying a slice that does not exist"
+           (fact "it returns a 404"
+                 (let [resp (GET "/data/bad-dataset/slice/bad-slice")]
+                   (:status resp) => 404)
 
-  (facts "about querying a slice that does not exist"
-         (fact "it returns a 404"
-               (app (request :get "/data/bad-dataset/slice/bad-slice"))
-               => (contains {:status 404})
+                 (let [resp (GET "/data/bad-dataset/slice/bad-slice.xml")]
+                   (:status resp) => 404
+                   (:headers resp) => (contains {:content-type "application/xml;charset=UTF-8"
+                                                 :vary "Accept"}))))
 
-               ;; TODO why is this Content-Type different
-               (app (request :get "/data/bad-dataset/slice/bad-slice.xml"))
-               => (contains {:status 404
-                             :headers {"Content-Type" "application/xml;charset=UTF-8"
-                                       "Vary" "Accept"}})))
+    (facts "about specifying JSON"
+           (fact "it returns a content-type of application/json"
+                 (let [resp (GET "/data/integration_test/slice/incomes.json")]
+                   (:status resp) => 200
+                   (:headers resp) => (contains {:content-type "application/json;charset=UTF-8"}))))
 
-  (facts "about specifying JSON"
-         (fact "it returns a content-type of application/json"
-             (app (request :get "/data/integration_test/slice/incomes.json"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "application/json;charset=UTF-8"
-                                     "Vary" "Accept"}})))
+    (facts "about specifying JSONP"
+           (fact "it uses the callback we supply"
+                 (let [resp (GET "/data/integration_test/slice/incomes.jsonp?$callback=foo")]
+                   (:status resp) => 200
+                   (:headers resp) => (contains {:content-type "text/javascript;charset=UTF-8"})
+                   (:body resp) => #"^foo\("))
 
-  (facts "about specifying JSONP"
-         (fact "it uses the callback we supply"
-             (let [result (app (request :get "/data/integration_test/slice/incomes.jsonp?$callback=foo"))]
-               result => (contains {:status 200
-                                    :headers {"Content-Type" "text/javascript;charset=UTF-8"
-                                              "Vary" "Accept"}})
+           (fact "it uses 'callback' by default"
+                 (let [resp (GET "/data/integration_test/slice/incomes.jsonp")]
+                   (:status resp) => 200
+                   (:headers resp) => (contains {:content-type "text/javascript;charset=UTF-8"})
+                   (:body resp) => #"^callback\(")))
+    
+    (facts "about specifying XML"
+           (fact "it returns a content-type of application/xml"
+                 (let [resp (GET "/data/integration_test/slice/incomes.xml")]
+                   (:status resp) => 200
+                   (:headers resp) => (contains {:content-type "application/xml;charset=UTF-8"}))))
 
-               (:body result) => #"^foo\("))
-
-         (fact "it uses 'callback' by default"
-               (let [result (app (request :get "/data/integration_test/slice/incomes.jsonp"))]
-                 result => (contains {:status 200
-                                      :headers {"Content-Type" "text/javascript;charset=UTF-8"
-                                                "Vary" "Accept"}})
-                 
-                 (:body result) => #"^callback\(")))
-  
-  (facts "about specifying XML"
-         (fact "it returns a content-type of application/xml"
-             (app (request :get "/data/integration_test/slice/incomes.xml"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"
-                                     "Vary" "Accept"}})))
-
-  (facts "about querying with an error"
-         (fact "it returns the status code for bad request"
-               (app (request :get "/data/integration_test/slice/incomes?$where=peanut%20butter"))
-               => (contains {:status 400}))))
+    (facts "about querying with an error"
+           (fact "it returns the status code for bad request"
+                 (let [resp (GET "/data/integration_test/slice/incomes?$where=peanut%20butter")]
+                   (:status resp) => 400)))))
