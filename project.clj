@@ -18,7 +18,8 @@ serve their public data sets."
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]
-  :main cfpb.qu.core
+  :main cfpb.qu.main
+  :aot [cfpb.qu.main]
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
@@ -49,12 +50,19 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [stencil "0.3.2"]
                  ]
+  :env {:mongo-host "127.0.0.1"
+        :mongo-port 27017
+        :http-port 3000
+        :http-threads 4
+        :dev false
+        :integration false}
+  :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
+  :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
+                       #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :configleaf {:namespace cfpb.qu.project
                :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]
-                   :env {:mongo-host "127.0.0.1"
-                         :mongo-port 27017
-                         :dev true}
+                   :env {:dev true}
                    :embongo {:version "2.4.5"}
                    :dependencies [[alembic "0.1.3"]
                                   [clj-http "0.7.2"]                                  

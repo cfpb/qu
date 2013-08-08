@@ -23,5 +23,5 @@ through Jetty, not through another web server."
   (GET "/data/:dataset/slice/:slice/metadata" [dataset slice] resources/slice-metadata)  
   (GET "/data/:dataset/slice/:slice.:extension" [dataset slice] resources/slice-query)
   (GET "/data/:dataset/slice/:slice" [dataset slice] resources/slice-query)
-  (route/files "/static" {:root (.getPath (io/resource "static/"))})
+  (route/resources "/static" {:root "static"})
   (route/not-found (resources/not-found "Route not found")))
