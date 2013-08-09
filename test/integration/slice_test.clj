@@ -1,7 +1,7 @@
 (ns integration.slice-test
   (:require [midje.sweet :refer :all]
             [ring.mock.request :refer :all]
-            [cfpb.qu.handler :refer [app]]
+            [cfpb.qu.main :refer [app]]
             [cfpb.qu.loader :as loader]
             [cfpb.qu.data :as data]
             [cfpb.qu.test-util :refer :all]))

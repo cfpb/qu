@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer :all]
             [org.httpkit.server :refer [run-server]]
             [org.httpkit.client :as client]
-            [cfpb.qu.handler :refer [app]]))
+            [cfpb.qu.main :refer [app]]))
 
 (def port 4545)
 (def server (atom nil))

@@ -38,7 +38,7 @@ serve their public data sets."
                  [digest "1.4.3"]
                  [environ "0.4.0"]
                  [factual/drake "0.1.4-SNAPSHOT"]
-                 [halresource "0.1.0-SNAPSHOT"]
+                 [halresource "0.1.1-SNAPSHOT"]
                  [http-kit "2.1.5"]                 
                  [lib-noir "0.6.6"]
                  [liberator "0.9.0"]

@@ -1,7 +1,7 @@
-(ns cfpb.qu.handler-test
+(ns cfpb.qu.main-test
   (:require [midje.sweet :refer :all]
             [ring.mock.request :refer :all]
-            [cfpb.qu.handler :refer [app]]
+            [cfpb.qu.main :refer [app]]
             [cfpb.qu.test-util :refer :all]))
 
 (fact "the index URL redirects to /data"

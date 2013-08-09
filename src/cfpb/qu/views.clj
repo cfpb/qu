@@ -33,6 +33,7 @@
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
 
+(def ^:dynamic *min-records-to-stream* 1000)
 (def ^:dynamic *stream-size* 1024)
 
 (def footer-info {:qu_version (:version project)
@@ -286,10 +287,10 @@
                     :href (href-for-page resource total-pages)}])))
     []))
 
-(defmulti slice-query (fn [format _ _]
-                        format))
+(defmulti slice-query (fn [format _ _] format))
 
-(defmethod slice-query "text/html" [_ resource {:keys [query metadata slicedef headers dimensions]}]
+(defmethod slice-query "text/html"
+  [_ resource {:keys [query metadata slicedef headers dimensions]}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
@@ -340,30 +341,10 @@
                    :has-data? has-data?
                    :data data}))))
 
-(defmethod slice-query "text/csv" [_ resource {:keys [query slicedef request]}]
-  (let [table (:table slicedef)
-        data (get-in resource [:properties :results])
-        columns (columns-for-view query slicedef)
-        rows (data/get-data-table data columns)
-        size 100]
-    (let [links (reduce conj
-                        [{:href (:href resource) :rel "self"}]
-                        (:links resource))
-          links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
-          response (->> {:body ""}
-                        (response/content-type "text/csv; charset=utf-8")
-                        (response/set-headers {"Link" (str/join ", " links)}))]
-      (with-channel request channel
-        (on-close channel #(log/info "Channel closed:" %))
-        (send! channel (assoc response :body (write-csv (vector columns))) false)
-        (loop [rows rows]          
-          (if (empty? rows)
-            (close channel)
-            (do
-              (send! channel
-                     (assoc response :body (write-csv (take size rows)))
-                     false)          
-              (recur (drop size rows)))))))))
+(defn- should-stream?
+  [resource]
+  (> (->int (get-in resource [:properties :size]) 0)
+     *min-records-to-stream*))
 
 (defn send-stream
   [request response ^java.io.InputStream is len]
@@ -378,9 +359,24 @@
               (recur (.read is buf)))))
         (close channel)))))
 
-(defmethod slice-query "application/json" [_ resource {:keys [request]}]
+(defn- stream-slice-query-csv
+  [request response columns rows]
+  (let [size 100]
+    (with-channel request channel
+      (on-close channel #(log/info "Channel closed:" %))
+      (send! channel (assoc response :body (write-csv (vector columns))) false)
+      (loop [rows rows]          
+        (if (empty? rows)
+          (close channel)
+          (do
+            (send! channel
+                   (assoc response :body (write-csv (take size rows)))
+                   false)          
+            (recur (drop size rows))))))))
+
+(defn- stream-slice-query-json
+  [request response resource]
   (let [resource (hal/json-representation resource)
-        response (response/content-type "application/json;charset=UTF-8" {})      
         in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
     (future
@@ -389,10 +385,9 @@
     (send-stream request response in *stream-size*)
     (ring-response response)))
 
-(defmethod slice-query "text/javascript" [_ resource {:keys [request callback]}]
-  (let [callback (if (str/blank? callback) "callback" callback)
-        resource (hal/json-representation resource)
-        response (response/content-type "text/javascript;charset=UTF-8" {})      
+(defn- stream-slice-query-jsonp
+  [request response resource callback]
+  (let [resource (hal/json-representation resource)          
         in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
     (future
@@ -403,18 +398,57 @@
     (send-stream request response in *stream-size*)
     (ring-response response)))
 
-(defmethod slice-query "application/xml" [_ resource {:keys [request]}]
-  (let [resource (hal/xml-representation resource)
-        response (response/content-type "application/xml;charset=UTF-8" {})
-        in (PipedInputStream. *stream-size*)
+(defn- stream-slice-query-xml
+  [request response resource]
+  (let [in (PipedInputStream. *stream-size*)
         out (PipedOutputStream. in)]
-    (future
-      (with-open [out (io/writer out)]
-        (xml/emit (xml/sexp-as-element resource)
-                  out
-                  :encoding "UTF-8")))
-    (send-stream request response in *stream-size*)
-    (ring-response response)))
+      (future
+        (with-open [out (io/writer out)]
+          (xml/emit resource out :encoding "UTF-8")))
+      (send-stream request response in *stream-size*)
+      (ring-response response)))
+
+(defmethod slice-query "text/csv" [_ resource {:keys [request query slicedef]}]
+  (let [table (:table slicedef)
+        data (get-in resource [:properties :results])
+        columns (columns-for-view query slicedef)
+        rows (data/get-data-table data columns)
+        links (reduce conj
+                      [{:href (:href resource) :rel "self"}]
+                      (:links resource))
+        links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
+        response (->> {:body ""}
+                          (response/content-type "text/csv;charset=UTF-8")
+                          (response/set-headers {"Link" (str/join ", " links)}))]
+    (if (should-stream? resource)
+      (stream-slice-query-csv request response columns rows)
+      (->> (str (write-csv (vector columns)) (write-csv rows))
+           (response/content-type "text/csv; charset=utf-8")
+           (response/set-headers {"Link" (str/join ", " links)})
+           (ring-response)))))
+
+(defmethod slice-query "application/json"
+  [_ resource {:keys [request]}]
+  (let [response (response/content-type "application/json;charset=UTF-8" {})]
+    (if (should-stream? resource)
+      (stream-slice-query-json request response resource)
+      (ring-response
+       (assoc response :body (hal/resource->representation resource :json))))))
+
+(defmethod slice-query "text/javascript" [_ resource {:keys [request callback]}]
+  (let [response (response/content-type "text/javascript;charset=UTF-8" {})
+        callback (if (str/blank? callback) "callback" callback)]
+    (if (should-stream? resource)
+      (stream-slice-query-jsonp request response resource callback)
+      (ring-response
+       (assoc response :body (str callback "(" (hal/resource->representation resource :json) ");"))))))
+
+(defmethod slice-query "application/xml" [_ resource {:keys [request]}]
+  (let [response (response/content-type "application/xml;charset=UTF-8" {})
+        xml-resource (hal/xml-representation resource)]
+    (if (should-stream? resource)
+      (stream-slice-query-xml request response xml-resource)
+      (ring-response (assoc response :body (xml/emit-str xml-resource))))))
 
 (defmethod slice-query :default [format _ _]
   (format-not-found format))
