@@ -25,8 +25,7 @@
    [clojurewerkz.urly.core :as url]
    [lonocloud.synthread :as ->]
    [liberator.representation :refer [ring-response]]
-   [org.httpkit.server :refer :all]
-   [org.httpkit.timer :refer [schedule-task]])
+   [org.httpkit.server :refer :all])
   (:import [clojurewerkz.urly UrlLike]
            [java.io PipedOutputStream PipedInputStream PipedWriter PipedReader]))
 
