@@ -308,19 +308,20 @@
                                                         [:properties :query (keyword (:key %))])))
                      (map #(assoc-in % [:errors] (get-in resource
                                                          [:properties :errors (keyword (:key %))]))))
-        data (get-in resource [:properties :results])
+        data (take 100 (get-in resource [:properties :results]))
         columns (columns-for-view query slicedef)
         data (data/get-data-table data columns)
         columns (map desc columns)
+        data-size (->int (get-in resource [:properties :size]) 0)
         start (-> (get-in resource [:properties :query :offset])
                   (->int 0)
                   inc)
-        end (-> (get-in resource [:properties :size])
-                (->int 0)
+        end (-> data-size
                 (+ start)
                 dec)
         total (get-in resource [:properties :total])
         has-data? (> (- end start) 0)
+        has-more-data? (> data-size 100)
         pagination (create-pagination resource)]
     (layout-html resource
                  (slice-html
@@ -338,6 +339,7 @@
                    :total total
                    :pagination pagination
                    :has-data? has-data?
+                   :has-more-data? has-more-data?
                    :data data}))))
 
 (defn- should-stream?
