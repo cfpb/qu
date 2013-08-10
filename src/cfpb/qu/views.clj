@@ -352,7 +352,6 @@
   (let [buf (char-array len)]
     (with-open [is (io/reader is)]
       (with-channel request channel
-        (on-close channel #(log/info "Channel closed:" %))
         (loop [n (.read is buf)]
           (let [string (apply str (take n buf))]
             (send! channel (assoc response :body string) false)
@@ -364,7 +363,6 @@
   [request response columns rows]
   (let [size 100]
     (with-channel request channel
-      (on-close channel #(log/info "Channel closed:" %))
       (send! channel (assoc response :body (write-csv (vector columns))) false)
       (loop [rows rows]          
         (if (empty? rows)
