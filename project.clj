@@ -54,6 +54,7 @@ serve their public data sets."
         :mongo-port 27017
         :http-port 3000
         :http-threads 4
+        :http-queue-size 20480
         :dev false
         :integration false}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]

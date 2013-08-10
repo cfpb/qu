@@ -71,7 +71,8 @@
                       wrap-stacktrace)
                   app)
         options {:port (->int (:http-port env))
-                 :thread (->int (:http-threads env))}]
+                 :thread (->int (:http-threads env))
+                 :queue-size (->int (:http-queue-size env))}]
     (log/info "Starting server on port" (:port options))
     (when (:dev env)
       (log/info "Dev mode enabled"))
