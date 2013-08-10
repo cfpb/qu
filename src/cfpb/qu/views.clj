@@ -347,65 +347,52 @@
   (> (->int (get-in resource [:properties :size]) 0)
      *min-records-to-stream*))
 
-(defn send-stream
-  [request response ^java.io.InputStream is len]
-  (let [buf (char-array len)]
-    (with-open [is (io/reader is)]
-      (with-channel request channel
-        (loop [n (.read is buf)]
-          (let [string (apply str (take n buf))]
-            (send! channel (assoc response :body string) false)
-            (when-not (= n -1)
-              (recur (.read is buf)))))
-        (close channel)))))
+(defn- ch->outputstream [ch]
+  (proxy [java.io.OutputStream] []
+    (close []
+       (close ch))
+    (write
+      ([^bytes bs] ;; bytes of byte
+         (send! ch (String. bs) false))
+      ([^bytes bs off len]
+         (send! ch (String. bs off len) false)))))
+
+(defn- ch->writer [ch]
+  (io/writer (ch->outputstream ch)))
 
 (defn- stream-slice-query-csv
-  [request response columns rows]
-  (let [size 100]
-    (with-channel request channel
-      (send! channel (assoc response :body (write-csv (vector columns))) false)
-      (loop [rows rows]          
-        (if (empty? rows)
-          (close channel)
-          (do
-            (send! channel
-                   (assoc response :body (write-csv (take size rows)))
-                   false)          
-            (recur (drop size rows))))))))
+  [request response data]
+  (with-channel request ch
+    (send! ch response false)
+    (csv/write-csv (ch->writer ch) data)
+    (close ch))
+  (ring-response response))
 
 (defn- stream-slice-query-json
   [request response resource]
-  (let [resource (hal/json-representation resource)
-        in (PipedInputStream. *stream-size*)
-        out (PipedOutputStream. in)]
-    (future
-      (with-open [out (io/writer out)]
-        (json/generate-stream resource out)))
-    (send-stream request response in *stream-size*)
+  (let [resource (hal/json-representation resource)]        
+    (with-channel request ch
+      (send! ch response false)
+      (json/generate-stream resource (ch->writer ch))
+      (close ch))
     (ring-response response)))
 
 (defn- stream-slice-query-jsonp
-  [request response resource callback]
-  (let [resource (hal/json-representation resource)          
-        in (PipedInputStream. *stream-size*)
-        out (PipedOutputStream. in)]
-    (future
-      (with-open [out (io/writer out)]
-        (.write out (str callback "("))
-        (json/generate-stream resource out)
-        (.write out ");")))
-    (send-stream request response in *stream-size*)
+  [request response resource callback]  
+  (let [resource (hal/json-representation resource)]
+    (with-channel request ch
+      (send! ch (assoc response :body (str callback "(")) false)
+      (json/generate-stream resource (ch->writer ch))
+      (send! ch ");" true))
     (ring-response response)))
 
 (defn- stream-slice-query-xml
   [request response resource]
-  (let [in (PipedInputStream. *stream-size*)
-        out (PipedOutputStream. in)]
-      (future
-        (with-open [out (io/writer out)]
-          (xml/emit resource out :encoding "UTF-8")))
-      (send-stream request response in *stream-size*)
-      (ring-response response)))
+  (with-channel request ch
+    (send! ch response false)
+    (xml/emit resource (ch->writer ch))
+    (close ch))
+  (ring-response response))
 
 (defmethod slice-query "text/csv" [_ resource {:keys [request query slicedef]}]
   (let [table (:table slicedef)
@@ -416,11 +403,12 @@
                       [{:href (:href resource) :rel "self"}]
                       (:links resource))
         links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
-        response (->> {:body ""}
-                          (response/content-type "text/csv;charset=UTF-8")
-                          (response/set-headers {"Link" (str/join ", " links)}))]
+        response (->> {}
+                      (response/content-type "text/csv;charset=UTF-8")
+                      (response/set-headers {"Link" (str/join ", " links)}))
+        data (concat (vector columns) rows)]
     (if (should-stream? resource)
-      (stream-slice-query-csv request response columns rows)
+      (stream-slice-query-csv request response data)
       (->> (str (write-csv (vector columns)) (write-csv rows))
            (response/content-type "text/csv; charset=utf-8")
            (response/set-headers {"Link" (str/join ", " links)})
