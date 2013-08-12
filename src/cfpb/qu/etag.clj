@@ -30,7 +30,8 @@ supported for string bodies). If the request includes a matching
         (if (= etag if-none-match)
           (not-modified-response etag)
           resp)
-        (if (or (string? body) (instance? File body))
+        (if (and (or (string? body) (instance? File body))
+                 (= status 200))
           (let [etag (calculate-etag body)]            
             (if (= etag if-none-match)
               (not-modified-response etag)

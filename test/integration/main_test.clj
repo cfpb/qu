@@ -17,37 +17,31 @@
 
   (facts "about /data"
        (fact "it returns successfully"
-             (app (request :get "/data"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"
-                                     "Vary" "Accept"}})
+             (let [resp (app (request :get "/data"))]
+               (:status resp) => 200
+               (:headers resp) => (contains {"Content-Type" "text/html;charset=UTF-8"}))
 
-             (app (request :get "/data.xml"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"
-                                     "Vary" "Accept"}})))
+             (let [resp (app (request :get "/data.xml"))]
+               (:status resp) => 200
+               (:headers resp) => (contains {"Content-Type" "application/xml;charset=UTF-8"}))))
 
-  (facts "about /data/county_taxes"
+  (facts "about /data/integration_test"
          (fact "it returns successfully"
-             (app (request :get "/data/integration_test"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "text/html;charset=UTF-8"
-                                     "Vary" "Accept"}})
-
-             (app (request :get "/data/integration_test.xml"))
-             => (contains {:status 200
-                           :headers {"Content-Type" "application/xml;charset=UTF-8"
-                                     "Vary" "Accept"}})))
-
+               (let [resp (app (request :get "/data/integration_test"))]
+                 (:status resp) => 200
+                 (:headers resp) => (contains {"Content-Type" "text/html;charset=UTF-8"}))
+               
+               (let [resp (app (request :get "/data/integration_test.xml"))]
+                 (:status resp) => 200
+                 (:headers resp) => (contains {"Content-Type" "application/xml;charset=UTF-8"}))))
+  
   (facts "about /data/bad-dataset"
          (fact "it returns a 404"
-               (app (request :get "/data/bad-dataset"))
-               => (contains {:status 404
-                             :headers {"Content-Type" "text/html;charset=UTF-8"
-                                       "Vary" "Accept"}})
+               (let [resp (app (request :get "/data/bad_dataset"))]
+                 (:status resp) => 404
+                 (:headers resp) => (contains {"Content-Type" "text/html"}))
 
-               (app (request :get "/data/bad-dataset.xml"))
-               => (contains {:status 404
-                             :headers {"Content-Type" "application/xml;charset=UTF-8"
-                                       "Vary" "Accept"}}))))
+               (let [resp (app (request :get "/data/bad_dataset.xml"))]
+                 (:status resp) => 404
+                 (:headers resp) => (contains {"Content-Type" "application/xml;charset=UTF-8"})))))
 

@@ -69,14 +69,15 @@ functions to return the resource that will be presented later."
                    metadata (data/get-metadata dataset)]
                (if metadata
                  {:dataset dataset
-                  :metadata metadata})))
-  :etag (fn [{:keys [metadata]}]
-          (digest/md5 (str metadata)))
+                  :metadata metadata}
+                 [false {:dataset dataset}])))
+  :etag (fn [{:keys [dataset metadata]}]
+          (digest/md5 (str dataset metadata)))
   :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
                         (case (:media-type representation)
-                          "text/html"  (not-found message)
+                          "text/html" (ring-response (not-found message))
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
