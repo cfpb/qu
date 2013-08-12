@@ -16,6 +16,8 @@ functions to return the resource that will be presented later."
    [halresource.resource :as hal]
    [clojurewerkz.urly.core :as url :refer [url-like]]
    [lonocloud.synthread :as ->]
+   [clj-time.coerce :as coerce]
+   [clj-time.core :as time]
    [cfpb.qu.project :refer [project]]
    [cfpb.qu.urls :as urls]
    [cfpb.qu.data :as data]
@@ -33,9 +35,11 @@ functions to return the resource that will be presented later."
   index
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
-  :handle-ok (fn [{:keys [request representation]}]
-               (let [datasets (data/get-datasets)
-                     resource (hal/new-resource (:uri request))
+  :exists? (fn [_] {:datasets (data/get-datasets)})
+  :etag (fn [{:keys [datasets]}]
+          (digest/md5 (str (into [] datasets))))
+  :handle-ok (fn [{:keys [request representation datasets]}]
+               (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
                                      (hal/add-properties
                                       (hal/new-resource (urls/dataset-path (:name dataset)))
@@ -66,6 +70,8 @@ functions to return the resource that will be presented later."
                (if metadata
                  {:dataset dataset
                   :metadata metadata})))
+  :etag (fn [{:keys [metadata]}]
+          (digest/md5 (str metadata)))
   :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
@@ -121,6 +127,8 @@ functions to return the resource that will be presented later."
                   :concept concept
                   :cdata cdata}
                  [false {:dataset dataset :concept concept}])))
+  :etag (fn [{:keys [cdata]}]
+          (digest/md5 (str cdata)))
   :handle-not-found (fn [{:keys [dataset concept request representation]}]
                       (let [message (str "No such concept " concept " in dataset " dataset)]
                         (case (:media-type representation)
@@ -155,6 +163,8 @@ functions to return the resource that will be presented later."
                   :slice slice                  
                   :slicedef slicedef}
                  [false {:dataset dataset :slice slice}])))
+  :etag (fn [{:keys [slicedef]}]
+          (digest/md5 (str slicedef)))  
   :handle-not-found (fn [{:keys [dataset slice request representation]}]
                       (let [message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)

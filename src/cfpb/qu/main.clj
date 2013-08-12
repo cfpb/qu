@@ -4,6 +4,7 @@
   (:require
    [cfpb.qu
     [data :refer [ensure-mongo-connection]]
+    [etag :refer [wrap-etag]]
     [loader :refer [load-dataset]]    
     [project :refer [project]]    
     [routes :refer [app-routes]]
@@ -33,7 +34,8 @@
       wrap-keyword-params
       wrap-nested-params
       wrap-params
-      wrap-with-logging      
+      wrap-with-logging
+      wrap-etag
       wrap-convert-extension-to-accept-header))
 
 (defn bootstrap

@@ -11,7 +11,7 @@ transforming the data within."
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
    [drake.core :as drake]
-   [clj-time.core :refer [default-time-zone]]
+   [clj-time.core :refer [default-time-zone now]]
    [clj-time.format :as time]
    [lonocloud.synthread :as ->]
    [monger
@@ -70,7 +70,10 @@ in MongoDB."
                         definition
                         slices)))]
       (coll/update "datasets" {:name name}
-                   (build-types-for-slices (assoc definition :name name))
+                   (-> definition
+                       (assoc :name name)
+                       (assoc :last-modified (now))
+                       (build-types-for-slices))
                    :upsert true))))
 
 (defmulti cast-value (fn [_ valuedef] (:type valuedef)))
