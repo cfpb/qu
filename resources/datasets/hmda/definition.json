@@ -1,7 +1,7 @@
 {
   "info": {
     "url": "http://www.ffiec.gov/hmda/hmdaproducts.htm", 
-    "name": "2009-2011 HMDA LAR", 
+    "name": "2007-2011 HMDA LAR",
     "description": "Home Mortgage Disclosure Act Data for the years 2007-2011."
   },
   "concepts": {
@@ -578,7 +578,18 @@
           "value": "name"
         }
       }
-    }    
+    },
+    "census_tracts": {
+      "info": {
+        "name": "Census Tracts",
+        "description": "Distinct collection of Census Tracts for MSAMD and State Code, derived from the HMDA LAR data"
+      },
+      "type": "derived",
+      "slice": "hmda_lar",
+      "dimensions": [
+        "state_code", "msamd", "census_tract_number"
+      ]
+    }
   }, 
   "tables": {
     "action_taken": {
@@ -861,7 +872,7 @@
         "hmda_lar_2009.csv",
         "hmda_lar_2008.csv",
         "hmda_lar_2007.csv"
-      ], 
+      ],
       "columns": {
         "As of Year": {
           "type": "integer", 
