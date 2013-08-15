@@ -57,5 +57,5 @@ is nil unless specified."
 
 (defn ->print
   [x]
-  (println (str x))
+  (println x)
   x)

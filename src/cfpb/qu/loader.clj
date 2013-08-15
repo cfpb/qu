@@ -196,7 +196,7 @@ transform that data into the form we want."
                                   :_id (:value cdef)))
                                data references))
         transform-keys (if keyfn
-                         (partial map #(convert-keys1 % keyfn))
+                         (partial map #(convert-keys % keyfn))
                          identity)
         remove-nils (fn [data]
                       (map
@@ -256,7 +256,7 @@ transform that data into the form we want."
         query-result (get-aggregation database from-collection aggregation)
         data (-> query-result
                  :data
-                 (convert-keys1 (field-zip-fn sdef)))
+                 (convert-keys (field-zip-fn sdef)))
         chunks (partition-all *chunk-size* data)]
     (doseq [chunk chunks]
       (coll/insert-batch slice chunk))))
