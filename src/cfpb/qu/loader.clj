@@ -253,8 +253,10 @@ transform that data into the form we want."
         group-id (apply merge
                         (map #(hash-map % (str "$" (name %))) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
-                    {agg-metric {(str "$" (name agg))
-                                 (str "$" (name metric))}}) aggregations)
+                    (if (= agg "count")
+                      {agg-metric {"$sum" 1}}
+                      {agg-metric {(str "$" (name agg))
+                                   (str "$" (name metric))}})) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
                             {dimension
@@ -357,6 +359,14 @@ transform that data into the form we want."
     (when (and drakefile (.isFile drakefile))
       (run-drakefile drakefile))))
 
+(defn ez-load-definition
+  "Load the definition of a dataset.
+  Does not run Drake to process data first."
+  [dataset]
+  (let [dataset (name dataset)
+        definition (read-definition dataset)]
+    (save-dataset-definition dataset definition)))
+
 (defn ez-load-concepts
   "Load just the concepts for a dataset.
   Does not run Drake to process data first."
@@ -377,5 +387,6 @@ transform that data into the form we want."
         definition (read-definition dataset)
         concepts (read-concepts definition)]
     (with-db (get-db dataset)
+      (coll/drop slice)      
       (load-slice slice concepts definition)
       (index-slice slice definition))))
