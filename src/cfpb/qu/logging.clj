@@ -1,7 +1,23 @@
-(ns cfpb.qu.middleware.logging
-  (:require [clojure.string :as str]
-            [clj-statsd :as sd]
-            [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
+(ns cfpb.qu.logging
+  (:require
+   [clojure.string :as str]
+   [clj-statsd :as sd]
+   [environ.core :refer [env]]   
+   [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
+
+(defn config
+  []
+  (let [log-file (:log-file env)
+        log-level (:log-level env)]
+    (log/set-level! log-level)
+    (when log-file
+      (log/set-config! [:appenders :spit :enabled?] true)
+      (log/set-config! [:shared-appender-config :spit-filename] log-file)
+      (log/set-config! [:appenders :standard-out :enabled?] false)))
+  (log/set-config! [:prefix-fn]
+                   (fn [{:keys [level timestamp hostname ns]}]
+                     (str timestamp " " (-> level name str/upper-case)
+                            " [" ns "]"))))
 
 (defn- log-request-msg
   [verb {:keys [request-method uri remote-addr query-string params] :as req}]

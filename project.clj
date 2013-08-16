@@ -50,20 +50,25 @@ serve their public data sets."
                  [ring/ring-core "1.1.6"]
                  [stencil "0.3.2"]
                  ]
-  :env {:mongo-host "127.0.0.1"
-        :mongo-port 27017
-        :http-port 3000
-        :http-threads 4
-        :http-queue-size 20480
-        :dev false
-        :integration false}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :configleaf {:namespace cfpb.qu.project
                :config-source-path "src"}
-  :profiles {:dev {:source-paths ["dev"]
-                   :env {:dev true}
+  :env {:mongo-host "127.0.0.1"
+        :mongo-port 27017
+        :http-port 3000
+        :http-threads 4
+        :http-queue-size 20480
+        :log-file nil
+        :log-level :info
+        :dev false
+        :integration false}  
+  :profiles {:dev {:log-level :debug
+                   :source-paths ["dev"]
+                   :env {:dev true
+                         :mongo-host "127.0.0.1"
+                         :mongo-port 27017}
                    :embongo {:version "2.4.5"}
                    :dependencies [[alembic "0.1.3"]
                                   [clj-http "0.7.2"]                                  
