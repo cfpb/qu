@@ -11,7 +11,7 @@ transforming the data within."
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
    [drake.core :as drake]
-   [clj-time.core :refer [default-time-zone]]
+   [clj-time.core :refer [default-time-zone now]]
    [clj-time.format :as time]
    [monger
     [core :as mongo :refer [with-db get-db]]
@@ -84,7 +84,7 @@ in MongoDB."
   [name definition]
   (with-db (get-db "metadata")
     (coll/update "datasets" {:name name}
-                 (assoc definition :name name)
+                 (assoc definition :name name :last-modified (now))
                  :upsert true)))
 
 (defmulti cast-value (fn [_ valuedef] (:type valuedef)))
@@ -329,8 +329,7 @@ transform that data into the form we want."
         dir (:dir definition)
         drakefile (-> (str dir "/Drakefile")
                       (io/resource)
-                      (io/as-file))
-        concepts (read-concepts definition)]
+                      (io/as-file))]
     (when delete
       (log/info "Dropping old dataset" dataset)
       (mongo/drop-db dataset))
@@ -341,11 +340,12 @@ transform that data into the form we want."
     (when (and drakefile (.isFile drakefile))
       (run-drakefile drakefile))
 
-    (with-db (get-db dataset)
-      (log/info "Writing concept data")
-      (write-concept-data concepts)
-      (log/info "Loading slices for dataset" dataset)
-      (load-slices concepts definition))))
+    (let [concepts (read-concepts definition)]
+      (with-db (get-db dataset)
+        (log/info "Writing concept data")
+        (write-concept-data concepts)
+        (log/info "Loading slices for dataset" dataset)
+        (load-slices concepts definition)))))
 
 (defn ez-prepare-data
   "Prepare all data you need for a dataset."
