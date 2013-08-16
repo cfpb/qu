@@ -69,13 +69,7 @@ lein repl
 In order to run the API as a web server, run:
 
 ```sh
-lein ring server
-```
-
-To auto-reload templates during development, run:
-
-```sh
-DEBUG=1 lein ring server
+lein run
 ```
 
 Go to http://localhost:3000 and you should see the app running.
@@ -86,6 +80,22 @@ MongoDB connection.
 
 ### Configuration
 
+All the settings below are shown via environment variables, but they
+can also be set via Java properties. See
+[the documentation for environ][https://github.com/weavejester/environ/blob/master/README.md]
+for more information on how to use Java properties if you prefer.
+
+#### Server port and threads
+
+By default, the server will come up on port 3000 and 4 threads will be
+allocated to handle requests. You can change these settings via
+environment variables:
+
+```sh
+HTTP_PORT=3000
+HTTP_THREADS=4
+```
+
 #### MongoDB
 
 In development mode, the application will connect to your local MongoDB server. In production, or if you want to connect to a different Mongo server in dev, you will have to specify the Mongo host and port.
@@ -95,12 +105,6 @@ You can do this via setting environment variables:
 ```sh
 MONGO_HOST=192.168.21.98
 MONGO_PORT=27017
-```
-
-You can also do this via setting Java system properties:
-
-```sh
-java -jar qu.jar -Dmongo.host=192.168.21.98 -Dmongo.port=27017
 ```
 
 #### APP URL

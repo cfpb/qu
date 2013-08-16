@@ -18,7 +18,7 @@ after retrieval."
              json]))
 
 (defn connect-mongo []
-  (let [address (mongo/server-address (env :mongo-host)  (Integer/parseInt(str (env :mongo-port))))
+  (let [address (mongo/server-address (env :mongo-host)  (Integer/parseInt (str (env :mongo-port))))
         options (mongo/mongo-options)]
     (mongo/connect! address options)))
 
@@ -72,7 +72,6 @@ stored in a Mongo database called 'metadata'."
            slicedef (get-in metadata [:slices (keyword slice)])]
        (field-zip-fn slicedef)))
   ([slicedef]
-
     (let [fields (slice-columns slicedef)]
       (sd/with-timing "qu.queries.fields.zip"
        (mzip/compression-fn fields)))))

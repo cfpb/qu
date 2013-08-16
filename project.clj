@@ -18,16 +18,17 @@ serve their public data sets."
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]
-  :plugins [[codox "0.6.4"]
-            [lein-cloverage "1.0.2"]
-            [lein-environ "0.4.0"]
+  :main cfpb.qu.main
+  :aot [cfpb.qu.main]
+  :repl-options {:init-ns user}
+  :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.0.0"]
-            [lein-ring "0.8.2"]
             [lein-embongo "0.2.1"]
             [configleaf "0.4.6"]]
   :hooks [configleaf.hooks]  
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.2.0"]
+                 [clj-statsd "0.3.9"]                 
                  [clj-time "0.5.1"]
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.6.0"]
@@ -37,7 +38,8 @@ serve their public data sets."
                  [digest "1.4.3"]
                  [environ "0.4.0"]
                  [factual/drake "0.1.4-SNAPSHOT"]
-                 [halresource "0.1.0-SNAPSHOT"]
+                 [halresource "0.1.1-SNAPSHOT"]
+                 [http-kit "2.1.5"]                 
                  [lib-noir "0.6.6"]
                  [liberator "0.9.0"]
                  [lonocloud/synthread "1.0.5"]
@@ -46,32 +48,31 @@ serve their public data sets."
                  [parse-ez "0.3.6"]
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring/ring-core "1.1.6"]
-                 [ring/ring-jetty-adapter "1.1.6"]
                  [stencil "0.3.2"]
-                 [clj-statsd "0.3.9"]
-                 
-                 ;; provisional
-                 [slingshot "0.10.3"]
                  ]
-  :ring {:handler cfpb.qu.handler/app
-         :init cfpb.qu.handler/init
-         :destroy cfpb.qu.handler/destroy
-         :war-exclusions [#"(^|/)\." #"datasets.*" #".*javax.servlet-2.5.0.*" #".*appengine-api-*" #".*aws-java-sdk-*"]}
-  :codox {:src-dir-uri "https://github.com/cfpb/qu/blob/master"
-          :src-linenum-anchor-prefix "L"
-          :output-dir "doc/codox"}
+  :env {:mongo-host "127.0.0.1"
+        :mongo-port 27017
+        :http-port 3000
+        :http-threads 4
+        :http-queue-size 20480
+        :dev false
+        :integration false}
+  :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
+  :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
+                       #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :configleaf {:namespace cfpb.qu.project
                :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]
-                   :env {:mongo-host "127.0.0.1"
-                         :mongo-port 27017}
+                   :env {:dev true}
                    :embongo {:version "2.4.5"}
-                   :dependencies [[ring-mock "0.1.5"]
+                   :dependencies [[alembic "0.1.3"]
+                                  [clj-http "0.7.2"]                                  
                                   [midje "1.6-alpha2"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
-                                  [alembic "0.1.3"]]}
+                                  [ring-mock "0.1.5"]                                  
+                                  ]}
              :integration [:default
                            {:env {:mongo-port 37017
                                   :integration true}

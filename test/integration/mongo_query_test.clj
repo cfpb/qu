@@ -34,7 +34,7 @@
 
     (fact "get-metadata returns metadata for a dataset"
         (:name metadata) => "integration_test"
-        (keys metadata) => (contains [:_id :name :database :dir :info :concepts :slices :tables])
+        (keys metadata) => (contains [:_id :last-modified :name :database :dir :info :concepts :slices :tables])
         (get-in metadata [:tables :incomes]) =not=> nil
         (get-in metadata [:slices :incomes :metrics])
         => ["tax_returns" "adjusted_gross_income" "date_observed"]))
