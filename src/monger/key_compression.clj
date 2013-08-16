@@ -37,7 +37,7 @@
                              (= prefix field)))
             prefixes)))
 
-(defn compression-map
+(defn -compression-map
   "Create a map of shortened unique field names from a list of fields."
   [field-list]
   (let [field-list (remove #(= % "_id") (map name field-list))
@@ -47,6 +47,8 @@
            (fn [field]
              [(keyword field) (keyword (get-unique-prefix field field-trie))])
            field-list))))
+
+(def compression-map (memoize -compression-map))
 
 (defn compression-fn
   [field-list]
@@ -61,3 +63,4 @@
     (fn [field]
       (let [field (keyword field)]
         (get decomp-map field field)))))
+

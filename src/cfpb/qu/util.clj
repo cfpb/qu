@@ -48,7 +48,14 @@ is nil unless specified."
     ;; only apply to maps
     (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) m)))
 
+(defn convert-keys1
+  "Transform all map keys at the top level, no recursion."
+  [m fun]
+  (->> m
+       (map (fn [[k v]] [(fun k) v]))
+       (into {})))
+
 (defn ->print
   [x]
-  (println (str x))
+  (println x)
   x)
