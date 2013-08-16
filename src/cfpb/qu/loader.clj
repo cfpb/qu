@@ -13,7 +13,6 @@ transforming the data within."
    [drake.core :as drake]
    [clj-time.core :refer [default-time-zone]]
    [clj-time.format :as time]
-   [lonocloud.synthread :as ->]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
