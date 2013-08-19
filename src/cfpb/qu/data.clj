@@ -6,7 +6,7 @@ after retrieval."
             [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
             [cfpb.qu.util :refer :all]
-            [environ.core :refer [env]]
+            [cfpb.qu.env :refer [env]]
             [clj-statsd :as sd]
             [monger
              [core :as mongo :refer [with-db get-db]]
@@ -17,17 +17,42 @@ after retrieval."
              joda-time
              json]))
 
-(defn connect-mongo []
-  (let [address (mongo/server-address (env :mongo-host)  (Integer/parseInt (str (env :mongo-port))))
-        options (mongo/mongo-options)]
-    (mongo/connect! address options)))
+(defn- authenticate-mongo
+  [auth]
+  (doseq [[db [username password]] auth]
+    (mongo/authenticate (mongo/get-db (name db))
+                        username
+                        (.toCharArray password))))
 
-(defn disconnect-mongo []
+(defn connect-mongo
+  []
+  (let [uri (env :mongo-uri)
+        hosts (env :mongo-hosts)
+        host (env :mongo-host)
+        port (->int (env :mongo-port))
+        options (apply-kw mongo/mongo-options (env :mongo-options {}))
+        auth (env :mongo-auth)
+        connection 
+        (cond
+         uri (try (mongo/connect-via-uri! uri)
+                  (catch Exception e
+                    (log/error "The Mongo URI specified is invalid.")))
+         hosts (let [addresses (map #(apply mongo/server-address %) hosts)]
+                 (mongo/connect! addresses options))
+         :else (mongo/connect! (mongo/server-address host port) options))]
+    (if (map? auth)
+      (authenticate-mongo auth))
+    connection))
+
+(defn disconnect-mongo
+  []
   (when (bound? #'mongo/*mongodb-connection*)
     (mongo/disconnect!)))
 
-(defn ensure-mongo-connection []
-  (connect-mongo))
+(defn ensure-mongo-connection
+  []
+  (when-not (bound? #'mongo/*mongodb-connection*)
+    (connect-mongo)))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is

@@ -8,13 +8,13 @@
     [loader :refer [load-dataset]]    
     [project :refer [project]]    
     [routes :refer [app-routes]]
-    [util :refer [->int]]]
+    [util :refer [->int]]
+    [env :refer [env]]]
    [cfpb.qu.middleware
     [keyword-params :refer [wrap-keyword-params]]
     [logging :refer [wrap-with-logging]]]   
    [clj-statsd :as sd]
    [clojure.string :as str]
-   [environ.core :refer [env]]
    [org.httpkit.server :refer [run-server]]   
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.middleware
@@ -45,14 +45,14 @@
   (load-dataset "county_taxes"))
 
 (defn init
-  ([] (init (:dev env)))
-  ([dev]
-     (when dev
-       (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
-     (log/set-config! [:prefix-fn]
-                      (fn [{:keys [level timestamp hostname ns]}]
-                        (str timestamp " " (-> level name str/upper-case)
-                             " [" ns "]")))))
+  []
+  (let [dev (:dev env)]
+    (when dev
+      (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
+    (log/set-config! [:prefix-fn]
+                     (fn [{:keys [level timestamp hostname ns]}]
+                       (str timestamp " " (-> level name str/upper-case)
+                            " [" ns "]")))))
 
 (defn setup-statsd
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port

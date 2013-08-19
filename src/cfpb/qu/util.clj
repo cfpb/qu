@@ -7,6 +7,14 @@
   [& args]
   (apply str (map name args)))
 
+(defn apply-kw
+  "Like apply, but f takes keyword arguments and the last argument is
+  not a seq but a map with the arguments for f."
+  [f & args]
+  {:pre [(map? (last args))]}
+  (apply f (apply concat
+                  (butlast args) (last args))))
+
 (defn ->int
   "Convert strings and integers to integers. A blank string or
 anything but a string or integer will return the default value, which
