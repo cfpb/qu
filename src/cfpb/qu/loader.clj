@@ -217,7 +217,7 @@ transform that data into the form we want."
         transform-fn (comp remove-nils transform-keys add-concepts cast-data)
         agent-error-handler (fn [agent exception]
                               (log/error "Error in table loading agent"
-                                         (.getMessage exception)))
+                                         agent (.getMessage exception)))
         agents (map (fn [source]
                       (agent source
                              :error-mode :continue
