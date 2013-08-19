@@ -51,6 +51,7 @@ serve their public data sets."
                  ]
   :env {:mongo-host "127.0.0.1"
         :mongo-port 27017
+        :http-ip "127.0.0.1"
         :http-port 3000
         :http-threads 4
         :http-queue-size 20480

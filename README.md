@@ -107,13 +107,14 @@ QU_CONFIG=/etc/qu-conf.clj
 
 Note that the configuration file overrides environment variables.
 
-#### Server port and threads
+#### HTTP server
 
 By default, the server will come up on port 3000 and 4 threads will be
-allocated to handle requests. You can change these settings via
-environment variables:
+allocated to handle requests. The server will be bound to
+localhost. You can change these settings via environment variables:
 
 ```sh
+HTTP_IP=0.0.0.0
 HTTP_PORT=3000
 HTTP_THREADS=4
 ```

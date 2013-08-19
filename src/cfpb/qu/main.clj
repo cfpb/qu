@@ -72,10 +72,11 @@
                       reload/wrap-reload
                       wrap-stacktrace)
                   app)
-        options {:port (->int (:http-port env))
+        options {:ip (:http-ip env)
+                 :port (->int (:http-port env))
                  :thread (->int (:http-threads env))
                  :queue-size (->int (:http-queue-size env))}]
-    (log/info "Starting server on port" (:port options))
+    (log/info "Starting server on" (str (:ip options) ":" (:port options)))
     (when (:dev env)
       (log/info "Dev mode enabled"))
     (run-server handler options)))
