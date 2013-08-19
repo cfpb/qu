@@ -58,14 +58,14 @@
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
   to be in the project.clj file."
   []
-  (log/info (str "Configuring statsd: " (:statsd-host project) ":" (:statsd-port project)))
-  (sd/setup (:statsd-host project) (:statsd-port project)))
+  (log/info (str "Configuring statsd: " (env :statsd-host) ":" (env :statsd-port)))
+  (sd/setup (env :statsd-host) (env :statsd-port)))
 
 (defn -main
   [& args]
   (ensure-mongo-connection)  
   (init)
-  (when (:statsd-host project)
+  (when (env :statsd-host)
     (setup-statsd))
   (let [handler (if (:dev env)
                   (-> app

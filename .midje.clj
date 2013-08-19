@@ -8,6 +8,3 @@
                    (fn [metadata]
                      (let [file (:midje/file metadata)]
                        (not (re-find #"integration/" file))))))
-
-
-
