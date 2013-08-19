@@ -149,7 +149,7 @@
   [query]
   (-> query
       (validate-integer :limit)
-      (validate-max-limit 1000)))
+      #_(validate-max-limit 1000)))
 
 (defn- validate-offset
   [query]

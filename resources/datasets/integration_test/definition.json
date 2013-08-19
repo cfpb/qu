@@ -53,9 +53,11 @@
         "state_abbr"
       ],
       "metrics": [
+        "counties",
         "tax_returns"
       ],
       "aggregations": {
+        "counties": ["count"],
         "tax_returns": ["sum", "tax_returns"]
       }
     }

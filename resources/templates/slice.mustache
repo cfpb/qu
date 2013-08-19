@@ -105,6 +105,12 @@
 {{#has-data?}}
 <div>
   <h2>Query Results ({{start}}-{{end}} of {{total}})</h2>
+  {{#has-more-data?}}
+    <div class="alert">
+      Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
+    </div>
+  {{/has-more-data?}}
+  
 
   {{> templates/pagination}}
 

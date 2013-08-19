@@ -11,9 +11,8 @@ transforming the data within."
    [cheshire.core :as json]
    [com.stuartsierra.dependency :as dep]
    [drake.core :as drake]
-   [clj-time.core :refer [default-time-zone]]
+   [clj-time.core :refer [default-time-zone now]]
    [clj-time.format :as time]
-   [lonocloud.synthread :as ->]
    [monger
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
@@ -28,7 +27,7 @@ transforming the data within."
 (def default-date-parser (time/formatter (default-time-zone)
                                          "YYYY-MM-dd" "YYYY/MM/dd" "YYYYMMdd"))
 
-(defn run-drakefile
+(defn- run-drakefile
   "Run all tasks in a Drakefile."
   [drakefile]
   (log/info "Running Drakefile" drakefile)
@@ -46,32 +45,47 @@ in MongoDB."
     "number" "number"
     "string"))
 
+(defn- build-types-for-slices
+  [definition]
+  (letfn [(build-types-for-slice [slice definition]
+            (let [slice-def (get-in definition [:slices slice])
+                  table-name (:table slice-def)
+                  table-def (get-in definition [:tables (keyword table-name)])]
+              (reduce (fn [definition column]
+                        (if (and (:name column)
+                                 ((set (slice-columns slice-def)) (:name column)))
+                          (assoc-in definition
+                                    [:slices slice :types (keyword (:name column))]
+                                    (slice-type-for-table-type (:type column)))
+                          definition))
+                      definition
+                      (vals (:columns table-def)))))]
+    (let [slices (keys (:slices definition))]
+      (reduce (fn [definition slice]
+                (build-types-for-slice slice definition))
+              definition
+              slices))))
+
+(defn read-definition
+  "Read the definition of a dataset from disk."
+  [dataset]
+  (let [dataset (name dataset)
+        dir (str "datasets/" dataset)]
+    (-> (str dir "/definition.json")
+        io/resource
+        slurp
+        (json/parse-string true)
+        (assoc :dir dir)
+        (assoc :database dataset)
+        (build-types-for-slices))))
+
 (defn save-dataset-definition
   "Save the definition of a dataset into the 'metadata' database."
   [name definition]
   (with-db (get-db "metadata")
-    (letfn [(build-types-for-slice [slice definition]
-              (let [slice-def (get-in definition [:slices slice])
-                    table-name (:table slice-def)
-                    table-def (get-in definition [:tables (keyword table-name)])]
-                (reduce (fn [definition column]
-                          (if (and (:name column)
-                                   ((set (slice-columns slice-def)) (:name column)))
-                            (assoc-in definition
-                                      [:slices slice :types (keyword (:name column))]
-                                      (slice-type-for-table-type (:type column)))
-                            definition))
-                        definition
-                        (vals (:columns table-def)))))
-            (build-types-for-slices [definition]
-              (let [slices (keys (:slices definition))]
-                (reduce (fn [definition slice]
-                          (build-types-for-slice slice definition))
-                        definition
-                        slices)))]
-      (coll/update "datasets" {:name name}
-                   (build-types-for-slices (assoc definition :name name))
-                   :upsert true))))
+    (coll/update "datasets" {:name name}
+                 (assoc definition :name name :last-modified (now))
+                 :upsert true)))
 
 (defmulti cast-value (fn [_ valuedef] (:type valuedef)))
 
@@ -105,7 +119,7 @@ in MongoDB."
 (defmethod cast-value :default [value _]
   value)
 
-(defn cast-data
+(defn- cast-data
   "Given the data from a CSV file and the definition of the data's columns,
 transform that data into the form we want."
   [data columns]
@@ -118,7 +132,7 @@ transform that data into the form we want."
                                [(keyword (or (:name cdef) column))
                                 (cast-value value cdef)]))) data))))
 
-(defn read-csv-file
+(defn- read-csv-file
   "Reads an entire CSV file into memory as a seq of maps.
   The seq is fully realized because we have to in order to
   close the CSV. Therefore, this can suck up a lot of memory
@@ -129,7 +143,7 @@ transform that data into the form we want."
           headers (map keyword (first data))]
       (map (partial zipmap headers) (doall (rest data))))))
 
-(defn read-table
+(defn- read-table
   [table definition]
   (let [tdef (get-in definition [:tables (keyword table)])
         dir (:dir definition)
@@ -141,14 +155,14 @@ transform that data into the form we want."
                               (map #(cast-data % columns) d))))]
     (reduce concat file-data)))
 
-(defn read-concept-data
+(defn- read-concept-data
   [concept definition]
   (let [cdef (get-in definition [:concepts concept])
         tables (:tables definition)]
     (when-let [table (:table cdef)]
       (read-table table definition))))
 
-(defn read-concepts
+(defn- read-concepts
   [definition]
   (let [concepts (:concepts definition)]
     (reduce (fn [acc concept]
@@ -166,7 +180,7 @@ transform that data into the form we want."
     (map (fn [row]
              (assoc row lval (get rmap (get row lkey)))) left)))
 
-(defn load-csv-file
+(defn- load-csv-file
   [file collection transform-fn]
   (with-open [in-file (io/reader (io/resource file))]
     (let [csv (csv/read-csv in-file)
@@ -203,7 +217,7 @@ transform that data into the form we want."
         transform-fn (comp remove-nils transform-keys add-concepts cast-data)
         agent-error-handler (fn [agent exception]
                               (log/error "Error in table loading agent"
-                                         (.getMessage exception)))
+                                         agent (.getMessage exception)))
         agents (map (fn [source]
                       (agent source
                              :error-mode :continue
@@ -239,8 +253,10 @@ transform that data into the form we want."
         group-id (apply merge
                         (map #(hash-map % (str "$" (name %))) dimensions))
         aggs (map (fn [[agg-metric [agg metric]]]
-                    {agg-metric {(str "$" (name agg))
-                                 (str "$" (name metric))}}) aggregations)
+                    (if (= agg "count")
+                      {agg-metric {"$sum" 1}}
+                      {agg-metric {(str "$" (name agg))
+                                   (str "$" (name metric))}})) aggregations)
         group (apply merge {:_id group-id} aggs)
         project-dims (map (fn [dimension]
                             {dimension
@@ -274,7 +290,7 @@ transform that data into the form we want."
     (doseq [index indexes]
       (coll/ensure-index slice {(zipfn index) 1}))))
 
-(defn load-slices
+(defn- load-slices
   ([definition]
      (log/info "Loading concepts")
      (load-slices (read-concepts definition) definition))  
@@ -292,7 +308,7 @@ transform that data into the form we want."
          (load-slice slice concepts definition)
          (index-slice slice definition)))))
 
-(defn write-concept-data
+(defn- write-concept-data
   [concepts]
   (doseq [[concept data] concepts]
     (when (seq data)
@@ -306,20 +322,14 @@ transform that data into the form we want."
   directory containing a definition.json and a set of CSV files.
 
   These files are loaded in parallel."
-  [dataset & {:keys [delete]}]
+  [dataset & {:keys [delete] :or {delete true}}]
   (log/info "Loading dataset" dataset)
   (let [dataset (name dataset)
-        dir (str "datasets/" dataset)
+        definition (read-definition dataset)
+        dir (:dir definition)
         drakefile (-> (str dir "/Drakefile")
                       (io/resource)
-                      (io/as-file))
-        definition (-> (str dir "/definition.json")
-                       io/resource
-                       slurp
-                       (json/parse-string true)
-                       (assoc :dir dir)
-                       (assoc :database dataset))
-        concepts (read-concepts definition)]
+                      (io/as-file))]
     (when delete
       (log/info "Dropping old dataset" dataset)
       (mongo/drop-db dataset))
@@ -330,8 +340,53 @@ transform that data into the form we want."
     (when (and drakefile (.isFile drakefile))
       (run-drakefile drakefile))
 
+    (let [concepts (read-concepts definition)]
+      (with-db (get-db dataset)
+        (log/info "Writing concept data")
+        (write-concept-data concepts)
+        (log/info "Loading slices for dataset" dataset)
+        (load-slices concepts definition)))))
+
+(defn ez-prepare-data
+  "Prepare all data you need for a dataset."
+  [dataset]
+  (let [dataset (name dataset)
+        definition (read-definition dataset)
+        dir (:dir definition)        
+        drakefile (-> (str dir "/Drakefile")
+                      (io/resource)
+                      (io/as-file))]
+    (when (and drakefile (.isFile drakefile))
+      (run-drakefile drakefile))))
+
+(defn ez-load-definition
+  "Load the definition of a dataset.
+  Does not run Drake to process data first."
+  [dataset]
+  (let [dataset (name dataset)
+        definition (read-definition dataset)]
+    (save-dataset-definition dataset definition)))
+
+(defn ez-load-concepts
+  "Load just the concepts for a dataset.
+  Does not run Drake to process data first."
+  [dataset]
+  (let [dataset (name dataset)
+        definition (read-definition dataset)
+        concepts (read-concepts definition)]
     (with-db (get-db dataset)
-      (log/info "Writing concept data")
-      (write-concept-data concepts)
-      (log/info "Loading slices for dataset" dataset)
-      (load-slices concepts definition))))
+      (write-concept-data concepts))))
+
+(defn ez-load-slice
+  [dataset slice]
+  "Load one slice for a dataset.
+  Does not run Drake to process data first. Also does not run other
+  slices that the slice may depend on, so make sure you have all the
+  data you need before running this."
+  (let [dataset (name dataset)
+        definition (read-definition dataset)
+        concepts (read-concepts definition)]
+    (with-db (get-db dataset)
+      (coll/drop slice)      
+      (load-slice slice concepts definition)
+      (index-slice slice definition))))
