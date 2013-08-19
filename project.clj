@@ -3,8 +3,6 @@
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
 (def app-url (or (System/getenv "APP_URL") ""))
-(def statsd-host (or (System/getenv "STATSD_HOST") nil))
-(def statsd-port (or (System/getenv "STATSD_PORT") 8125))
 
 (defproject qu "0.1.0-SNAPSHOT"
   :description "qu is an **in-progress** data platform created by the CFPB to
@@ -13,8 +11,6 @@ serve their public data sets."
   :build-url ~build-url
   :git-commit ~git-commit
   :app-url ~app-url
-  :statsd-host ~statsd-host
-  :statsd-port ~statsd-port
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]
@@ -51,6 +47,7 @@ serve their public data sets."
                  ]
   :env {:mongo-host "127.0.0.1"
         :mongo-port 27017
+        :statsd-port 8125
         :http-ip "127.0.0.1"
         :http-port 3000
         :http-threads 4
