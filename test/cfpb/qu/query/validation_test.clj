@@ -81,9 +81,9 @@
                (errors (q :limit "10"))
                =not=> (contains {:limit anything}))
 
-         (fact "it errors if limit is greater than 1000"
+         (fact "it does not error if limit is greater than 1000"
                (errors (q :limit "1001"))
-               => (contains {:limit ["The maximum limit is 1000."]}))
+               =not=> (contains {:limit ["The maximum limit is 1000."]}))
          
          (fact "it errors if offset is not an integer string"
                (errors (q :offset "ten"))
