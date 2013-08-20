@@ -52,6 +52,15 @@
   (error ex)
   (error "--- END STACKTRACE ---"))
 
+(defmacro log-with-time
+  [level msg & body]
+  `(let [start# (System/currentTimeMillis)
+         result# (do ~@body)
+         finish# (System/currentTimeMillis)
+         ms# (- finish# start#)]
+     (log/log ~level ~msg (str ms# "ms"))
+     result#))
+
 (defn wrap-with-logging
   [handler]
     (fn [request]

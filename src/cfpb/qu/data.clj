@@ -6,6 +6,7 @@ after retrieval."
             [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
             [cfpb.qu.util :refer :all]
+            [cfpb.qu.logging :refer [log-with-time]]
             [environ.core :refer [env]]
             [clj-statsd :as sd]
             [monger
@@ -131,23 +132,26 @@ stored in a Mongo database called 'metadata'."
    :data - Seq of maps with the IDs stripped out"
   [database collection find-map]
   (sd/with-timing "qu.queries.find"
-    (log/info (str "Mongo find: " find-map))
     (let [find-map (compress-find database collection find-map)
           unzipfn (field-unzip-fn database collection)]
-      (log/info "Post-compress Mongo find: " find-map)
-      (with-db (get-db database)
-        (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
-                             (.limit (:limit find-map 0))
-                             (.skip (:skip find-map 0))
-                             (.sort (conv/to-db-object (:sort find-map))))]
-          (->QueryResult
-           (.count cursor)
-           (.size cursor)
-           (->> cursor
-                (map (fn [x] (-> x
-                                 (conv/from-db-object true)
-                                 (convert-keys unzipfn))))
-                strip-id)))))))
+      (log-with-time
+       :info
+       (str/join " " ["Mongo query"
+                      (str database "/" (name collection))
+                      (str find-map)])
+       (with-db (get-db database)
+         (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
+                              (.limit (:limit find-map 0))
+                              (.skip (:skip find-map 0))
+                              (.sort (conv/to-db-object (:sort find-map))))]
+           (->QueryResult
+            (.count cursor)
+            (.size cursor)
+            (->> cursor
+                 (map (fn [x] (-> x
+                                  (conv/from-db-object true)
+                                  (convert-keys unzipfn))))
+                 strip-id))))))))
 
 (defn compress-aggregation
   [database collection aggregation]
@@ -155,7 +159,7 @@ stored in a Mongo database called 'metadata'."
   (let [zipfn (field-zip-fn database collection)
         compress (fn [operation op-type compress-fn]
                    (update-in operation [op-type] compress-fn zipfn))]
-    (loop [operations aggregation,
+    (loop [operations aggregation
            aggregation []
            projected false]
       (cond
@@ -187,14 +191,16 @@ stored in a Mongo database called 'metadata'."
   After adding the compression processing, $match MUST come before $group."
   [database collection aggregation]
   (sd/with-timing "qu.queries.aggregation"
-    (log/info (str "Mongo aggregation: " aggregation))
-
     (let [aggregation (compress-aggregation database collection aggregation)]
-      (log/info (str "Post-compress Mongo aggregation: " (into [] aggregation)))
-      (with-db (get-db database)
-        (let [data (strip-id (coll/aggregate collection aggregation))
-              size (count data)]
-          (->QueryResult size size data))))))
+      (log-with-time
+       :info
+       (str/join " " ["Mongo aggregation"
+                      (str database "/" (name collection))
+                      (str (into [] aggregation))])
+       (with-db (get-db database)
+         (let [data (strip-id (coll/aggregate collection aggregation))
+               size (count data)]
+           (->QueryResult size size data)))))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from
