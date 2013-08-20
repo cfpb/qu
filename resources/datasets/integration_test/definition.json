@@ -1,7 +1,7 @@
 { "info": {
     "name": "Integration Test Data",
     "description": "Data for integration tests.",
-    "url": ""
+    "copyright": "This dataset is a public domain work of the US Government."
   },
   "concepts": {
     "state_abbr": {
