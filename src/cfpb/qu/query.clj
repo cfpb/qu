@@ -84,12 +84,11 @@
   [dataset collection query]
 
   (sd/with-timing "qu.queries.execute"
-    (let [_ (log/info (str "Raw query: " (into {} (dissoc query :metadata :slicedef))))
+    (let [_ (log/info "Execute query" (str (into {} (dissoc query :metadata :slicedef))))
           query (-> query
                     validation/validate
                     resolve-limit-and-offset
-                    mongo/process)
-          _ (log/info (str "Post-process query: " (into {} (dissoc query :metadata :slicedef))))]
+                    mongo/process)]
       (assoc query :result
              (cond
               (seq (:errors query))

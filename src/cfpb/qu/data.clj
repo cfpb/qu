@@ -9,6 +9,7 @@ after retrieval."
             [cfpb.qu.logging :refer [log-with-time]]
             [environ.core :refer [env]]
             [clj-statsd :as sd]
+            [cheshire.core :as json]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -138,7 +139,7 @@ stored in a Mongo database called 'metadata'."
        :info
        (str/join " " ["Mongo query"
                       (str database "/" (name collection))
-                      (str find-map)])
+                      (json/generate-string find-map)])
        (with-db (get-db database)
          (with-open [cursor (doto (coll/find collection (:query find-map) (:fields find-map))
                               (.limit (:limit find-map 0))
@@ -196,7 +197,7 @@ stored in a Mongo database called 'metadata'."
        :info
        (str/join " " ["Mongo aggregation"
                       (str database "/" (name collection))
-                      (str (into [] aggregation))])
+                      (json/generate-string (into [] aggregation))])
        (with-db (get-db database)
          (let [data (strip-id (coll/aggregate collection aggregation))
                size (count data)]
