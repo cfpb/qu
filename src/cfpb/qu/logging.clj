@@ -5,6 +5,16 @@
    [environ.core :refer [env]]   
    [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
 
+(def ^:dynamic *log-id* "------")
+
+(defn make-log-id
+  []
+  (subs (str (java.util.UUID/randomUUID)) 0 6))
+
+(defn prefix-fn
+  [{:keys [level timestamp hostname ns]}]
+  (str/join " " [timestamp (-> level name str/upper-case) (str "[" *log-id* "]")]))
+
 (defn config
   []
   (let [log-file (:log-file env)
@@ -14,59 +24,50 @@
       (log/set-config! [:appenders :spit :enabled?] true)
       (log/set-config! [:shared-appender-config :spit-filename] log-file)
       (log/set-config! [:appenders :standard-out :enabled?] false)))
-  (log/set-config! [:prefix-fn]
-                   (fn [{:keys [level timestamp hostname ns]}]
-                     (str timestamp " " (-> level name str/upper-case)
-                            " [" ns "]"))))
+  (log/set-config! [:timestamp-pattern] "yyyy-MM-dd'T'HH:mm:ssZZ")
+  (log/set-config! [:prefix-fn] prefix-fn))
 
 (defn- log-request-msg
   [verb {:keys [request-method uri remote-addr query-string params] :as req}]
-  (str verb
-       " "
-       (str/upper-case (name request-method))
-       " "
-       uri
-       (if query-string (str "?" query-string))
-       " for " remote-addr))
+  (let [uri (if query-string (str uri "?" query-string) uri)]
+    (str/join " " [verb (str/upper-case (name request-method)) uri])))
 
 (defn- log-request
   [{:keys [params] :as req}]
-  (info (log-request-msg "Started" req))
-  (if params
-    (info (str "Params:" params))))
+  (info (log-request-msg "Started" req)))
 
 (defn- log-response
   [req {:keys [status] :as resp} total]
-  (let [msg (str (log-request-msg "Finished" req)
-                 " in " total " ms.  Status: "
-                 status)]
+  (let [msg (log-request-msg "Finished" req)
+        ms (str total "ms")]
     (if (and (number? status)
              (>= status 500))
-      (error msg)
-      (info msg))))
+      (error msg ms status)
+      (info msg ms status))))
 
 (defn- log-exception
   [req ex total]
   (sd/increment "qu.request.exception")
-  (error (str (log-request-msg "Exception on " req)
-              " in " total " ms."))
-  (error ex "--- END STACKTRACE ---"))
+  (error (log-request-msg "Exception" req) (str total "ms"))
+  (error ex)
+  (error "--- END STACKTRACE ---"))
 
 (defn wrap-with-logging
   [handler]
     (fn [request]
-      (sd/with-timing "qu.request.time"
-      (let [start (System/currentTimeMillis)]
-        (try
-          (log-request request)
-          (let [response (handler request)
-                finish (System/currentTimeMillis)
-                total  (- finish start)]
-            (log-response request response total)
-            response)
-          (catch Throwable ex
-            (let [finish (System/currentTimeMillis)
-                  total (- finish start)]
-              (log-exception request ex total))
-            (throw ex)))))))
+      (binding [*log-id* (make-log-id)]
+        (sd/with-timing "qu.request.time"
+          (let [start (System/currentTimeMillis)]
+            (try
+              (log-request request)
+              (let [response (handler request)
+                    finish (System/currentTimeMillis)
+                    total  (- finish start)]
+                (log-response request response total)
+                response)
+              (catch Throwable ex
+                (let [finish (System/currentTimeMillis)
+                      total (- finish start)]
+                  (log-exception request ex total))
+                (throw ex))))))))
 
