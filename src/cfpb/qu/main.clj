@@ -10,9 +10,8 @@
     [routes :refer [app-routes]]
     [util :refer [->int]]
     [env :refer [env]]]
-   [cfpb.qu.middleware
-    [keyword-params :refer [wrap-keyword-params]]
-    [logging :refer [wrap-with-logging]]]   
+   [cfpb.qu.logging :as logging :refer [wrap-with-logging]]
+   [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [clj-statsd :as sd]
    [clojure.string :as str]
    [org.httpkit.server :refer [run-server]]   
@@ -49,10 +48,7 @@
   (let [dev (:dev env)]
     (when dev
       (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
-    (log/set-config! [:prefix-fn]
-                     (fn [{:keys [level timestamp hostname ns]}]
-                       (str timestamp " " (-> level name str/upper-case)
-                            " [" ns "]")))))
+    (logging/config)))
 
 (defn setup-statsd
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
