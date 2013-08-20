@@ -45,6 +45,9 @@ serve their public data sets."
                  [ring.middleware.mime-extensions "0.2.0"]
                  [stencil "0.3.2"]
                  ]
+  :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
+  :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
+                       #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :env {:mongo-host "127.0.0.1"
         :mongo-port 27017
         :statsd-port 8125
@@ -52,6 +55,8 @@ serve their public data sets."
         :http-port 3000
         :http-threads 4
         :http-queue-size 20480
+        :log-file nil
+        :log-level :info
         :dev false
         :integration false}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
