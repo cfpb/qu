@@ -579,16 +579,53 @@
         }
       }
     },
-    "census_tracts": {
+    "institutions": {
       "info": {
-        "name": "Census Tracts",
-        "description": "Distinct collection of Census Tracts for MSAMD and State Code, derived from the HMDA LAR data"
+        "name": "Lending Institutions",
+        "description": "Details about the lending institutions reporting HMDA data."
       },
-      "type": "derived",
-      "slice": "hmda_lar",
+      "type": "table",
+      "table": "institutions",
       "dimensions": [
-        "state_code", "msamd", "census_tract_number"
-      ]
+        "activity_year", 
+        "respondent_id", 
+        "agency_code",
+        "agency_abbr",
+        "agency_name",
+        "federal_tax_id", 
+        "respondent_name", 
+        "respondent_address", 
+        "respondent_city", 
+        "respondent_state", 
+        "respondent_zip_code", 
+        "parent_name", 
+        "parent_address", 
+        "parent_city", 
+        "parent_state", 
+        "parent_zip_code", 
+        "respondent_name_panel", 
+        "respondent_city_panel", 
+        "respondent_state_panel", 
+        "other_lender_code", 
+        "region_code",         
+        "validity_error"
+      ],
+      "metrics": [
+        "assets", 
+        "lar_count"
+      ],
+      "references": {
+        "agency_abbr": {
+          "column": "agency_code",
+          "concept": "agency_code",
+          "value": "abbr"
+        },
+        "agency_name": {
+          "column": "agency_code",
+          "concept": "agency_code",
+          "value": "name"
+        }
+      }
     }
   }, 
   "tables": {
@@ -671,6 +708,83 @@
         "hoepa": {
           "type": "string",
           "name": "name"
+        }
+      }
+    },
+    "institutions": {
+      "sources": [
+        "hmda_ts_2011.csv",
+        "hmda_ts_2010.csv",
+        "hmda_ts_2009.csv",
+        "hmda_ts_2008.csv",
+        "hmda_ts_2007.csv"
+      ],
+      "columns": {
+        "activity_year": {
+          "type": "integer"
+        },
+        "respondent_id": {
+          "type": "string"
+        },
+        "agency_code": {
+          "type": "integer"
+        },
+        "federal_tax_id": {
+          "type": "string"
+        },
+        "respondent_name": {
+          "type": "string"
+        }, 
+        "respondent_address": {
+          "type": "string"
+        }, 
+        "respondent_city": {
+          "type": "string"
+        }, 
+        "respondent_state": {
+          "type": "string"
+        }, 
+        "respondent_zip_code": {
+          "type": "string"
+        }, 
+        "parent_name": {
+          "type": "string"
+        }, 
+        "parent_address": {
+          "type": "string"
+        }, 
+        "parent_city": {
+          "type": "string"
+        }, 
+        "parent_state": {
+          "type": "string"
+        }, 
+        "parent_zip_code": {
+          "type": "string"
+        }, 
+        "respondent_name_panel": {
+          "type": "string"
+        }, 
+        "respondent_city_panel": {
+          "type": "string"
+        }, 
+        "respondent_state_panel": {
+          "type": "string"
+        }, 
+        "assets": {
+          "type": "integer"
+        }, 
+        "other_lender_code": {
+          "type": "integer"
+        }, 
+        "region_code": {
+          "type": "integer"
+        }, 
+        "lar_count": {
+          "type": "integer"
+        }, 
+        "validity_error": {
+          "type": "string"
         }
       }
     },

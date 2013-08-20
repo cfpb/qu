@@ -9,11 +9,11 @@
     [project :refer [project]]    
     [routes :refer [app-routes]]
     [util :refer [->int]]
-    [logging :as logging :refer [wrap-with-logging]]]
-   [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]   
+    [env :refer [env]]]
+   [cfpb.qu.logging :as logging :refer [wrap-with-logging]]
+   [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [clj-statsd :as sd]
    [clojure.string :as str]
-   [environ.core :refer [env]]
    [org.httpkit.server :refer [run-server]]   
    [ring.adapter.jetty :refer [run-jetty]]
    [ring.middleware
@@ -44,11 +44,11 @@
   (load-dataset "county_taxes"))
 
 (defn init
-  ([] (init (:dev env)))
-  ([dev]
-     (when dev
-       (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
-     (logging/config)))
+  []
+  (let [dev (:dev env)]
+    (when dev
+      (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
+    (logging/config)))
 
 (defn setup-statsd
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
@@ -68,10 +68,11 @@
                       reload/wrap-reload
                       wrap-stacktrace)
                   app)
-        options {:port (->int (:http-port env))
+        options {:ip (:http-ip env)
+                 :port (->int (:http-port env))
                  :thread (->int (:http-threads env))
                  :queue-size (->int (:http-queue-size env))}]
-    (log/info "Starting server on port" (:port options))
+    (log/info "Starting server on" (str (:ip options) ":" (:port options)))
     (when (:dev env)
       (log/info "Dev mode enabled"))
     (run-server handler options)))

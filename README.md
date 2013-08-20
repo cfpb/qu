@@ -85,13 +85,36 @@ can also be set via Java properties. See
 [the documentation for environ][https://github.com/weavejester/environ/blob/master/README.md]
 for more information on how to use Java properties if you prefer.
 
-#### Server port and threads
+#### Configuration file
 
-By default, the server will come up on port 3000 and 4 threads will be
-allocated to handle requests. You can change these settings via
-environment variables:
+Besides using environment variables, you can also use a configuration
+file. This file must contain a Clojure map with your configuration set
+in it. Unlike with environment variables, where each setting is
+uppercased and SNAKE_CASED, these settings must be lowercase keywords
+with dashes, like so:
+
+```clojure
+{ :http-port 8080
+  :mongo-host "127.0.0.1" }
+```
+
+In order to use a configuration file, set `QU_CONFIG` to the file's
+location, like so:
 
 ```sh
+QU_CONFIG=/etc/qu-conf.clj
+```
+
+Note that the configuration file overrides environment variables.
+
+#### HTTP server
+
+By default, the server will come up on port 3000 and 4 threads will be
+allocated to handle requests. The server will be bound to
+localhost. You can change these settings via environment variables:
+
+```sh
+HTTP_IP=0.0.0.0
 HTTP_PORT=3000
 HTTP_THREADS=4
 ```
@@ -106,6 +129,30 @@ You can do this via setting environment variables:
 MONGO_HOST=192.168.21.98
 MONGO_PORT=27017
 ```
+
+If you prefer to connect via a URI, use `MONGO_URI`.
+
+If you need to connect to several servers to read from multiple replica sets, set specific Mongo options, or authenticate, you will have to set your configuration in a file as specified under `QU_PROJECT`. Your configuration should look like the following:
+
+```clojure
+{ ;; Set a vector of vectors, each made up of the IP address and port.
+  :mongo-hosts [["127.0.0.1" 27017] ["192.168.1.1" 27017]]
+  
+  ;; Mongo options should be in a map.
+  :mongo-options {:connections-per-host 20
+                  :connect-timeout 60}
+                  
+  ;; Authentication should be a map of database names to vectors containing username and password.
+  ;; If you have a user on the admin database with the roles "readWriteAnyDatabase", that user should
+  ;; work for running the entire API. To load data, that user needs the roles "clusterAdmin" and
+  ;; "dbAdminAnyDatabase" as well.
+  ;; If you choose not to have a user on the admin database, you will need a user for every dataset
+  ;; and for the "metadata" database.
+  :mongo-auth {:admin ["admin" "s3cr3t"]}
+}
+```
+
+See [the Monger documentation for all available Mongo connection options](http://clojuremongodb.info/articles/connecting.html#connecting_to_mongodb_using_connection_options).
 
 #### APP URL
 
