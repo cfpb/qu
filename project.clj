@@ -48,17 +48,6 @@ serve their public data sets."
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
-  :env {:mongo-host "127.0.0.1"
-        :mongo-port 27017
-        :statsd-port 8125
-        :http-ip "127.0.0.1"
-        :http-port 3000
-        :http-threads 4
-        :http-queue-size 20480
-        :log-file nil
-        :log-level :info
-        :dev false
-        :integration false}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
