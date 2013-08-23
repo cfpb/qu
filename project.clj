@@ -43,6 +43,8 @@ serve their public data sets."
                  [parse-ez "0.3.6"]
                  [ring "1.2.0"]                 
                  [ring.middleware.mime-extensions "0.2.0"]
+                 [scriptjure "0.1.24"]
+                 [slingshot "0.10.3"]                 
                  [stencil "0.3.2"]
                  ]
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
