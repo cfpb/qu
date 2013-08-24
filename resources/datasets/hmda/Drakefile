@@ -1,9 +1,13 @@
 SAMPLE_SIZE:=0.01
 
 unzip()
-  7z x $INPUT -so > $OUTPUT
+  unzip -p $INPUT > $OUTPUT
 
 add_headers_and_unzip()
+  cp headers.csv $OUTPUT
+  unzip -p $INPUT | perl -p -e 's/na| //gi' >> $OUTPUT
+
+add_headers_and_7unzip()
   cp headers.csv $OUTPUT
   7z x $INPUT -so | perl -p -e 's/na| //gi' >> $OUTPUT
 
@@ -29,7 +33,7 @@ add_fips_column() [python]
       csvin = csv.reader(input)
       csvout = csv.writer(output)
       headers = csvin.next()
-      headers.append('FIPS')
+      headers.append('fips_code')
       csvout.writerow(headers)
       for row in csvin:
         fips_codes = row[11:13]
@@ -45,7 +49,7 @@ convert_ts_to_csv() [python]
       csvout = csv.writer(output)
       csvout.writerow(fields)
       for row in csvin:
-        csvout.writerow(row)        
+        csvout.writerow(row)
 
 link()
   ln -f $INPUT $OUTPUT
@@ -67,7 +71,7 @@ hmda_lar_all_2011_no_fips.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip
 hmda_lar_all_2010_no_fips.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
 hmda_lar_all_2009_no_fips.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
 hmda_lar_all_2008_no_fips.csv <- hmda_lar_2008.zip [method:add_headers_and_unzip]
-hmda_lar_all_2007_no_fips.csv <- hmda_lar_2007.zip [method:add_headers_and_unzip]
+hmda_lar_all_2007_no_fips.csv <- hmda_lar_2007.zip [method:add_headers_and_7unzip]
 
 hmda_lar_all_2011.csv <- hmda_lar_all_2011_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2010.csv <- hmda_lar_all_2010_no_fips.csv [method:add_fips_column]
@@ -105,4 +109,3 @@ hmda_ts_2010.csv <- hmda_ts_2010.txt [method:convert_ts_to_csv]
 hmda_ts_2009.csv <- hmda_ts_2009.txt [method:convert_ts_to_csv]
 hmda_ts_2008.csv <- hmda_ts_2008.txt [method:convert_ts_to_csv]
 hmda_ts_2007.csv <- hmda_ts_2007.txt [method:convert_ts_to_csv]
-

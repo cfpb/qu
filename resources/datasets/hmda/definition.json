@@ -284,11 +284,11 @@
   "slices": {
     "hmda_lar": {
       "info": {
-        "name": "HMDA LAR with code sheets",
+        "name": "HMDA Loan Application Records (LAR)",
         "description": "The HMDA LAR data, with code sheet lookups added."
       },
       "type": "table",
-      "table": "hmda_lar",      
+      "table": "hmda_lar",
       "index_only": [
         "action_taken",
         "agency_code",
@@ -626,7 +626,205 @@
           "value": "name"
         }
       }
-    }
+    },
+    "application_groups": {
+      "info": {
+        "name": "HMDA Loan Application Records Grouped",
+        "description": "The HMDA LAR data grouped by state, county, loan type, loan purpose, race, ethnicity, sex, property type, and purchaser type. These will result into many narrow groups, but is a good start for building your own aggregations."
+      },
+      "type": "derived",
+      "slice": "hmda_lar",
+      "dimensions": [
+        "state_code",
+        "state_abbr",
+        "county_code",
+        "county_name",
+        "loan_type",
+        "loan_type_name",
+        "loan_purpose",
+        "loan_purpose_name",
+        "applicant_sex",
+        "applicant_sex_name",
+        "applicant_ethnicity",
+        "applicant_ethnicity_name",
+        "applicant_race_1",
+        "applicant_race_name_1",
+        "co_applicant_sex",
+        "co_applicant_sex_name",
+        "co_applicant_ethnicity",
+        "co_applicant_ethnicity_name",
+        "co_applicant_race_1",
+        "co_applicant_race_name_1",
+        "property_type",
+        "property_type_name",
+        "purchaser_type",
+        "purchaser_type_name"
+      ],
+      "metrics": [
+        "avg_applicant_income_000s",        
+        "avg_co_applicant_income_000s",
+        "avg_hud_median_family_income",
+        "avg_loan_amount_000s",
+        "avg_number_of_1_to_4_family_units",
+        "avg_number_of_owner_occupied_units",
+        "avg_minority_population",        
+        "avg_population",
+        "avg_rate_spread",
+        "avg_tract_to_msamd_income",
+        "max_applicant_income_000s",        
+        "max_co_applicant_income_000s",
+        "max_hud_median_family_income",
+        "max_loan_amount_000s",
+        "max_number_of_1_to_4_family_units",
+        "max_number_of_owner_occupied_units",
+        "max_minority_population",        
+        "max_population",
+        "max_rate_spread",
+        "max_tract_to_msamd_income",
+        "min_applicant_income_000s",        
+        "min_co_applicant_income_000s",
+        "min_hud_median_family_income",
+        "min_loan_amount_000s",
+        "min_number_of_1_to_4_family_units",
+        "min_number_of_owner_occupied_units",
+        "min_minority_population",        
+        "min_population",
+        "min_rate_spread",
+        "min_tract_to_msamd_income",
+        "application_count"
+      ],
+      "aggregations": {
+        "avg_applicant_income_000s": ["avg", "applicant_income_000s"],        
+        "avg_co_applicant_income_000s": ["avg", "co_applicant_income_000s"],
+        "avg_hud_median_family_income": ["avg", "hud_median_family_income"],
+        "avg_loan_amount_000s": ["avg", "loan_amount_000s"],
+        "avg_number_of_1_to_4_family_units": ["avg", "number_of_1_to_4_family_units"],
+        "avg_number_of_owner_occupied_units": ["avg", "number_of_owner_occupied_units"],
+        "avg_minority_population": ["avg", "minority_population"],        
+        "avg_population": ["avg", "population"],
+        "avg_rate_spread": ["avg", "rate_spread"],
+        "avg_tract_to_msamd_income": ["avg", "tract_to_msamd_income"],
+        "max_applicant_income_000s": ["max", "applicant_income_000s"],        
+        "max_co_applicant_income_000s": ["max", "co_applicant_income_000s"],
+        "max_hud_median_family_income": ["max", "hud_median_family_income"],
+        "max_loan_amount_000s": ["max", "loan_amount_000s"],
+        "max_number_of_1_to_4_family_units": ["max", "number_of_1_to_4_family_units"],
+        "max_number_of_owner_occupied_units": ["max", "number_of_owner_occupied_units"],
+        "max_minority_population": ["max", "minority_population"],        
+        "max_population": ["max", "population"],
+        "max_rate_spread": ["max", "rate_spread"],
+        "max_tract_to_msamd_income": ["max", "tract_to_msamd_income"],
+        "min_applicant_income_000s": ["min", "applicant_income_000s"],        
+        "min_co_applicant_income_000s": ["min", "co_applicant_income_000s"],
+        "min_hud_median_family_income": ["min", "hud_median_family_income"],
+        "min_loan_amount_000s": ["min", "loan_amount_000s"],
+        "min_number_of_1_to_4_family_units": ["min", "number_of_1_to_4_family_units"],
+        "min_number_of_owner_occupied_units": ["min", "number_of_owner_occupied_units"],
+        "min_minority_population": ["min", "minority_population"],        
+        "min_population": ["min", "population"],
+        "min_rate_spread": ["min", "rate_spread"],
+        "min_tract_to_msamd_income": ["min", "tract_to_msamd_income"],
+        "application_count": ["count"]
+      }
+    },
+    "application_groups_by_state": {
+      "info": {
+        "name": "HMDA Loan Application Records Grouped by State",
+        "description": "The HMDA LAR data grouped by state, loan type, loan purpose, race, ethnicity, sex, property type, and purchaser type. These will result into many narrow groups, but is a good start for building your own aggregations."
+      },
+      "type": "derived",
+      "slice": "hmda_lar",
+      "dimensions": [
+        "state_code",
+        "state_abbr",
+        "loan_type",
+        "loan_type_name",
+        "loan_purpose",
+        "loan_purpose_name",
+        "applicant_sex",
+        "applicant_sex_name",
+        "applicant_ethnicity",
+        "applicant_ethnicity_name",
+        "applicant_race_1",
+        "applicant_race_name_1",
+        "co_applicant_sex",
+        "co_applicant_sex_name",
+        "co_applicant_ethnicity",
+        "co_applicant_ethnicity_name",
+        "co_applicant_race_1",
+        "co_applicant_race_name_1",
+        "property_type",
+        "property_type_name",
+        "purchaser_type",
+        "purchaser_type_name"
+      ],
+      "metrics": [
+        "avg_applicant_income_000s",        
+        "avg_co_applicant_income_000s",
+        "avg_hud_median_family_income",
+        "avg_loan_amount_000s",
+        "avg_number_of_1_to_4_family_units",
+        "avg_number_of_owner_occupied_units",
+        "avg_minority_population",        
+        "avg_population",
+        "avg_rate_spread",
+        "avg_tract_to_msamd_income",
+        "max_applicant_income_000s",        
+        "max_co_applicant_income_000s",
+        "max_hud_median_family_income",
+        "max_loan_amount_000s",
+        "max_number_of_1_to_4_family_units",
+        "max_number_of_owner_occupied_units",
+        "max_minority_population",        
+        "max_population",
+        "max_rate_spread",
+        "max_tract_to_msamd_income",
+        "min_applicant_income_000s",        
+        "min_co_applicant_income_000s",
+        "min_hud_median_family_income",
+        "min_loan_amount_000s",
+        "min_number_of_1_to_4_family_units",
+        "min_number_of_owner_occupied_units",
+        "min_minority_population",        
+        "min_population",
+        "min_rate_spread",
+        "min_tract_to_msamd_income",
+        "application_count"
+      ],
+      "aggregations": {
+        "avg_applicant_income_000s": ["avg", "applicant_income_000s"],        
+        "avg_co_applicant_income_000s": ["avg", "co_applicant_income_000s"],
+        "avg_hud_median_family_income": ["avg", "hud_median_family_income"],
+        "avg_loan_amount_000s": ["avg", "loan_amount_000s"],
+        "avg_number_of_1_to_4_family_units": ["avg", "number_of_1_to_4_family_units"],
+        "avg_number_of_owner_occupied_units": ["avg", "number_of_owner_occupied_units"],
+        "avg_minority_population": ["avg", "minority_population"],        
+        "avg_population": ["avg", "population"],
+        "avg_rate_spread": ["avg", "rate_spread"],
+        "avg_tract_to_msamd_income": ["avg", "tract_to_msamd_income"],
+        "max_applicant_income_000s": ["max", "applicant_income_000s"],        
+        "max_co_applicant_income_000s": ["max", "co_applicant_income_000s"],
+        "max_hud_median_family_income": ["max", "hud_median_family_income"],
+        "max_loan_amount_000s": ["max", "loan_amount_000s"],
+        "max_number_of_1_to_4_family_units": ["max", "number_of_1_to_4_family_units"],
+        "max_number_of_owner_occupied_units": ["max", "number_of_owner_occupied_units"],
+        "max_minority_population": ["max", "minority_population"],        
+        "max_population": ["max", "population"],
+        "max_rate_spread": ["max", "rate_spread"],
+        "max_tract_to_msamd_income": ["max", "tract_to_msamd_income"],
+        "min_applicant_income_000s": ["min", "applicant_income_000s"],        
+        "min_co_applicant_income_000s": ["min", "co_applicant_income_000s"],
+        "min_hud_median_family_income": ["min", "hud_median_family_income"],
+        "min_loan_amount_000s": ["min", "loan_amount_000s"],
+        "min_number_of_1_to_4_family_units": ["min", "number_of_1_to_4_family_units"],
+        "min_number_of_owner_occupied_units": ["min", "number_of_owner_occupied_units"],
+        "min_minority_population": ["min", "minority_population"],        
+        "min_population": ["min", "population"],
+        "min_rate_spread": ["min", "rate_spread"],
+        "min_tract_to_msamd_income": ["min", "tract_to_msamd_income"],
+        "application_count": ["count"]
+      }
+    }        
   }, 
   "tables": {
     "action_taken": {
@@ -926,12 +1124,10 @@
           "name": "_id"
         },
         "abbr": {
-          "type": "string",
-          "name": "abbr"
+          "type": "string"
         },
         "name": {
-          "type": "string",
-          "name": "name"
+          "type": "string"
         }
       }
     },
@@ -987,190 +1183,144 @@
         "hmda_lar_2008.csv",
         "hmda_lar_2007.csv"
       ],
-      "columns": {
-        "As of Year": {
-          "type": "integer", 
-          "name": "as_of_year"
+      "columns": {        
+        "as_of_year": {
+          "type": "integer"
         }, 
-        "Respondent ID": {
-          "type": "string", 
-          "name": "respondent_id"
+        "respondent_id": {
+          "type": "string"
         },
-        "Agency Code": {
-          "type": "integer", 
-          "name": "agency_code"
+        "agency_code": {
+          "type": "integer"
         },         
-        "Loan Type": {
-          "type": "integer", 
-          "name": "loan_type"
+        "loan_type": {
+          "type": "integer"
         },
-        "Property Type": {
-          "type": "integer", 
-          "name": "property_type"
+        "property_type": {
+          "type": "integer"
         },
-        "Loan Purpose": {
-          "type": "integer", 
-          "name": "loan_purpose"
+        "loan_purpose": {
+          "type": "integer"
         },
-        "Occupancy": {
-          "type": "integer", 
-          "name": "owner_occupancy"
+        "owner_occupancy": {
+          "type": "integer"       
         },
-        "Loan Amount (Thousands)": {
-          "type": "integer", 
-          "name": "loan_amount_000s"
+        "loan_amount_000s": {
+          "type": "integer"
         },
-        "Preapproval": {
-          "type": "integer", 
-          "name": "preapproval"
+        "preapproval": {
+          "type": "integer"
         },
-        "Action Type": {
-          "type": "integer", 
-          "name": "action_taken"
+        "action_taken": {
+          "type": "integer"
         },
-        "MSA/MD": {
-          "type": "string", 
-          "name": "msamd"
+        "msamd": {
+          "type": "string"
         },
-        "State Code": {
-          "type": "integer", 
-          "name": "state_code"
+        "state_code": {
+          "type": "integer"
         },
-        "County Code": {
-          "type": "integer", 
-          "name": "county_code"
+        "county_code": {
+          "type": "integer"
         },
-        "Census Tract Number": {
-          "type": "string", 
-          "name": "census_tract_number"
+        "census_tract_number": {
+          "type": "string"
         },
-        "Applicant Ethnicity": {
-          "type": "integer", 
-          "name": "applicant_ethnicity"
+        "applicant_ethnicity": {
+          "type": "integer" 
         }, 
-        "Co Applicant Ethnicity": {
-          "type": "integer", 
-          "name": "co_applicant_ethnicity"
+        "co_applicant_ethnicity": {
+          "type": "integer" 
         },
-        "Applicant Race 1": {
-          "type": "integer", 
-          "name": "applicant_race_1"
+        "applicant_race_1": {
+          "type": "integer" 
         }, 
-        "Applicant Race 2": {
-          "type": "integer", 
-          "name": "applicant_race_2"
+        "applicant_race_2": {
+          "type": "integer" 
         }, 
-        "Applicant Race 3": {
-          "type": "integer", 
-          "name": "applicant_race_3"
+        "applicant_race_3": {
+          "type": "integer" 
         }, 
-        "Applicant Race 4": {
-          "type": "integer", 
-          "name": "applicant_race_4"
+        "applicant_race_4": {
+          "type": "integer" 
         }, 
-        "Applicant Race 5": {
-          "type": "integer", 
-          "name": "applicant_race_5"
+        "applicant_race_5": {
+          "type": "integer" 
         }, 
-        "Co Applicant Race 1": {
-          "type": "integer", 
-          "name": "co_applicant_race_1"
+        "co_applicant_race_1": {
+          "type": "integer" 
         }, 
-        "Co Applicant Race 2": {
-          "type": "integer", 
-          "name": "co_applicant_race_2"
+        "co_applicant_race_2": {
+          "type": "integer" 
         }, 
-        "Co Applicant Race 3": {
-          "type": "integer", 
-          "name": "co_applicant_race_3"
+        "co_applicant_race_3": {
+          "type": "integer" 
         },         
-        "Co Applicant Race 4": {
-          "type": "integer", 
-          "name": "co_applicant_race_4"
+        "co_applicant_race_4": {
+          "type": "integer" 
         }, 
-        "Co Applicant Race 5": {
-          "type": "integer", 
-          "name": "co_applicant_race_5"
+        "co_applicant_race_5": {
+          "type": "integer" 
         },
-        "Applicant Sex": {
-          "type": "integer", 
-          "name": "applicant_sex"
+        "applicant_sex": {
+          "type": "integer" 
         }, 
-        "Co Applicant Sex": {
-          "type": "integer", 
-          "name": "co_applicant_sex"
+        "co_applicant_sex": {
+          "type": "integer" 
         }, 
-        "Applicant Income (Thousands)": {
-          "type": "integer", 
-          "name": "applicant_income_000s"
+        "applicant_income_000s": {
+          "type": "integer" 
         }, 
-        "Purchaser Type": {
-          "type": "integer", 
-          "name": "purchaser_type"
+        "purchaser_type": {
+          "type": "integer" 
         }, 
-        "Denial Reason 1": {
-          "type": "integer", 
-          "name": "denial_reason_1"
+        "denial_reason_1": {
+          "type": "integer" 
         }, 
-        "Denial Reason 2": {
-          "type": "integer", 
-          "name": "denial_reason_2"
+        "denial_reason_2": {
+          "type": "integer" 
         }, 
-        "Denial Reason 3": {
-          "type": "integer", 
-          "name": "denial_reason_3"
+        "denial_reason_3": {
+          "type": "integer" 
         }, 
-        "Rate Spread": {
-          "type": "string", 
-          "name": "rate_spread"
+        "rate_spread": {
+          "type": "string" 
         }, 
-        "HOEPA Status": {
-          "type": "integer", 
-          "name": "hoepa_status"
+        "hoepa_status": {
+          "type": "integer" 
         }, 
-        "Lien Status": {
-          "type": "integer", 
-          "name": "lien_status"
+        "lien_status": {
+          "type": "integer" 
         },
-        "Edit Status": {
-          "type": "integer", 
-          "name": "edit_status"
+        "edit_status": {
+          "type": "integer" 
         }, 
-        "Sequence Number": {
-          "type": "string", 
-          "name": "sequence_number"
+        "sequence_number": {
+          "type": "string" 
         }, 
-        "Population": {
-          "type": "integer", 
-          "name": "population"
+        "population": {
+          "type": "integer" 
         },
-        "Minority Population %": {
-          "type": "number", 
-          "name": "minority_population"
+        "minority_population": {
+          "type": "number" 
         },         
-        "HUD Median Family Income": {
-          "type": "integer", 
-          "name": "hud_median_family_income"
+        "hud_median_family_income": {
+          "type": "integer" 
         },
-        "Tract to MSA/MD Income %": {
-          "type": "number", 
-          "name": "tract_to_msamd_income"
+        "tract_to_msamd_income": {
+          "type": "number" 
         },       
-        "Number of Owner-Occupied Units": {
-          "type": "integer", 
-          "name": "number_of_owner_occupied_units"
+        "number_of_owner_occupied_units": {
+          "type": "integer" 
         }, 
-        "Number of 1-to-4-Family Units": {
-          "type": "integer", 
-          "name": "number_of_1_to_4_family_units"
+        "number_of_1_to_4_family_units": {
+          "type": "integer" 
         }, 
-        "Application Date Indicator": {
-          "type": "string", 
-          "name": "application_date_indicator"
+        "application_date_indicator": {
+          "type": "string" 
         },
-        "FIPS": {
-          "type": "string",
-          "name": "fips_code"
+        "fips_code": {
+          "type": "string"
         }
       }
     }
