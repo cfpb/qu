@@ -19,7 +19,8 @@ transforming the data within."
     [core :as mongo :refer [with-db get-db]]
     [query :as q]
     [collection :as coll]
-    [joda-time]]
+    [joda-time]
+    [key-compression :refer [compression-map]]]
    [cfpb.qu.util :refer :all]
    [cfpb.qu.query.where :as where]
    [cfpb.qu.data :refer :all])
@@ -85,10 +86,20 @@ in MongoDB."
 (defn save-dataset-definition
   "Save the definition of a dataset into the 'metadata' database."
   [name definition]
-  (with-db (get-db "metadata")
-    (coll/update "datasets" {:name name}
-                 (assoc definition :name name :last-modified (now))
-                 :upsert true)))
+  (let [definition (assoc definition
+                     :name name
+                     :last-modified (now))
+        definition (reduce (fn [def [slice sdef]]
+                             (assoc-in def
+                                       [:compression-map slice]
+                                       (compression-map (slice-columns sdef))))
+                           definition
+                           (:slices definition))
+        definition (dissoc definition :tables)]
+    (with-db (get-db "metadata")
+      (coll/update "datasets" {:name name}
+                   definition
+                   :upsert true))))
 
 (defmulti cast-value (fn [_ valuedef] (:type valuedef)))
 
