@@ -44,12 +44,11 @@
 
   ;; get-find and get-aggregation facts are simply sanity checks
   (facts "about get-find"
-
     (fact "returns a QueryResult object with total, size, and data (Seq of maps)"
-      (let [ limit 2
-             query {:query {} :fields {} :limit limit :skip 0 :sort {}}
-             result (data/get-find db coll query)]
-        (> (:total result) limit ) => true
+      (let [limit 2
+            query {:query {} :fields {} :limit limit :skip 0 :sort {}}
+            result (data/get-find db coll query)]
+        (> (:total result) limit) => true
         (:size result) => limit
         (count (:data result)) => limit)))
 
@@ -61,10 +60,10 @@
                    {"$sort" {:state_abbr 1}}]
             result (data/get-aggregation db coll query)]
         ;; We know the integration_test dataset has 3 states
-        (map :state_abbr (:data result)) => ["NC" "NY" "PA"]
-        (:total result) => 3
-        (:size result) => 3
-        (count (:data result)) => 3)))
+        (map :state_abbr (:data result)) => (just ["NC" "NY" "PA" "DC"] :in-any-order)
+        (:total result) => 4
+        (:size result) => 4
+        (count (:data result)) => 4)))
 
   (facts "about execute"
 
@@ -121,12 +120,13 @@
       (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
             result (query/execute db coll q)
             query_result (:result result)]
-        (:size query_result) => 3
-        (:total query_result) => 3
-        (count (:data query_result)) => 3
-        (:data query_result) => [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
-                                 {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
-                                 {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"}])))
+        (:size query_result) => 4
+        (:total query_result) => 4
+        (count (:data query_result)) => 4
+        (:data query_result) => (just [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
+                                       {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
+                                       {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"},
+                                       {:sum_tax_returns 33, :count_tax_returns 2, :min_tax_returns 16, :max_tax_returns 17, :state_abbr "DC"}] :in-any-order))))
 
   (facts "about execute and error handling"
 
