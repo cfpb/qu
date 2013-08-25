@@ -154,7 +154,7 @@ If you need to connect to several servers to read from multiple replica sets, se
 
 See [the Monger documentation for all available Mongo connection options](http://clojuremongodb.info/articles/connecting.html#connecting_to_mongodb_using_connection_options).
 
-#### APP URL
+#### App URL
 
 To control the HREF of the links that are created for data slices, you can set the APP_URL environment variable.
 
@@ -167,12 +167,18 @@ APP_URL=https://my.data.platform/data-api
 will create links such as
 
 ```sh
-_links":[{"rel":"self","href":"https://my.data.platform/data-api/data/a_resource/a_slice.json? ....
+_links":[{"rel":"self","href":"https://my.data.platform/data-api/data/a_resource/a_slice.json?...."}]
 ```
 
 when emitted in JSON, JSONP, XML, and so on.
 
-If the variable is not set, then absolute HREFs such as `/data/a_resource/a_slice.json` are used. This variable is most useful in production hosting situations where an application server is behind a proxy, and you wish to granularly control the HREFs that are created independent of how the application server sees the request URI.
+If the variable is not set, then relative HREFs such as `/data/a_resource/a_slice.json` are used. This variable is most useful in production hosting situations where an application server is behind a proxy, and you wish to granularly control the HREFs that are created independent of how the application server sees the request URI.
+
+#### API Name
+
+In order for your API to show a custom name (such as "Spiffy Lube
+API"), set the `API_NAME` environment variable. This is probably best
+set in an external config file.
 
 ### Loading data
 
