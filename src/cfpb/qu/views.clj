@@ -35,9 +35,9 @@
 (def ^:dynamic *min-records-to-stream* 1000)
 (def ^:dynamic *stream-size* 1024)
 
-(def footer-info {:qu_version (:version project)
-                  :build_number (:build-number project)
-                  :build_url (:build-url project)})
+(def footer-info {:qu_version (@project :version)
+                  :build_number (@project :build-number)
+                  :build_url (@project :build-url)})
 
 (defn json-error
   ([status] (json-error status {}))
@@ -48,9 +48,10 @@
 
 (defn layout-html
   ([content] (layout-html {} content))
-  ([resource content] (render-file "templates/layout"
-                                   (merge footer-info {:content content
-                                                       :resource resource}))))
+  ([resource content]
+     (render-file "templates/layout"
+                  (merge footer-info {:content content
+                                      :resource resource}))))
 
 (defn not-found-html [message]
   (render-file "templates/404" {:message message}))
