@@ -14,7 +14,8 @@
    :log-file nil
    :log-level :info
    :dev false
-   :integration false})
+   :integration false
+   :api-name "Data API"})
 
 (def ^{:doc "A map of environment variables."}
   env

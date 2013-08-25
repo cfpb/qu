@@ -15,6 +15,7 @@
    monger.json
    [halresource.resource :as hal]
    [cfpb.qu.project :refer [project]]
+   [cfpb.qu.env :refer [env]]
    [cfpb.qu.util :refer [->int]]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
@@ -35,9 +36,10 @@
 (def ^:dynamic *min-records-to-stream* 1000)
 (def ^:dynamic *stream-size* 1024)
 
-(def footer-info {:qu_version (@project :version)
+(def layout-info {:qu_version (@project :version)
                   :build_number (@project :build-number)
-                  :build_url (@project :build-url)})
+                  :build_url (@project :build-url)
+                  :api_name (env :api-name)})
 
 (defn json-error
   ([status] (json-error status {}))
@@ -50,7 +52,7 @@
   ([content] (layout-html {} content))
   ([resource content]
      (render-file "templates/layout"
-                  (merge footer-info {:content content
+                  (merge layout-info {:content content
                                       :resource resource}))))
 
 (defn not-found-html [message]
@@ -112,7 +114,8 @@
 
 (defmethod index "text/html" [_ resource]
   (layout-html resource
-               (render-file "templates/index" {:datasets (map second (:embedded resource))})))
+               (render-file "templates/index" {:api_name (env :api-name)
+                                               :datasets (map second (:embedded resource))})))
 
 (defmethod index "application/json" [_ resource]
   (hal/resource->representation resource :json))
@@ -227,7 +230,6 @@
 (defmethod slice-metadata :default [format _ _]
   (format-not-found format))
 
-
 (def clauses
   [{:key "select"   :label "Select (fields to return)" :placeholder "state,age,population_2010"}
    {:key "group"    :label "Group By"}
@@ -295,18 +297,27 @@
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
         query (get-in resource [:properties :query])
-        base-href (urls/slice-path dataset slice)        
+        base-href (urls/slice-path dataset slice)
+        dimensions (:dimensions slicedef)
+        metrics (:metrics slicedef)
+        sample-dimension (first (sort #(< (count %1) (count %2)) dimensions))
+        sample-metric (first (sort #(< (count %1) (count %2)) metrics))
         slice-metadata {:name (get-in slicedef [:info :name])
                         :description (get-in slicedef [:info :description])
-                        :dimensions (str/join ", " (:dimensions slicedef))
-                        :metrics (str/join ", " (:metrics slicedef))}
-        dimensions (map #(hash-map :key %
-                                   :name (desc %)
-                                   :value (get-in dimensions [(keyword %)]))
-                        (:dimensions slicedef))
+                        :dimensions (str/join ", " dimensions)
+                        :metrics (str/join ", " metrics)}
+        dimension-form-data (map #(hash-map :key %
+                                            :name (desc %)
+                                            :value (get-in dimensions [(keyword %)]))
+                                 dimensions)
+        placeholders {:select (str/join ", " (vector sample-dimension sample-metric))
+                      :where (str sample-metric " > 10")
+                      :orderBy (str sample-dimension ", " sample-metric " DESC")}
         clauses (->> clauses
                      (map #(assoc-in % [:value] (get-in resource
                                                         [:properties :query (keyword (:key %))])))
+                     (map #(assoc-in % [:placeholder]
+                                     ((keyword (:key %)) placeholders (:placeholder %))))
                      (map #(assoc-in % [:errors] (get-in resource
                                                          [:properties :errors (keyword (:key %))]))))
         data (take 100 (get-in resource [:properties :results]))
@@ -332,7 +343,7 @@
                    :dataset dataset
                    :slice slice
                    :metadata slice-metadata
-                   :dimensions dimensions
+                   :dimensions dimension-form-data
                    :clauses clauses
                    :columns columns
                    :start start
