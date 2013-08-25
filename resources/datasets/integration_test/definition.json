@@ -54,11 +54,13 @@
       ],
       "metrics": [
         "counties",
-        "tax_returns"
+        "tax_returns",
+        "median_tax_return"
       ],
       "aggregations": {
         "counties": ["count"],
-        "tax_returns": ["sum", "tax_returns"]
+        "tax_returns": ["sum", "tax_returns"],
+        "median_tax_return": ["median", "tax_returns"]
       }
     }
   },  

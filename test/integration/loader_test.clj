@@ -21,4 +21,13 @@
                      result (data/get-find db coll query)]
                  (doseq [datum (:data result)]
                    (class (:date_observed datum)) =>
-                   org.joda.time.DateTime)))))
+                   org.joda.time.DateTime))))
+
+  (facts "about median pre-aggregations"
+         (fact "they work!"
+               (let [query {:query {} :fields {} :limit 100 :skip 0 :sort {}}
+                     result (data/get-find db "incomes_by_state" query)
+                     medians (->> result
+                                  :data
+                                  (map :median_tax_return))]
+                 medians => (just [3.0 7.0 13.0 16.5] :in-any-order)))))
