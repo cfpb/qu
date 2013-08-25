@@ -15,6 +15,7 @@
    monger.json
    [halresource.resource :as hal]
    [cfpb.qu.project :refer [project]]
+   [cfpb.qu.env :refer [env]]
    [cfpb.qu.util :refer [->int]]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
@@ -35,9 +36,10 @@
 (def ^:dynamic *min-records-to-stream* 1000)
 (def ^:dynamic *stream-size* 1024)
 
-(def footer-info {:qu_version (@project :version)
+(def layout-info {:qu_version (@project :version)
                   :build_number (@project :build-number)
-                  :build_url (@project :build-url)})
+                  :build_url (@project :build-url)
+                  :api_name (env :api-name)})
 
 (defn json-error
   ([status] (json-error status {}))
@@ -112,7 +114,8 @@
 
 (defmethod index "text/html" [_ resource]
   (layout-html resource
-               (render-file "templates/index" {:datasets (map second (:embedded resource))})))
+               (render-file "templates/index" {:api_name (env :api-name)
+                                               :datasets (map second (:embedded resource))})))
 
 (defmethod index "application/json" [_ resource]
   (hal/resource->representation resource :json))
