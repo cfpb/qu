@@ -109,8 +109,8 @@ functions to return the resource that will be presented later."
 (defn- base-url
   "Derive a base URL from the APP_URL environment variable and either the path-info or uri value from the request scope"
   [request]
-  (str (:app-url project) (or (:path-info request)
-                              (:uri request))))
+  (str (@project :app-url) (or (:path-info request)
+                               (:uri request))))
 
 (defresource
   ^{:doc "Resource for an individual concept."}
