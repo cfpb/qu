@@ -301,11 +301,24 @@ transform that data into the form we want."
                              (if (= len 0)
                                (return nil)
                                (return (/ (.sum Array vals) len)))))
+                 :median (js* (fn [ary field]
+                                (var median (fn [array]
+                                              (var array (.sort array))
+                                              (var len (aget array "length"))
+                                              (if (= len 0)
+                                                (return nil))
+                                              (if (= (% len 2) 0)
+                                                (return (/ (+ (aget array (- 1 (/ len 2)))
+                                                              (aget array (/ len 2)))
+                                                           2))
+                                                (return (aget array (/ (- len 1) 2))))))
+                                (var vals (.map ary (fn [obj] (return (aget obj field)))))
+                                (return (median vals))))
                  :sum (js* (fn [ary field]
                              (var vals (.map ary (fn [obj] (return (aget obj field)))))
                              (return (.sum Array vals))))
                  :count (js* (fn [ary field]
-                               (aget ary "length")))}
+                               (return (aget ary "length"))))}
         reduce-obj (reduce (fn [acc [to-field [agg from-field]]]
                              (let [agg-fn (agg-fns (keyword agg))]
                                (merge acc
@@ -347,6 +360,7 @@ transform that data into the form we want."
                              (merge acc {(str "value." (name field)) field}))
                            {} zfields)
         mr-results (mongo/command mr)]
+    (log/debug "Map-reduce for " slice mr)
     (log/info "Results of map-reduce for" slice mr-results)
     (coll/update slice {} {"$rename" rename-map} :multi true)
     (coll/update slice {} {"$unset" {"value" 1}} :multi true)))
