@@ -256,10 +256,11 @@ functions to return the resource that will be presented later."
                                :dimensions (:dimensions query)
                                :callback (:callback query)
                                :request request}
-                     response-body (views/slice-query
-                                    (:media-type representation)
-                                    resource
-                                    view-map)]
-                 (if (query/valid? query)
-                   response-body
-                   (ring-response {:status 400 :body response-body})))))
+                     response (views/slice-query
+                               (:media-type representation)
+                               resource
+                               view-map)]
+                 (ring-response
+                  (if (query/valid? query)
+                    response
+                    (assoc response :status 400))))))

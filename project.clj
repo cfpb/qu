@@ -54,7 +54,8 @@ serve their public data sets."
   :profiles {:dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}
-                   :dependencies [[clj-http "0.7.6"]
+                   :dependencies [[alembic "0.1.3"]
+                                  [clj-http "0.7.6"]
                                   [factual/drake "0.1.4-SNAPSHOT"]                                  
                                   [midje "1.6-SNAPSHOT"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
