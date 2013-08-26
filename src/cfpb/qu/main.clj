@@ -5,7 +5,6 @@
    [cfpb.qu
     [data :refer [ensure-mongo-connection]]
     [etag :refer [wrap-etag]]
-    [loader :refer [load-dataset]]    
     [project :refer [project]]    
     [routes :refer [app-routes]]
     [util :refer [->int]]
@@ -36,12 +35,6 @@
       wrap-with-logging
       wrap-etag
       wrap-convert-extension-to-accept-header))
-
-(defn bootstrap
-  "Load sample data for use in trying out Qu."
-  []
-  (ensure-mongo-connection)
-  (load-dataset "county_taxes"))
 
 (defn init
   []

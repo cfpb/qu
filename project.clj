@@ -4,7 +4,7 @@
                     (System/getenv "TRAVIS_COMMIT")))
 (def app-url (or (System/getenv "APP_URL") ""))
 
-(defproject qu "0.9.0"
+(defproject qu "0.9.1"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :build-number ~build-number
@@ -28,12 +28,11 @@ serve their public data sets."
                  [clojurewerkz/urly "1.0.0"]
                  [com.novemberain/monger "1.6.0"]
                  [com.stuartsierra/dependency "0.1.1"]                 
-                 [com.taoensso/timbre "2.6.1"]
+                 [com.taoensso/timbre "2.6.1" :exclusions [expectations]]
                  [compojure "1.1.5"]
                  [digest "1.4.3"]
                  [environ "0.4.0"]
-                 [factual/drake "0.1.4-SNAPSHOT"]
-                 [halresource "0.1.1-SNAPSHOT"]
+                 [halresource "0.1.1-20130809.164342-1"]
                  [http-kit "2.1.10"]                 
                  [lib-noir "0.6.8"]
                  [liberator "0.9.0"]
@@ -50,16 +49,13 @@ serve their public data sets."
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
-  :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
-  :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
-                       #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
   :profiles {:dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}
-                   :dependencies [[alembic "0.1.3"]
-                                  [clj-http "0.7.6"]   
+                   :dependencies [[clj-http "0.7.6"]
+                                  [factual/drake "0.1.4-SNAPSHOT"]                                  
                                   [midje "1.6-SNAPSHOT"]
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
