@@ -216,3 +216,8 @@ To run these tests:
 ```sh
 lein with-profile integration embongo midje
 ```
+
+### Nginx
+
+We recommend serving Qu behind a proxy. Nginx works well for this, and
+there is a [sample configuration file](doc/nginx.conf) available.
