@@ -24,11 +24,13 @@ functions to return the resource that will be presented later."
    [cfpb.qu.views :as views]
    [cfpb.qu.query :as query :refer [params->Query]]))
 
-(defn not-found [msg]
-  (status
-   404
-   (views/layout-html
-    (views/not-found-html msg))))
+(defn not-found
+  ([] (not-found "Route not found"))
+  ([msg]
+     (status
+      404
+      (views/layout-html
+       (views/not-found-html msg)))))
 
 (defresource
   ^{:doc "Resource for the collection of datasets."}
@@ -214,6 +216,7 @@ functions to return the resource that will be presented later."
                       :templated true)
         (hal/add-properties {:dataset dataset
                              :slice (name slice)
+                             :computing (= (:data result) :computing)
                              :size (:size result)
                              :total (:total result)
                              :page page
@@ -246,7 +249,7 @@ functions to return the resource that will be presented later."
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
                      query (params->Query (:params request) metadata slice)
-                     query (query/execute dataset slice query)
+                     query (query/execute query)
                      resource (slice-resource dataset slice request query)
                      view-map {:base-href (:uri request)
                                :query query

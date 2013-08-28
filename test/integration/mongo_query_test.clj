@@ -10,6 +10,8 @@
             [cfpb.qu.data :as data]
             [cfpb.qu.loader :as loader]
             [cfpb.qu.query :as query :refer [params->Query]]
+            [cfpb.qu.query.cache :as qc]
+            [clojure.core.cache :as cache]
             [monger.core :as mongo]))
 
 (def db "integration_test")
@@ -52,24 +54,10 @@
         (:size result) => limit
         (count (:data result)) => limit)))
 
-  (facts "about get-aggregation"
-
-    (fact "returns a QueryResult object with total, size, and data representing aggregation results"
-      (let [query [{"$group" {:sum_agi {"$sum" "$adjusted_gross_income"}, :_id {:state_abbr "$state_abbr"}}}
-                   {"$project" {"sum_agi" "$sum_agi", "state_abbr" "$_id.state_abbr"}}
-                   {"$sort" {:state_abbr 1}}]
-            result (data/get-aggregation db coll query)]
-        ;; We know the integration_test dataset has 3 states
-        (map :state_abbr (:data result)) => (just ["NC" "NY" "PA" "DC"] :in-any-order)
-        (:total result) => 4
-        (:size result) => 4
-        (count (:data result)) => 4)))
-
   (facts "about execute"
-
     (fact "passes a Query object to MongoDB and returns results"
       (let [q (params->Query {:state_abbr "NC"} metadata :incomes)
-            result (query/execute db coll q)
+            result (query/execute q)
             query_result (:result result)
             first-doc (first (:data query_result))]
         first-doc => (contains {:tax_returns 1 :county "County 1" :state_abbr "NC" :state_name "North Carolina"})
@@ -79,7 +67,7 @@
     (fact "returns only fields in $select, if specified"
       (let [q (params->Query {:$select "state_name,county,tax_returns" :state_abbr "NC"}
                              metadata :incomes)
-            result (query/execute db coll q)
+            result (query/execute q)
             query_result (:result result)
             first-doc (first (:data query_result))]
         first-doc => {:tax_returns 1 :county "County 1" :state_name "North Carolina"}))
@@ -87,7 +75,7 @@
     (fact "limits number of returned documents if $limit is specified"
       (let [limit 10
             q (params->Query {:$limit limit} metadata :incomes)
-            result (query/execute db coll q)
+            result (query/execute q)
             query_result (:result result)]
         (count (:data query_result)) => limit
         (:size query_result) => limit
@@ -97,8 +85,8 @@
       (let [offset 1
             all (params->Query {:$orderBy "tax_returns"} metadata :incomes)
             q (params->Query {:$offset offset :$orderBy "tax_returns"} metadata :incomes)
-            all_result (:result (query/execute db coll all))
-            query_result (:result (query/execute db coll q))
+            all_result (:result (query/execute all))
+            query_result (:result (query/execute q))
             first-doc (first (:data query_result))]
         (:tax_returns first-doc) => (+ offset 1)
         (:size query_result) => (- (:size all_result) offset)
@@ -108,37 +96,48 @@
       (let [upper-bound 9
             where (str "tax_returns <= " upper-bound)
             q (params->Query {:$where where} metadata :incomes)
-            result (query/execute db coll q)
+            result (query/execute q)
             query_result (:result result)]
         (:total query_result) => upper-bound
         (:size query_result) => upper-bound
         (:tax_returns (last (:data query_result))) => upper-bound)))
 
   (facts "about execute and aggregation"
+    (let [query (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
+          agg-map (query/mongo-aggregation (query/prepare query))
+          cache (qc/create-query-cache)]
 
-    (fact "passes a Query object to MongoDB and returns result containing aggregation"
-      (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
-            result (query/execute db coll q)
-            query_result (:result result)]
-        (:size query_result) => 4
-        (:total query_result) => 4
-        (count (:data query_result)) => 4
-        (:data query_result) => (just [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
-                                       {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
-                                       {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"},
-                                       {:sum_tax_returns 33, :count_tax_returns 2, :min_tax_returns 16, :max_tax_returns 17, :state_abbr "DC"}] :in-any-order))))
+      (with-state-changes [(before :facts (cache/evict cache query))]
+        (fact "returns a :computing result at first"
+              (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
+                    result (query/execute q)
+                    query_result (:result result)]
+                (:data query_result) => :computing)))
 
+      (with-state-changes [(before :facts (qc/add-to-cache cache agg-map))]
+        (fact "once added to the cache, returns result containing aggregation"
+              (let [q query
+                    result (query/execute q)
+                    query_result (:result result)]
+                (:size query_result) => 4
+                (:total query_result) => 4
+                (count (:data query_result)) => 4
+                (:data query_result) => (just [{:sum_tax_returns 15.0, :count_tax_returns 5.0, :min_tax_returns 1.0, :max_tax_returns 5.0, :state_abbr "NC"},
+                                               {:sum_tax_returns 65.0, :count_tax_returns 5.0, :min_tax_returns 11.0, :max_tax_returns 15.0, :state_abbr "NY"},
+                                               {:sum_tax_returns 40.0, :count_tax_returns 5.0, :min_tax_returns 6.0, :max_tax_returns 10.0, :state_abbr "PA"},
+                                               {:sum_tax_returns 33.0, :count_tax_returns 2.0, :min_tax_returns 16.0, :max_tax_returns 17.0, :state_abbr "DC"}] :in-any-order))))))
+  
   (facts "about execute and error handling"
 
     (fact "result contains :error when invalid $select is specified"
       (let [q (params->Query {:$select "trick_name"} metadata :incomes)
-            result (query/execute db coll q)]
+            result (query/execute q)]
         (:result result) => []
         (first (get-in result [:errors :select])) => (contains "\"trick_name\" is not a valid field")))
 
     (fact "result contains :error when invalid $where is specified"
       (let [q (params->Query {:$where "inventor = 'plywood_hoods'", :$orderBy "difficulty"} metadata :incomes)
-            result (query/execute db coll q)
+            result (query/execute q)
             errors (:errors result)]
         (:result result) => []
         (first (:where errors)) => (contains "\"inventor\" is not a valid field")
@@ -146,20 +145,20 @@
 
     (fact "result contains :error when invalid $limit or $offset is specified"
       (let [q (params->Query {:$limit "a" :$offset "b"} metadata :incomes)
-            result (query/execute db coll q)]
+            result (query/execute q)]
         (:result result) => []
         (first (get-in result [:errors :limit])) => (contains "use an integer")
         (first (get-in result [:errors :offset])) => (contains "use an integer")))
 
     (fact "result contains :error when $group is present but $select is not"
       (let [q (params->Query {:$group "state_abbr"} metadata :incomes)
-            result (query/execute db coll q)]
+            result (query/execute q)]
         (:result result) => []
         (first (get-in result [:errors :group])) => (contains "must have a select clause")))
 
     (fact "result contains :error when invalid $group is specified"
       (let [q (params->Query {:$select "state_abbr", :$group "cherrypicker"} metadata :incomes)
-            result (query/execute db coll q)]
+            result (query/execute q)]
         (:result result) => []
         (first (get-in result [:errors :group])) => (contains "\"cherrypicker\" is not a valid field")
         (last (get-in result [:errors :group])) => (contains "\"cherrypicker\" is not a dimension")))))

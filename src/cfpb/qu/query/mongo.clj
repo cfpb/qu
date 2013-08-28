@@ -12,6 +12,7 @@
   * If not, they populate :mongo on that Query."
   (:refer-clojure :exclude [sort])
   (:require [clojure.string :as str]
+            [clojure.set :as set]
             [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
@@ -19,7 +20,7 @@
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.parser :as parser]
-            [cfpb.qu.query.validation :refer [valid? validate-field]]))
+            [cfpb.qu.query.validation :refer [valid? validate-field add-error]]))
 
 (declare match project group sort post-validate)
 
@@ -62,29 +63,13 @@ this namespace."
       (assoc-in query [:mongo :project] project))
     query))
 
-(defn- select-to-agg
-  "Convert a select/aggregation map into the Mongo equivalent for the
-  $group filter of the aggregation framework. Used in the group
-  function. Non-public."
-  [{alias :select [agg column] :aggregation}]
-  (if (= agg :COUNT)
-    {alias {"$sum" 1}}
-    {alias
-     {(str "$" (str/lower-case (name agg)))
-      (str "$" (name column))}}))
-
 (defn group
   "Add the :group provision of the Mongo query, using both the :select
 and :group provisions of the original query."
   [query]
   (if-let [group (str (:group query))]
-    (let [columns (parse parser/group-expr group)
-          id (into {} (map #(vector % (str "$" (name %))) columns))
-          aggregations (->> (select/parse (str (:select query)))
-                            (filter :aggregation)
-                            (map select-to-agg))
-          group (apply merge {:_id id} aggregations)]
-      (assoc-in query [:mongo :group] group))
+    (let [columns (parse parser/group-expr group)]
+      (assoc-in query [:mongo :group] columns))
     query))
 
 (defn sort
@@ -116,12 +101,21 @@ and :group provisions of the original query."
   (let [fields (match-fields (get-in query [:mongo :match]))]
     (reduce #(validate-field %1 :where %2) query fields)))
 
+(defn- validate-order-fields-aggregation [query order-fields]
+  (let [available-fields (set (get-in query [:mongo :project :fields]))
+        order-fields (set (map keyword order-fields))
+        invalid-fields (set/difference order-fields available-fields)]
+    (reduce #(add-error %1 :orderBy
+                        (str "\"" (name %2)
+                             "\" is not an available field for sorting."))
+            query invalid-fields)))
+
 (defn- validate-order-fields [query metadata slice]
   (let [order-fields (keys (get-in query [:mongo :sort]))
         group (get-in query [:mongo :group])]
     (if (str/blank? (:group query))
       (reduce #(validate-field %1 :orderBy %2) query order-fields)
-      query)))
+      (validate-order-fields-aggregation query order-fields))))
 
 (defn post-validate [query]
   (let [metadata (:metadata query)

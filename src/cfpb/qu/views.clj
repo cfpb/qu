@@ -340,7 +340,8 @@
         total (get-in resource [:properties :total])
         has-data? (> (- end start) 0)
         has-more-data? (> data-size 100)
-        pagination (create-pagination resource)]
+        pagination (create-pagination resource)
+        computing? (get-in resource [:properties :computing])]
     (response/content-type
      "text/html;charset=UTF-8"
      (layout-html resource
@@ -360,6 +361,7 @@
                     :pagination pagination
                     :has-data? has-data?
                     :has-more-data? has-more-data?
+                    :computing? computing?
                     :data data})))))
 
 (defn- should-stream?
@@ -423,13 +425,15 @@
         data (get-in resource [:properties :results])
         columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)
+        computing (get-in resource [:properties :computing])
         links (reduce conj
                       [{:href (:href resource) :rel "self"}]
                       (:links resource))
         links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
         response (->> {}
                       (response/content-type "text/csv;charset=UTF-8")
-                      (response/set-headers {"Link" (str/join ", " links)}))
+                      (response/set-headers {"Link" (str/join ", " links)})
+                      (response/set-headers {"X-Computing" computing}))
         data (concat (vector columns) rows)]
     (if (should-stream? resource)
       (stream-slice-query-csv request response data)
