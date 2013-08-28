@@ -41,6 +41,12 @@
                   :build_url (@project :build-url)
                   :api_name (env :api-name)})
 
+(defn- request-protocol
+  [request]
+  (if-let [proto (get-in request [:headers "x-forwarded-proto"])]
+    proto
+    (name (:scheme request))))
+
 (defn json-error
   ([status] (json-error status {}))
   ([status body]
@@ -292,7 +298,7 @@
 (defmulti slice-query (fn [format _ _] format))
 
 (defmethod slice-query "text/html"
-  [_ resource {:keys [query metadata slicedef headers dimensions]}]
+  [_ resource {:keys [request query metadata slicedef headers dimensions]}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
@@ -339,7 +345,7 @@
      "text/html;charset=UTF-8"
      (layout-html resource
                   (slice-html
-                   {:action (str "http://" (headers "host") base-href)
+                   {:action (str (request-protocol request) "://" (headers "host") base-href)
                     :base-href base-href
                     :metadata-href (urls/slice-metadata-path dataset slice)
                     :dataset dataset

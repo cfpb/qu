@@ -28,3 +28,4 @@ src/cfpb/qu/project.clj
 dev/cfpb/qu/project.clj
 .drake
 .sly
+.nrepl-port
