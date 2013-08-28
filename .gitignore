@@ -1,4 +1,3 @@
-/doc
 /docs
 /logs
 /target
@@ -29,3 +28,4 @@ dev/cfpb/qu/project.clj
 .drake
 .sly
 .nrepl-port
+.vagrant
