@@ -55,6 +55,4 @@ Vagrant::Config.run do |config|
   # config.vm.share_folder "v-data", "/vagrant_data", "../data"
 
   config.vm.provision :shell, :path => "doc/provision.sh"
-
-  config.vm.customize ["modifyvm", :id, "--memory", 1024]
 end
