@@ -45,10 +45,16 @@ provision() {
             echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | sudo tee /etc/apt/sources.list.d/mongodb.list
         fi
         sudo apt-get update
-        # sudo apt-get upgrade
-        # sudo apt-get install dkms build-essential linux-headers-generic
+        # sudo apt-get -y upgrade
+        # sudo apt-get install -y dkms build-essential linux-headers-generic
         # sudo /etc/init.d/vboxadd setup
-        sudo apt-get install openjdk-7-jre-headless mongodb-10gen git byobu tmux nginx
+        sudo apt-get install -y openjdk-7-jre-headless mongodb-10gen git byobu tmux nginx
+
+        if [ ! -f /usr/local/bin/lein ]; then
+            wget https://raw.github.com/technomancy/leiningen/stable/bin/lein
+            mv lein /usr/local/bin/lein
+            chmod 755 /usr/local/bin/lein
+        fi
     fi
 
     ensureFilePresentMd5 /vagrant/doc/nginx.conf /etc/nginx/sites-available/qu "nginx config"
