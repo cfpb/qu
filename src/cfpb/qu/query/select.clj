@@ -27,8 +27,12 @@
       {column-name (str "$" column-name)}
       {column-name (str "$_id." column-name)})))
 
-(defn- mongo-eval-aggregation [ast]
-  (->> ast
-       vec
-       (map convert-select)
-       (apply merge)))
+(defn mongo-eval-aggregation [ast]
+  (let [ast (vec ast)
+        aggregations (->> (filter :aggregation ast)
+                          (map (fn [{:keys [select aggregation]}]
+                                 {select (map (comp str/lower-case name) aggregation)}))
+                          (apply merge))
+        fields (map :select ast)]
+    {:fields fields
+     :aggregations aggregations}))

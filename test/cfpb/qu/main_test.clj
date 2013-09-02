@@ -44,7 +44,7 @@
   (facts "about /data/:dataset/slice/:slice"       
          (fact "it returns successfully when the dataset and slice exist"
                (prerequisite (#'cfpb.qu.data/get-metadata "good-dataset") => {:slices {:whoa {}}}
-                             (#'cfpb.qu.query/execute "good-dataset" anything anything)
+                             (#'cfpb.qu.query/execute anything)
                              => {:total 0 :size 0 :data []})
                
                (let [resp (GET "/data/good-dataset/slice/whoa")]

@@ -5,9 +5,14 @@ after retrieval."
   (:require [taoensso.timbre :as log]
             [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
+            [clojure.core.cache :as cache]            
             [cfpb.qu.util :refer :all]
             [cfpb.qu.logging :refer [log-with-time]]
             [cfpb.qu.env :refer [env]]
+            [cfpb.qu.query.cache :refer [create-query-cache add-to-cache]]
+            [cfpb.qu.query.cache-worker :as qc-worker]
+            [cfpb.qu.query.result :refer [->QueryResult]]
+            [cfpb.qu.data.compression :as compression]
             [clj-statsd :as sd]
             [cheshire.core :as json]
             [monger
@@ -15,7 +20,6 @@ after retrieval."
              [query :as q]
              [collection :as coll]
              [conversion :as conv]
-             [key-compression :as mzip]
              joda-time
              json]))
 
@@ -92,28 +96,20 @@ stored in a Mongo database called 'metadata'."
     (coll/find-maps (concept-collection concept))))
 
 (defn field-zip-fn
-  "Given a slice definition, return a function that will compress
+  "Given a dataset and a slice, return a function that will compress
   field names."
-  ([dataset slice]
-     (let [metadata (get-metadata dataset)
-           slicedef (get-in metadata [:slices (keyword slice)])]
-       (field-zip-fn slicedef)))
-  ([slicedef]
-    (let [fields (slice-columns slicedef)]
-      (sd/with-timing "qu.queries.fields.zip"
-       (mzip/compression-fn fields)))))
+  [dataset slice]
+  (let [metadata (get-metadata dataset)
+        slicedef (get-in metadata [:slices (keyword slice)])]
+    (compression/field-zip-fn slicedef)))
 
 (defn field-unzip-fn
-  "Given a slice definition, return a function that will compress
+  "Given a dataset and a slice, return a function that will decompress
   field names."
-  ([dataset slice]
-     (let [metadata (get-metadata dataset)
-           slicedef (get-in metadata [:slices (keyword slice)])]
-       (field-unzip-fn slicedef)))
-  ([slicedef]
-     (let [fields (slice-columns slicedef)]
-       (sd/with-timing "qu.queries.fields.unzip"
-        (mzip/decompression-fn fields)))))
+  [dataset slice]
+  (let [metadata (get-metadata dataset)
+        slicedef (get-in metadata [:slices (keyword slice)])]
+    (compression/field-unzip-fn slicedef)))
 
 (defn- strip-id [data]
   (map #(dissoc % :_id) data))
@@ -122,35 +118,6 @@ stored in a Mongo database called 'metadata'."
   (or (string? text)
       (symbol? text)))
 
-(defn compress-where
-  [where zipfn]
-  (let [f (fn [[k v]] (if (keyword? k) [(zipfn k) v] [k v]))]
-    ;; only apply to maps
-    (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) where)))
-
-(defn compress-group
-  [group zipfn]
-  (let [f (fn [[k v]] 
-            (if (and (string? v)
-                     (.startsWith v "$"))
-              [k (str+ "$" (zipfn (.substring v 1)))]
-              [k v]))]
-    (postwalk (fn [x] (if (map? x) (into {} (map f x)) x)) group)))
-
-(defn compress-fields
-  [fields zipfn]
-  (convert-keys fields zipfn))
-
-(defrecord QueryResult [total size data])
-
-(defn compress-find
-  [database collection find-map]
-  (let [zipfn (field-zip-fn database collection)]
-    (-> find-map
-        (update-in [:query] compress-where zipfn)
-        (update-in [:fields] convert-keys zipfn)
-        (update-in [:sort] convert-keys zipfn))))
-
 (defn get-find
   "Given a collection and a Mongo find map, return a QueryResult of the form:
    :total - Total number of documents for the input query irrespective of skip or limit
@@ -158,7 +125,8 @@ stored in a Mongo database called 'metadata'."
    :data - Seq of maps with the IDs stripped out"
   [database collection find-map]
   (sd/with-timing "qu.queries.find"
-    (let [find-map (compress-find database collection find-map)
+    (let [zipfn (field-zip-fn database collection)
+          find-map (compression/compress-find find-map zipfn)
           unzipfn (field-unzip-fn database collection)]
       (log-with-time
        :info
@@ -179,35 +147,6 @@ stored in a Mongo database called 'metadata'."
                                   (convert-keys unzipfn))))
                  strip-id))))))))
 
-(defn compress-aggregation
-  [database collection aggregation]
-
-  (let [zipfn (field-zip-fn database collection)
-        compress (fn [operation op-type compress-fn]
-                   (update-in operation [op-type] compress-fn zipfn))]
-    (loop [operations aggregation
-           aggregation []
-           projected false]
-      (cond
-       projected (concat aggregation operations)
-       (empty? operations) aggregation
-
-       :else
-       (let [operation (first operations)]
-         (case (keys operation)
-           ["$match"] (recur (rest operations)
-                             (conj aggregation (compress operation "$match" compress-where))
-                             projected)            
-           ["$group"] (recur (rest operations)
-                             (conj aggregation (compress operation "$group" compress-group))
-                             projected)
-           ["$project"] (recur (rest operations)
-                               (conj aggregation operation)
-                               true)
-           (recur (rest operations)
-                  (conj aggregation operation)
-                  projected)))))))
-
 (defn get-aggregation
   "Given a collection and a Mongo aggregation, return a QueryResult of the form:
    :total - Total number of results returned
@@ -215,18 +154,13 @@ stored in a Mongo database called 'metadata'."
    :data - Seq of maps with the IDs stripped out
 
   After adding the compression processing, $match MUST come before $group."
-  [database collection aggregation]
+  [database collection {:keys [query] :as aggmap}]
   (sd/with-timing "qu.queries.aggregation"
-    (let [aggregation (compress-aggregation database collection aggregation)]
-      (log-with-time
-       :info
-       (str/join " " ["Mongo aggregation"
-                      (str database "/" (name collection))
-                      (json/generate-string (into [] aggregation))])
-       (with-db (get-db database)
-         (let [data (strip-id (coll/aggregate collection aggregation))
-               size (count data)]
-           (->QueryResult size size data)))))))
+    (let [query-cache (create-query-cache)]
+      (when-not (cache/has? query-cache query)
+        (qc-worker/add-to-queue query-cache aggmap))
+      (cache/lookup query-cache query
+                    (->QueryResult nil nil :computing)))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

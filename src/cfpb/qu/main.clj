@@ -8,8 +8,10 @@
     [project :refer [project]]    
     [routes :refer [app-routes]]
     [util :refer [->int]]
-    [env :refer [env]]]
-   [cfpb.qu.logging :as logging :refer [wrap-with-logging]]
+    [env :refer [env]]
+    [logging :as logging :refer [wrap-with-logging]]]
+   [cfpb.qu.query.cache :as qc]
+   [cfpb.qu.query.cache-worker :as cw]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [clj-statsd :as sd]
    [clojure.string :as str]
@@ -50,6 +52,13 @@
   (log/info (str "Configuring statsd: " (env :statsd-host) ":" (env :statsd-port)))
   (sd/setup (env :statsd-host) (env :statsd-port)))
 
+(defn start-cache-worker
+  "Startup a query cache worker."
+  []
+  (let [cache (qc/create-query-cache)
+        worker (cw/create-worker cache)]
+    (cw/start worker)))
+
 (defn -main
   [& args]
   (ensure-mongo-connection)  
@@ -68,5 +77,6 @@
     (log/info "Starting server on" (str (:ip options) ":" (:port options)))
     (when (:dev env)
       (log/info "Dev mode enabled"))
+    (start-cache-worker)
     (run-server handler options)))
 

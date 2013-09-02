@@ -15,7 +15,6 @@ serve their public data sets."
   :min-lein-version "2.0.0"
   :source-paths ["src"]
   :main cfpb.qu.main
-  :aot [cfpb.qu.main]
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.1.1"]
@@ -25,11 +24,11 @@ serve their public data sets."
                  [cheshire "5.2.0"]
                  [clj-statsd "0.3.9"]                 
                  [clj-time "0.6.0"]
-                 [clojurewerkz/urly "1.0.0"]
+                 [clojurewerkz/urly "1.0.0" :exclusions [com.google.guava/guava]]
                  [com.novemberain/monger "1.6.0"]
                  [com.stuartsierra/dependency "0.1.1"]                 
                  [com.taoensso/timbre "2.6.1" :exclusions [expectations]]
-                 [compojure "1.1.5"]
+                 [compojure "1.1.5" :exclusions [ring/ring-core clout]]
                  [digest "1.4.3"]
                  [environ "0.4.0"]
                  [halresource "0.1.1-20130809.164342-1"]
@@ -37,6 +36,7 @@ serve their public data sets."
                  [lib-noir "0.6.8"]
                  [liberator "0.9.0"]
                  [lonocloud/synthread "1.0.5"]
+                 [org.clojure/core.cache "0.6.3"]                
                  [org.clojure/data.csv "0.1.2"]
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
                  [parse-ez "0.3.6"]
@@ -51,7 +51,8 @@ serve their public data sets."
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
-  :profiles {:dev {:source-paths ["dev"]
+  :profiles {:uberjar {:aot [cfpb.qu.main]}
+             :dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}
                    :dependencies [[alembic "0.1.3"]

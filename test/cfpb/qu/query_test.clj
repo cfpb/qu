@@ -47,7 +47,7 @@
              => (contains {:sort {}}))))
 
 (facts "about mongo-aggregation"
-       (fact "it creates a chain of filters for Mongo"
+       (fact "it creates a map-reduce query for Mongo"
              (let [query (mongo/process (make-query {:select "state, SUM(population)"
                                                      :limit 100
                                                      :offset 0
@@ -55,18 +55,18 @@
                                                      :orderBy "state"
                                                      :group "state"}))]
                (mongo-aggregation query) =>
-               [{"$match" {:land_area {"$gt" 1000000}}}
-                {"$group" {:_id {:state "$state"} :sum_population {"$sum" "$population"}}}
-                {"$project" {"state" "$_id.state", "sum_population" "$sum_population"}}
-                {"$sort" {:state 1}}
-                {"$skip" 0}
-                {"$limit" 100}])))
+               (contains {:group [:state]
+                          :aggregations {:sum_population ["sum" "population"]}
+                          :sort {:state 1}
+                          :limit 100
+                          :offset 0}))))
 
 (facts "about execute"
        (let [query (merge query {:limit 100 :offset 0 :page 1 :errors {}
+                                 :dataset ..dataset.. :slice ..collection..
                                  :aliases {} :reverse-aliases {}})]
          (fact "it calls data/get-find if is-aggregation? is false"
-               (execute ..dataset.. ..collection.. query) => (contains {:result ..get-find..})
+               (execute query) => (contains {:result ..get-find..})
                (provided
                 (#'cfpb.qu.query.mongo/process query) => query
                 (is-aggregation? query) => false
@@ -74,7 +74,7 @@
                 (#'cfpb.qu.data/get-find ..dataset.. ..collection.. {}) => ..get-find..))
 
          (fact "it calls data/get-aggregation if is-aggregation? is true"
-               (execute ..dataset.. ..collection.. query) => (contains {:result ..get-aggregation..})
+               (execute query) => (contains {:result ..get-aggregation..})
                (provided
                 (#'cfpb.qu.query.mongo/process query) => query
                 (is-aggregation? query) => true

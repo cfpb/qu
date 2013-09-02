@@ -6,6 +6,7 @@
             [cfpb.qu.query.mongo :as mongo]
             [cfpb.qu.query.select :as select]
             [cfpb.qu.query.validation :as validation]
+            [cfpb.qu.query.cache :refer [query-to-key]]
             [cfpb.qu.util :refer [->int ->num]]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]
@@ -25,9 +26,10 @@
       (zero? (reduce + (map count (:errors query))))))
 
 (defn params->Query
-  "Convert params from a web request plus a dateset definition and a slice name into a Query record."
+  "Convert params from a web request plus a dataset definition and a slice name into a Query record."
   [params metadata slice]
-  (let [slicedef (get-in metadata [:slices slice])
+  (let [slicedef (get-in metadata [:slices (keyword slice)])
+        dataset (:name metadata)
         {:keys [dimensions clauses]} (parse-params params slicedef)
         {select :$select
          group :$group
@@ -49,6 +51,7 @@
                  :callback callback
                  :dimensions dimensions
                  :metadata metadata
+                 :dataset dataset
                  :slice slice
                  :slicedef slicedef})))
 
@@ -79,16 +82,21 @@
                             :limit limit
                             :page 1}))))
 
+(defn prepare
+  "Prepare the query for execution"
+  [query]
+  (-> query
+      validation/validate
+      resolve-limit-and-offset
+      mongo/process))
+
 (defn execute
   "Execute the query against the provided collection."
-  [dataset collection query]
+  [{:keys [dataset slice] :as query}]
 
   (sd/with-timing "qu.queries.execute"
     (let [_ (log/info "Execute query" (str (into {} (dissoc query :metadata :slicedef))))
-          query (-> query
-                    validation/validate
-                    resolve-limit-and-offset
-                    mongo/process)]
+          query (prepare query)]
       (assoc query :result
              (cond
               (seq (:errors query))
@@ -97,11 +105,11 @@
                  [])
 
               (is-aggregation? query)
-              (data/get-aggregation dataset collection (mongo-aggregation query))
+              (let [agg (mongo-aggregation query)]
+                (data/get-aggregation dataset slice agg))
 
               :default
-              (data/get-find dataset collection (mongo-find query)))))))
-
+              (data/get-find dataset slice (mongo-find query)))))))
 
 (defn- cast-value [value type]
   (case type
@@ -149,23 +157,23 @@ can query with."
     mongo))
 
 (defn mongo-aggregation
-  "Add a Mongo aggregation map to the query."
-  [query]
-  (let [match (get-in query [:mongo :match])
-        project (get-in query [:mongo :project])
-        group (get-in query [:mongo :group])
-        sort (get-in query [:mongo :sort])
-        skip (->int (:offset query))
-        limit (->int (:limit query))]
-    (-> []
-        (->/when match
-          (conj {"$match" match}))
-        (conj {"$group" group})
-        (conj {"$project" project})
-        (->/when sort
-          (conj {"$sort" sort}))
-        (->/when skip
-          (conj {"$skip" skip}))
-        (->/when limit
-          (conj {"$limit" limit})))))
+  "Create a Mongo map-reduce aggregation map from the query."
+  [{:keys [dataset slice mongo] :as query}]
+  (let [filter (:match mongo {})
+        fields (get-in mongo [:project :fields])
+        aggregations (get-in mongo [:project :aggregations])
+        a-query (dissoc query :metadata :slicedef)
+        to-collection (query-to-key query)]
+    {:query a-query
+     :dataset dataset
+     :from slice
+     :to to-collection
+     :group (:group mongo)
+     :aggregations aggregations
+     :filter filter
+     :fields fields
+     :sort (:sort mongo)
+     :limit (->int (:limit query))
+     :offset (->int (:offset query))
+     :slicedef (:slicedef query)}))
 

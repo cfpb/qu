@@ -3,6 +3,12 @@
 datasets into MongoDB. This includes parsing CSV files and
 transforming the data within."
   (:require
+   [cfpb.qu
+    [util :refer :all]
+    [data :as data]]
+   [cfpb.qu.data.compression :refer [field-zip-fn]]
+   [cfpb.qu.data.aggregation :refer [generate-map-reduce]]   
+   [cfpb.qu.query.where :as where]
    [taoensso.timbre :as log]
    [clojure.string :as str]
    [clojure.java.io :as io]
@@ -11,7 +17,7 @@ transforming the data within."
    [cheshire.core :as json]
    [cheshire.factory :as factory]   
    [com.stuartsierra.dependency :as dep]
-   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
+   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]   
    [drake.core :as drake]
    [clj-time.core :refer [default-time-zone now]]
    [clj-time.format :as time]
@@ -20,10 +26,7 @@ transforming the data within."
     [query :as q]
     [collection :as coll]
     [joda-time]
-    [key-compression :refer [compression-map]]]
-   [cfpb.qu.util :refer :all]
-   [cfpb.qu.query.where :as where]
-   [cfpb.qu.data :refer :all])
+    [key-compression :refer [compression-map]]])
   (:import [org.bson.types ObjectId]))
 
 (def ^:dynamic *chunk-size* 256)
@@ -56,7 +59,7 @@ in MongoDB."
                   table-def (get-in definition [:tables (keyword table-name)])]
               (reduce (fn [definition column]
                         (if (and (:name column)
-                                 ((set (slice-columns slice-def)) (:name column)))
+                                 ((set (data/slice-columns slice-def)) (:name column)))
                           (assoc-in definition
                                     [:slices slice :types (keyword (:name column))]
                                     (slice-type-for-table-type (:type column)))
@@ -92,7 +95,7 @@ in MongoDB."
         definition (reduce (fn [def [slice sdef]]
                              (assoc-in def
                                        [:compression-map slice]
-                                       (compression-map (slice-columns sdef))))
+                                       (compression-map (data/slice-columns sdef))))
                            definition
                            (:slices definition))
         definition (dissoc definition :tables)]
@@ -254,78 +257,31 @@ transform that data into the form we want."
         zipfn (field-zip-fn sdef)]
     (load-table table slice concepts references definition :keyfn zipfn)))
 
-(defn map-reduce-derived-slice
+(defn derived-slice-map-reduce
   [slice definition]
-  (let [database (:database definition)
-        sdef (get-in definition [:slices (keyword slice)])
+  (let [sdef (get-in definition [:slices (keyword slice)])
+        dataset (:database definition)
         
         from-collection (:slice sdef)
-        from-zip-fn (field-zip-fn (get-in definition [:slices (keyword from-collection)]))
         to-collection slice
         to-zip-fn (field-zip-fn sdef)
 
-        query (if-let [where (:where sdef)]
-                (-> where
-                    (where/parse)
-                    (where/mongo-eval)
-                    (compress-where from-zip-fn)
-                    (convert-keys name))
-                {})
-        
         dimensions (:dimensions sdef)
         aggregations (:aggregations sdef)
-        agg-fields (->> aggregations
-                        (map #(get-in % [1 1]))
-                        (remove nil?))
-        match (if-let [where (:where sdef)]
-                (where/mongo-eval (where/parse where))
-                {})
-        create-map-obj (fn [fields]
-                         (reduce (fn [acc field]
-                                   (let [from-field (name (from-zip-fn field))]
-                                     (merge acc {field (js* (aget this (clj from-field)))})))
-                                 {} fields))
-        map-id (create-map-obj dimensions)
-        map-val (create-map-obj agg-fields) 
-        map-fn (js* (fn [] (emit (clj map-id) (clj map-val))))
-
-        agg-fns {:min (js* (fn [ary field]
-                             (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                             (return (.apply (aget Math "min") nil vals))))
-                 :max (js* (fn [ary field]
-                             (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                             (return (.apply (aget Math "max") nil vals))))
-                 :avg (js* (fn [ary field]
-                             (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                             (var len (aget ary "length"))
-                             (if (= len 0)
-                               (return nil)
-                               (return (/ (.sum Array vals) len)))))
-                 :median (js* (fn [ary field]
-                                (var median (fn [array]
-                                              (var array (.sort array))
-                                              (var len (aget array "length"))
-                                              (if (= len 0)
-                                                (return nil))
-                                              (if (= (% len 2) 0)
-                                                (return (/ (+ (aget array (- 1 (/ len 2)))
-                                                              (aget array (/ len 2)))
-                                                           2))
-                                                (return (aget array (/ (- len 1) 2))))))
-                                (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                                (return (median vals))))
-                 :sum (js* (fn [ary field]
-                             (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                             (return (.sum Array vals))))
-                 :count (js* (fn [ary field]
-                               (return (aget ary "length"))))}
-        reduce-obj (reduce (fn [acc [to-field [agg from-field]]]
-                             (let [agg-fn (agg-fns (keyword agg))]
-                               (merge acc
-                                      {(name to-field)
-                                       (js* ((clj agg-fn) values (clj from-field)))})))
-                           {} aggregations)
-        reduce-fn (js* (fn [key values] (return (clj reduce-obj))))
+        filter (if-let [where (:where sdef)]
+                 (-> where
+                     (where/parse)
+                     (where/mongo-eval))
+                 {})
+        
+        map-reduce (generate-map-reduce {:dataset dataset
+                                         :from from-collection
+                                         :to to-collection
+                                         :group dimensions
+                                         :aggregations aggregations
+                                         :filter filter
+                                         :slicedef sdef})
+        
         finalize-reduce-fn (fn [obj-name fields]
                              (reduce (fn [acc field]
                                        (merge acc
@@ -342,18 +298,15 @@ transform that data into the form we want."
                                                     (return nil)
                                                     (return val))))
                            (return (clj finalize-obj))))]
-    {:mapReduce (name from-collection)
-     :map (cljs map-fn)
-     :reduce (cljs reduce-fn)
-     :finalize (cljs finalize-fn)
-     :out (name to-collection)
-     :query query}))
+    (into (array-map)
+          (concat map-reduce
+                  {:finalize (cljs finalize-fn)}))))
 
 (defmethod load-slice "derived"
   [slice concepts definition]
-  (let [mr (map-reduce-derived-slice slice definition)
+  (let [mr (derived-slice-map-reduce slice definition)
         slicedef (get-in definition [:slices (keyword slice)])
-        fields (slice-columns slicedef)
+        fields (data/slice-columns slicedef)
         zip-fn (field-zip-fn slicedef)
         zfields (map zip-fn fields)
         rename-map (reduce (fn [acc field]
@@ -403,7 +356,7 @@ transform that data into the form we want."
   [concepts]
   (doseq [[concept data] concepts]
     (when (seq data)
-      (let [collection (concept-collection concept)]
+      (let [collection (data/concept-collection concept)]
         (coll/drop collection)
         (coll/insert-batch collection data)))))
 

@@ -22,13 +22,17 @@
 (facts "about project"
        (fact "it transforms :select into :project"
              (:mongo (project {:select "name, city"})) =>
-             (contains {:project {:name 1, :city 1}})))
+             (contains {:project {:name 1, :city 1}}))
+
+       (fact "it transforms aggregations"
+             (:mongo (project {:select "city, MAX(income)", :group "city"})) =>
+             (contains {:project {:fields [:city :max_income]
+                                  :aggregations {:max_income ["max" "income"]}}})))
 
 (facts "about group"
-       (fact "it transforms COUNT selects into $sum: 1"
-             (:mongo (group {:select "state, COUNT(county)" :group "state"})) =>
-             (contains {:group {:_id {:state "$state"}
-                                :count_county {"$sum" 1}}})))
+       (fact "it makes a list of all fields to group by"
+             (:mongo (group {:select "state, county, COUNT()" :group "state, county"})) =>
+             (contains {:group [:state :county]})))
 
 (facts "about process"
        (let [slicedef {:dimensions ["state_abbr" "county"]
@@ -45,7 +49,7 @@
 
          (fact "it does not error when you ORDER BY an aggregated field"
                (errors {:group "state_abbr"
-                        :select "state_abbr, COUNT(county)"
-                        :orderBy "count_county"
+                        :select "state_abbr, COUNT()"
+                        :orderBy "count"
                         :slicedef slicedef})
                =not=> (contains {:orderBy anything}))))
