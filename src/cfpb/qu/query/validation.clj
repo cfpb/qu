@@ -20,7 +20,7 @@
         fields (conj fields "_id")]
     (contains? fields field)))
 
-(defn- add-error
+(defn add-error
   [query field message]
   (update-in query [:errors field]
              (fnil #(conj % message) (vector))))
