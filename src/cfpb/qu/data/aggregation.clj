@@ -16,10 +16,7 @@ within Mongo."
                (return (.apply (aget Math "max") nil vals))))
    :avg (js* (fn [ary field]
                (var vals (.map ary (fn [obj] (return (aget obj field)))))
-               (var len (aget ary "length"))
-               (if (= len 0)
-                 (return nil)
-                 (return (/ (.sum Array vals) len)))))
+               (return (.avg Array vals))))
    :median (js* (fn [ary field]
                   (var median (fn [array]
                                 (var array (.sort array))
@@ -44,9 +41,9 @@ within Mongo."
      (generate-map-fn group-fields agg-fields identity))
   ([group-fields agg-fields zip-fn]
      (let [create-map-obj (fn [fields]
-                            (reduce (fn [acc field]
-                                      (let [from-field (name (zip-fn field))]
-                                        (merge acc {field (js* (aget this (clj from-field)))})))
+                            (reduce (fn [acc [out-field in-field]]
+                                      (let [from-field (name (zip-fn in-field))]
+                                        (merge acc {out-field (js* (aget this (clj from-field)))})))
                                     {} fields))
            map-id (create-map-obj group-fields)
            map-val (create-map-obj agg-fields)]
@@ -54,10 +51,10 @@ within Mongo."
 
 (defn- generate-reduce-fn
   [aggregations]
-  (let [reduce-obj (reduce (fn [acc [to-field [agg from-field]]]
+  (let [reduce-obj (reduce (fn [acc [out-field [agg in-field]]]
                              (merge acc
-                                    {(name to-field)
-                                     (js* ((aget aggs (clj agg)) values (clj from-field)))}))
+                                    {(name out-field)
+                                     (js* ((aget aggs (clj agg)) values (clj (name out-field))))}))
                            {} aggregations)]
     (js* (fn [key values]
            (var aggs (clj agg-fns))
@@ -90,10 +87,14 @@ within Mongo."
                     (convert-keys name))
                 {})
         agg-fields (->> aggregations
-                        (map (comp second second))
-                        (remove nil?))
+                        (map (juxt first (comp second second)))
+                        (remove #(nil? (second %)))
+                        (into {}))
 
-        map-fn (generate-map-fn group agg-fields field-zip-fn)
+        map-fn (generate-map-fn
+                (zipmap group group)
+                agg-fields
+                field-zip-fn)        
         reduce-fn (generate-reduce-fn aggregations)]
     (array-map :mapReduce (name from)
                :map map-fn

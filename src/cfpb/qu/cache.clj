@@ -1,7 +1,7 @@
-(ns cfpb.qu.query.cache
+(ns cfpb.qu.cache
   (:require [taoensso.timbre :as log]
             [cfpb.qu.util :refer :all]
-            [cfpb.qu.query.result :refer [->QueryResult]]
+            [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.aggregation :as agg]
             [clojure.string :as str]
             [clojure.core.cache :as cache :refer [defcache]]
@@ -47,20 +47,18 @@
                            (get-in query [:mongo :sort] {})))
         fields (get-in query [:mongo :project :fields])
         flatten-row (fn [row]
-                      (-> (merge (:_id row) (:value row))
-                          (select-keys fields)))]
+                      (select-keys (merge (:_id row) (:value row)) fields))]
     (with-open [cursor (doto (coll/find collection {})
                          (.limit limit)
                          (.skip offset)
                          (.sort (conv/to-db-object sort))
                          )]
-    (->QueryResult
+    (->DataResult
      (.count cursor)
      (.size cursor)
-     (->> cursor
-          (map (fn [x] (-> x
-                           (conv/from-db-object true)                           
-                           (flatten-row)))))))))
+     (map (fn [x] (-> x
+                      (conv/from-db-object true)                           
+                      (flatten-row))) cursor)))))
 
 (defn- get-collection
   ([database query]
@@ -100,7 +98,7 @@
                    {"$set" {:created (now)}}
                    :upsert true))))
 
-(defrecord QuQueryCache [database]
+(defrecord QueryCache [database]
   cache/CacheProtocol
   (lookup [cache query]
     (let [key (query-to-key query)]
@@ -138,4 +136,4 @@
 (defn create-query-cache
   "Create a query cache."
   ([] (create-query-cache (get-db "query_cache")))
-  ([database] (QuQueryCache. database)))
+  ([database] (QueryCache. database)))

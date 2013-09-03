@@ -5,7 +5,7 @@
 
 (defn str+
   [& args]
-  (apply str (map name args)))
+  (str/join (map name args)))
 
 (defn apply-kw
   "Like apply, but f takes keyword arguments and the last argument is

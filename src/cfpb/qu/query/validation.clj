@@ -3,7 +3,7 @@
             [clojure.string :as str]
             [protoflex.parse :refer [parse]]
             [taoensso.timbre :as log]
-            [cfpb.qu.util :refer [->int first-or-identity]]
+            [cfpb.qu.util :refer [->int first-or-identity ->print]]
             [cfpb.qu.data :as data :refer [slice-columns]]
             [cfpb.qu.query.where :as where]
             [cfpb.qu.query.select :as select]
@@ -147,9 +147,7 @@
 
 (defn- validate-limit
   [query]
-  (-> query
-      (validate-integer :limit)
-      #_(validate-max-limit 1000)))
+  (validate-integer query :limit))
 
 (defn- validate-offset
   [query]
