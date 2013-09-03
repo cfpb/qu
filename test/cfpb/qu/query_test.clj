@@ -7,13 +7,13 @@
   {:slices {:county_taxes {:dimensions ["state" "county"]
                            :metrics ["tax_returns" "population"]}}})
 
-(defn make-query
+(defn make-test-query
   [q]
   (merge {:metadata metadata
           :slicedef (get-in metadata [:slices :county_taxes])
           :limit "0" :offset "0"} q))
 
-(def query (make-query {}))
+(def query (make-test-query {}))
 
 (fact "parse-params puts clauses under :clauses"
       (let [params {:$select "age,race"}]
@@ -35,7 +35,7 @@
 
 (facts "about mongo-find"
        (fact "it populates fields if :select exists"
-             (mongo-find (mongo/process (make-query {:select "county, state"})))
+             (mongo-find (mongo/process (make-test-query {:select "county, state"})))
              => (contains {:fields {:county 1 :state 1}})
 
        (fact "it returns empty fields if :select does not exist"
@@ -48,7 +48,7 @@
 
 (facts "about mongo-aggregation"
        (fact "it creates a map-reduce query for Mongo"
-             (let [query (mongo/process (make-query {:select "state, SUM(population)"
+             (let [query (mongo/process (make-test-query {:select "state, SUM(population)"
                                                      :limit 100
                                                      :offset 0
                                                      :where "land_area > 1000000"

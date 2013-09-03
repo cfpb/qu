@@ -39,7 +39,7 @@ functions to return the resource that will be presented later."
   :method-allowed? (request-method-in :get)
   :exists? (fn [_] {:datasets (data/get-datasets)})
   :etag (fn [{:keys [datasets]}]
-          (digest/md5 (str (into [] datasets))))
+          (digest/md5 (str (vec datasets))))
   :handle-ok (fn [{:keys [request representation datasets]}]
                (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
@@ -52,14 +52,14 @@ functions to return the resource that will be presented later."
 (defn- concept-data
   "Build the concept data for a dataset from its metadata."
   [{concepts :concepts dataset :name}]
-  (let [concepts (->> concepts
-                      (map (fn [[concept data]]
-                             (let [concept (name concept)]
-                               [concept
-                                (-> data
-                                    (assoc :url (urls/concept-path dataset concept))
-                                    (dissoc :table))]))))]
-    (into {} concepts)))
+  (->> concepts
+       (map (fn [[concept data]]
+              (let [concept (name concept)]
+                [concept
+                 (-> data
+                     (assoc :url (urls/concept-path dataset concept))
+                     (dissoc :table))])))
+       (into {})))
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
@@ -100,7 +100,7 @@ functions to return the resource that will be presented later."
                                            (hal/add-properties (-> info
                                                                    (dissoc :table)
                                                                    (dissoc :properties)))
-                                           (->/when (not (empty? table))
+                                           (->/when (seq table)
                                              (hal/add-property :table {:data table}))))) (:concepts metadata))
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource slices)
                      resource (reduce #(hal/add-resource %1 "concept" %2) resource concepts)

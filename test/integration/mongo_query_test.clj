@@ -10,7 +10,7 @@
             [cfpb.qu.data :as data]
             [cfpb.qu.loader :as loader]
             [cfpb.qu.query :as query :refer [params->Query]]
-            [cfpb.qu.query.cache :as qc]
+            [cfpb.qu.cache :as qc]
             [clojure.core.cache :as cache]
             [monger.core :as mongo]))
 
