@@ -1,8 +1,8 @@
-(ns cfpb.qu.query.cache-test
+(ns cfpb.qu.cache-test
   (:refer-clojure :exclude [sort])
   (:require [midje.sweet :refer :all]
             [cfpb.qu.query :as q]
-            [cfpb.qu.query.cache :refer :all]))
+            [cfpb.qu.cache :refer :all]))
 
 (facts "about query-to-key"
        (let [query1 (q/map->Query {:select "state_id, county_id, MAX(tax_returns)" :group "state_id, county_id" :metadata {:database "test"} :slice "test"})

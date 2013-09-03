@@ -1,8 +1,8 @@
-(ns cfpb.qu.query.cache-worker
+(ns cfpb.qu.cache.worker
   (:require
    [monger.core :as mongo :refer [with-db get-db]]
    [monger.collection :as coll]
-   [cfpb.qu.query.cache :as qc]
+   [cfpb.qu.cache :as qc]
    [clj-time.core :refer [default-time-zone now]]
    [taoensso.timbre :as log])
   (:import

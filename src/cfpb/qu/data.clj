@@ -9,9 +9,9 @@ after retrieval."
             [cfpb.qu.util :refer :all]
             [cfpb.qu.logging :refer [log-with-time]]
             [cfpb.qu.env :refer [env]]
-            [cfpb.qu.query.cache :refer [create-query-cache add-to-cache]]
-            [cfpb.qu.query.cache-worker :as qc-worker]
-            [cfpb.qu.query.result :refer [->QueryResult]]
+            [cfpb.qu.cache :refer [create-query-cache add-to-cache]]
+            [cfpb.qu.cache.worker :as qc-worker]
+            [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.compression :as compression]
             [clj-statsd :as sd]
             [cheshire.core :as json]
@@ -119,7 +119,7 @@ stored in a Mongo database called 'metadata'."
       (symbol? text)))
 
 (defn get-find
-  "Given a collection and a Mongo find map, return a QueryResult of the form:
+  "Given a collection and a Mongo find map, return a Result of the form:
    :total - Total number of documents for the input query irrespective of skip or limit
    :size - Number of documents for the input query after skip and limit are applied
    :data - Seq of maps with the IDs stripped out"
@@ -138,7 +138,7 @@ stored in a Mongo database called 'metadata'."
                               (.limit (:limit find-map 0))
                               (.skip (:skip find-map 0))
                               (.sort (conv/to-db-object (:sort find-map))))]
-           (->QueryResult
+           (->DataResult
             (.count cursor)
             (.size cursor)
             (->> cursor
@@ -148,7 +148,7 @@ stored in a Mongo database called 'metadata'."
                  strip-id))))))))
 
 (defn get-aggregation
-  "Given a collection and a Mongo aggregation, return a QueryResult of the form:
+  "Given a collection and a Mongo aggregation, return a Result of the form:
    :total - Total number of results returned
    :size - Same as :total
    :data - Seq of maps with the IDs stripped out
@@ -156,11 +156,11 @@ stored in a Mongo database called 'metadata'."
   After adding the compression processing, $match MUST come before $group."
   [database collection {:keys [query] :as aggmap}]
   (sd/with-timing "qu.queries.aggregation"
-    (let [query-cache (create-query-cache)]
-      (when-not (cache/has? query-cache query)
-        (qc-worker/add-to-queue query-cache aggmap))
-      (cache/lookup query-cache query
-                    (->QueryResult nil nil :computing)))))
+    (let [cache (create-query-cache)]
+      (when-not (cache/has? cache query)
+        (qc-worker/add-to-queue cache aggmap))
+      (cache/lookup cache query
+                    (->DataResult nil nil :computing)))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

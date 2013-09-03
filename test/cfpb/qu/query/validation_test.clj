@@ -1,7 +1,7 @@
 (ns cfpb.qu.query.validation-test
   (:require [midje.sweet :refer :all]
             [cfpb.qu.query :as query]
-            [cfpb.qu.query.validation :refer :all]))
+            [cfpb.qu.query.validation :as v]))
 
 (facts "about validate"
        (let [slicedef {:dimensions ["state_abbr" "county"]
@@ -14,9 +14,9 @@
                          :slice :county_taxes
                          :metadata metadata}
                         query))
-             errors (comp :errors validate)]
+             errors (comp :errors v/validate)]
 
-         (fact "it errors when it cannot parse SELECT"
+         (fact "it errors when it cannot parse SELECT"               
                (errors (q :select "what what")) =>
                (contains {:select anything}))
 
