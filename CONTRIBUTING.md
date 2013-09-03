@@ -1,11 +1,11 @@
 ## Public domain
 
-The project is in the public domain, and all contributions to it will be
-released as such. By submitting a pull request, you are agreeing to comply
-with the following contributor agreement:
+The project is in the public domain within the United States, and
+copyright and related rights in the work worldwide are waived through
+the [CC0 1.0 Universal public domain dedication][CC0].
 
-> I dedicate any and all copyright interest in this software to the
-> public domain. I make this dedication for the benefit of the public at
-> large and to the detriment of my heirs and successors. I intend this
-> dedication to be an overt act of relinquishment in perpetuity of all
-> present and future rights to this software under copyright law.
+All contributions to this project will be released under the CC0
+dedication. By submitting a pull request, you are agreeing to comply
+with this waiver of copyright interest.
+
+[CC0]: http://creativecommons.org/publicdomain/zero/1.0/
