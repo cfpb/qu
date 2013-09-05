@@ -11,7 +11,6 @@
     [env :refer [env]]
     [logging :as logging :refer [wrap-with-logging]]]
    [cfpb.qu.cache :as qc]
-   [cfpb.qu.cache.worker :as cw]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [clj-statsd :as sd]
    [clojure.string :as str]
@@ -56,8 +55,8 @@
   "Startup a query cache worker."
   []
   (let [cache (qc/create-query-cache)
-        worker (cw/create-worker cache)]
-    (cw/start worker)))
+        worker (qc/create-worker cache)]
+    (qc/start-worker worker)))
 
 (defn -main
   [& args]
