@@ -39,7 +39,8 @@
 (def layout-info {:qu_version (@project :version)
                   :build_number (@project :build-number)
                   :build_url (@project :build-url)
-                  :api_name (env :api-name)})
+                  :api_name (env :api-name)
+                  :dev_mode (:dev env)})
 
 (defn- request-protocol
   [request]

@@ -23,4 +23,4 @@ through Jetty, not through another web server."
   (GET "/data/:dataset/slice/:slice.:extension" [dataset slice] resources/slice-query)
   (GET "/data/:dataset/slice/:slice" [dataset slice] resources/slice-query)
   (route/resources "/static" {:root "static"})
-  (route/not-found resources/not-found))
+  (route/not-found (resources/not-found)))

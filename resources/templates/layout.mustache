@@ -22,24 +22,26 @@
       {{{content}}}
     </div>
 
-    <div id="footer">
-      {{#qu_version}}
-        <p>
-          <a href="http://cfpb.github.io/qu/">Qu</a> version {{qu_version}}.
-        </p>
-      {{/qu_version}}
-      {{#build_number}}
-        <p>
-          Build number
-          {{#build_url}}
-            <a href="{{build_url}}">{{build_number}}</a>.
-          {{/build_url}}
-          {{^build_url}}
-          {{build_number}}.
-          {{/build_url}}
-        </p>
-      {{/build_number}}
-    </div>
+    {{#dev_mode}}
+      <div id="footer">
+        {{#qu_version}}
+          <p>
+            <a href="http://cfpb.github.io/qu/">Qu</a> version {{qu_version}}.
+          </p>
+        {{/qu_version}}
+        {{#build_number}}
+          <p>
+            Build number
+            {{#build_url}}
+              <a href="{{build_url}}">{{build_number}}</a>.
+            {{/build_url}}
+            {{^build_url}}
+            {{build_number}}.
+            {{/build_url}}
+          </p>
+        {{/build_number}}
+      </div>
+    {{/dev_mode}}
   </div>
   <script src="/static/js/data-api.min.js" type="text/javascript"></script>
 </body>
