@@ -9,8 +9,7 @@ after retrieval."
             [cfpb.qu.util :refer :all]
             [cfpb.qu.logging :refer [log-with-time]]
             [cfpb.qu.env :refer [env]]
-            [cfpb.qu.cache :refer [create-query-cache add-to-cache]]
-            [cfpb.qu.cache.worker :as qc-worker]
+            [cfpb.qu.cache :as qc :refer [create-query-cache add-to-cache]]
             [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.compression :as compression]
             [clj-statsd :as sd]
@@ -158,7 +157,7 @@ stored in a Mongo database called 'metadata'."
   (sd/with-timing "qu.queries.aggregation"
     (let [cache (create-query-cache)]
       (when-not (cache/has? cache query)
-        (qc-worker/add-to-queue cache aggmap))
+        (qc/add-to-queue cache aggmap))
       (cache/lookup cache query
                     (->DataResult nil nil :computing)))))
 

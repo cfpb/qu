@@ -96,11 +96,12 @@ within Mongo."
                 agg-fields
                 field-zip-fn)        
         reduce-fn (generate-reduce-fn aggregations)]
-    (array-map :mapReduce (name from)
+    (array-map :mapreduce (name from)
                :map map-fn
                :reduce reduce-fn
                :out (name to)
-               :query query)))
+               :query query
+               :verbose true)))
 
 (defn generate-map-reduce
   "Generates a map with the information needed to run map-reduce
