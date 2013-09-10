@@ -19,7 +19,8 @@ serve their public data sets."
   :plugins [[lein-environ "0.4.0"]
             [lein-midje "3.1.1"]
             [lein-embongo "0.2.1"]
-            [slothcfg "1.0.1"]]
+            [slothcfg "1.0.1"]
+            [codox "0.6.4"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [cheshire "5.2.0"]
                  [clj-statsd "0.3.9"]                 
@@ -44,8 +45,7 @@ serve their public data sets."
                  [ring.middleware.mime-extensions "0.2.0"]
                  [scriptjure "0.1.24"]
                  [slingshot "0.10.3"]                 
-                 [stencil "0.3.2"]
-                 ]
+                 [stencil "0.3.2"]]
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
@@ -55,6 +55,10 @@ serve their public data sets."
              :dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}
+                   :codox {:output-dir "doc/codox"
+                           :src-dir-uri "https://github.com/cfpb/qu/blob/master"
+                           :src-linenum-anchor-prefix "L"
+                           :writer codox-md.writer/write-docs}                   
                    :dependencies [[alembic "0.1.3"]
                                   [clj-http "0.7.6"]
                                   [factual/drake "0.1.4-SNAPSHOT"]                                  
@@ -62,7 +66,8 @@ serve their public data sets."
                                   [midje-junit-formatter "0.1.0-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
-                                  [ring-mock "0.1.5"]                                  
+                                  [ring-mock "0.1.5"]
+                                  [codox-md "0.2.0"]
                                   ]}
              :integration [:default
                            {:env {:mongo-port 37017
