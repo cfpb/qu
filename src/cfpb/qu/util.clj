@@ -15,6 +15,11 @@
   (apply f (apply concat
                   (butlast args) (last args))))
 
+(defn is-int? [^Double num]
+  (and (not (or (Double/isNaN num)
+                (Double/isInfinite num)))
+       (= num (Math/rint num))))
+
 (defn ->int
   "Convert strings and integers to integers. A blank string or
 anything but a string or integer will return the default value, which
