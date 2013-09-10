@@ -34,7 +34,8 @@ within Mongo."
                (var vals (.map ary (fn [obj] (return (aget obj field)))))
                (return (.sum Array vals))))
    :count (js* (fn [ary field]
-                 (return (aget ary "length"))))})
+                 (var vals (.map ary (fn [obj] (return (aget obj field)))))
+                 (return (.sum Array vals))))})
 
 (defn- generate-map-fn
   ([group-fields agg-fields]
@@ -42,8 +43,11 @@ within Mongo."
   ([group-fields agg-fields zip-fn]
      (let [create-map-obj (fn [fields]
                             (reduce (fn [acc [out-field in-field]]
-                                      (let [from-field (name (zip-fn in-field))]
-                                        (merge acc {out-field (js* (aget this (clj from-field)))})))
+                                      (merge acc {out-field
+                                                  (if (number? in-field)
+                                                    in-field
+                                                    (let [from-field (name (zip-fn in-field))]
+                                                      (js* (aget this (clj from-field)))))}))
                                     {} fields))
            map-id (create-map-obj group-fields)
            map-val (create-map-obj agg-fields)]
@@ -90,7 +94,6 @@ within Mongo."
                         (map (juxt first (comp second second)))
                         (remove #(nil? (second %)))
                         (into {}))
-
         map-fn (generate-map-fn
                 (zipmap group group)
                 agg-fields
