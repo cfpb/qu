@@ -122,10 +122,10 @@
                 (:size query_result) => 4
                 (:total query_result) => 4
                 (count (:data query_result)) => 4
-                (:data query_result) => (just [{:sum_tax_returns 15.0, :count_tax_returns 5.0, :min_tax_returns 1.0, :max_tax_returns 5.0, :state_abbr "NC"},
-                                               {:sum_tax_returns 65.0, :count_tax_returns 5.0, :min_tax_returns 11.0, :max_tax_returns 15.0, :state_abbr "NY"},
-                                               {:sum_tax_returns 40.0, :count_tax_returns 5.0, :min_tax_returns 6.0, :max_tax_returns 10.0, :state_abbr "PA"},
-                                               {:sum_tax_returns 33.0, :count_tax_returns 2.0, :min_tax_returns 16.0, :max_tax_returns 17.0, :state_abbr "DC"}] :in-any-order))))))
+                (:data query_result) => (just [{:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1, :max_tax_returns 5, :state_abbr "NC"},
+                                               {:sum_tax_returns 65, :count_tax_returns 5, :min_tax_returns 11, :max_tax_returns 15, :state_abbr "NY"},
+                                               {:sum_tax_returns 40, :count_tax_returns 5, :min_tax_returns 6, :max_tax_returns 10, :state_abbr "PA"},
+                                               {:sum_tax_returns 33, :count_tax_returns 2, :min_tax_returns 16, :max_tax_returns 17, :state_abbr "DC"}] :in-any-order))))))
   
   (facts "about execute and error handling"
 

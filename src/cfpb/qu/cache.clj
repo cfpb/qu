@@ -64,6 +64,9 @@ the same backing database have access to the same data."
                                [(str "_id." (name field)) order]))
                            (get-in query [:mongo :sort] {})))
         fields (get-in query [:mongo :project :fields])
+        integerize #(if (and (float? %) (is-int? %)) (int %) %)
+        integerize-row (fn [row]
+                         (into {} (map (fn [[k v]] (vector k (integerize v))) row)))
         flatten-row (fn [row]
                       (select-keys (merge (:_id row) (:value row)) fields))]
     (with-open [cursor (doto (coll/find collection {})
@@ -74,8 +77,9 @@ the same backing database have access to the same data."
        (.count cursor)
        (.size cursor)
        (map (fn [x] (-> x
-                        (conv/from-db-object true)                           
-                        (flatten-row))) cursor)))))
+                        (conv/from-db-object true)
+                        (flatten-row)
+                        (integerize-row))) cursor)))))
 
 (defn- get-collection
   ([database query]

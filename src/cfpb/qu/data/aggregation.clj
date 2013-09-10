@@ -34,7 +34,7 @@ within Mongo."
                (var vals (.map ary (fn [obj] (return (aget obj field)))))
                (return (.sum Array vals))))
    :count (js* (fn [ary field]
-                 (return (aget ary "length"))))})
+                 (return (NumberInt (aget ary "length")))))})
 
 (defn- generate-map-fn
   ([group-fields agg-fields]
