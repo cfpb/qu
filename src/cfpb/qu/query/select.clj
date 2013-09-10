@@ -15,7 +15,10 @@
   (let [ast (vec ast)
         aggregations (->> (filter :aggregation ast)
                           (map (fn [{:keys [select aggregation]}]
-                                 {select (map (comp str/lower-case name) aggregation)}))
+                                 (let [aggregation (map (comp str/lower-case name) aggregation)]
+                                   (if (= (first aggregation) "count")
+                                     {select ["count" 1]}
+                                     {select aggregation}))))
                           (apply merge))
         fields (map :select ast)]
     {:fields fields
