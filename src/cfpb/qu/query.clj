@@ -104,13 +104,12 @@ can query with."
   (let [limit (or (->int limit nil)
                   (->int perPage nil)
                   default-limit)
-        limit (if (zero? limit)
-                default-limit
-                limit)
         offset (->int offset nil)
-        page (->int page (when (and offset
-                                    (zero? (mod offset limit)))
-                           (inc (/ offset limit))))]
+        page (->int page (if (zero? limit)
+                           nil
+                           (when (and offset
+                                      (zero? (mod offset limit)))
+                             (inc (/ offset limit)))))]
     (cond
      page (merge query {:offset (-> page
                                     dec

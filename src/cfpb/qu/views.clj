@@ -271,8 +271,10 @@
           current-page (or (get-in resource [:properties :page]) 1)
           href (:href resource)
           limit (get-in resource [:properties :query :limit])
-          total-pages (+ (quot total limit)
-                         (if (zero? (rem total limit)) 0 1))
+          total-pages (if (zero? limit)
+                        1
+                        (+ (quot total limit)
+                           (if (zero? (rem total limit)) 0 1)))
           window (range (max 1 (- current-page window-size))
                         (inc (min total-pages (+ current-page window-size))))
           in-window? (fn [page]
