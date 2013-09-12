@@ -14,7 +14,8 @@ the same backing database have access to the same data."
             [cfpb.qu.data.aggregation :as agg]
             [clojure.string :as str]
             [clojure.core.cache :as cache :refer [defcache]]
-            [clj-time.core :refer [now]]            
+            [clj-time.core :refer [now]]
+            [clojure.edn :as edn]
             [lonocloud.synthread :as ->]            
             [monger
              [core :as mongo :refer [with-db get-db]]
@@ -176,7 +177,7 @@ one of `query_cache` will be used."
   "Given a map-reduce job, tells Mongo to perform the job.
    Returns true on success, false on failure."
   [worker job]
-  (add-to-cache (:cache worker) (:aggmap job)))
+  (add-to-cache (:cache worker) (edn/read-string (:aggmap job))))
 
 (defn- update-cache
   "Update the query cache to reflect that the map-reduce job is
@@ -184,12 +185,13 @@ one of `query_cache` will be used."
 
   Returns updated record."
   [worker job]
-  (let [cache (:cache worker)]
+  (let [cache (:cache worker)
+        aggmap (edn/read-string (:aggmap job))]
     (coll/update *work-collection*
                  {:_id (:_id job)}
                  {"$set" {:status "processed"
                           :finished (now)}})
-    (touch-cache cache (get-in job [:aggmap :query]))))
+    (touch-cache cache (:query aggmap))))
 
 (defn- process-next-job
   [worker]
@@ -224,7 +226,7 @@ one of `query_cache` will be used."
       (coll/insert-and-return *work-collection* {:_id (:to aggmap)
                                                  :status "unprocessed"
                                                  :created (now)
-                                                 :aggmap aggmap})
+                                                 :aggmap (pr-str aggmap)})
       (catch MongoException$DuplicateKey e
         (coll/find-map-by-id *work-collection* (:to aggmap))))))
 
