@@ -18,6 +18,7 @@ the same backing database have access to the same data."
             [clojure.edn :as edn]
             [lonocloud.synthread :as ->]            
             [monger
+             [db :as db]
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
              [collection :as coll]
@@ -115,6 +116,20 @@ the same backing database have access to the same data."
                    {:_id key}
                    {"$set" {:created (now)}}
                    :upsert true))))
+
+(defn clean-cache
+  "Clean out the cache according to some unspecified rules."
+  [cache]
+  true)
+
+(defn wipe-cache
+  "Wipe out the entire cache, including the list of jobs."
+  [cache]
+  (let [db (:database cache)
+        colls (->> (db/get-collection-names db)
+                   (remove #(re-find #"^system\." %)))]
+    (doseq [c colls]
+      (coll/drop db c))))
 
 (defrecord QueryCache [database]
   cache/CacheProtocol
