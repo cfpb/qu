@@ -22,10 +22,7 @@
 
 (with-state-changes [(before :facts (do                                      
                                       (loader/load-dataset db)
-                                      (db/drop-db (:database cache))
-                                      #_(reset! worker-agent (c/start-worker worker))))
-                     (after :facts (do true
-                                       #_(swap! worker-agent c/stop-worker)))]
+                                      (db/drop-db (:database cache))))]
 
   (facts "about cache"
          (fact "the default cache uses the query-cache db"
@@ -42,5 +39,17 @@
            (fact "it adds a document to jobs"
                  (conv/from-db-object (c/add-to-queue cache agg) true)
                  => (contains {:aggmap agg
-                               :status "unprocessed"})))))
+                               :status "unprocessed"})))
+
+    (facts "about worker"
+           (fact "it will process jobs"
+                 (data/get-aggregation db coll agg)
+                 => (contains {:data :computing})
+                 
+                 (do                   
+                   (reset! worker-agent (c/start-worker worker))
+                   (await @worker-agent)
+                   (swap! worker-agent c/stop-worker)
+                   (data/get-aggregation db coll agg))
+                 =not=> (contains {:data :computing})))))
 
