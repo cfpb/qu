@@ -51,6 +51,18 @@
                (do
                  (c/wipe-cache cache)
                  (coll/exists? (:database cache) (:to agg)))
+               => false)
+
+         (fact "it can be cleaned"
+               (do
+                 (data/get-aggregation db coll agg)
+                 (run-all-jobs)
+                 (coll/exists? (:database cache) (:to agg)))
+               => true
+
+               (do
+                 (c/clean-cache cache (constantly [(:to agg)]))
+                 (coll/exists? (:database cache) (:to agg)))
                => false))
     
     (facts "about add-to-queue"

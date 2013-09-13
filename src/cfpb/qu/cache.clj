@@ -33,6 +33,9 @@ the same backing database have access to the same data."
     MapReduceCommand
     MapReduceCommand$OutputType]))
 
+(def ^:dynamic *wait-time* 5000)
+(def ^:dynamic *work-collection* "jobs")
+
 (defn query-to-key
   "Converts a query to a key that can be used to look up the query
   results later. The key must begin with a letter, as it will be used
@@ -118,9 +121,15 @@ the same backing database have access to the same data."
                    :upsert true))))
 
 (defn clean-cache
-  "Clean out the cache according to some unspecified rules."
-  [cache]
-  true)
+  "Clean out the cache according to rules defined by fun.
+
+   Fun should take a cache and emit a seq of ids to clear."
+  [cache fun]
+  (mongo/with-db (:database cache)
+    (doseq [key (fun cache)]
+      (coll/drop key)
+      (coll/remove-by-id *work-collection* key)
+      (coll/remove-by-id "metadata" key))))
 
 (defn wipe-cache
   "Wipe out the entire cache, including the list of jobs."
@@ -173,9 +182,6 @@ the same backing database have access to the same data."
 one of `query_cache` will be used."
   ([] (create-query-cache (get-db "query_cache")))
   ([database] (->QueryCache database)))
-
-(def ^:dynamic *wait-time* 5000)
-(def ^:dynamic *work-collection* "jobs")
 
 (defrecord CacheWorker [cache ping processed kill])
 
