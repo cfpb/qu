@@ -14,9 +14,11 @@ the same backing database have access to the same data."
             [cfpb.qu.data.aggregation :as agg]
             [clojure.string :as str]
             [clojure.core.cache :as cache :refer [defcache]]
-            [clj-time.core :refer [now]]            
+            [clj-time.core :refer [now]]
+            [clojure.edn :as edn]
             [lonocloud.synthread :as ->]            
             [monger
+             [db :as db]
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
              [collection :as coll]
@@ -30,6 +32,9 @@ the same backing database have access to the same data."
     MongoException$DuplicateKey
     MapReduceCommand
     MapReduceCommand$OutputType]))
+
+(def ^:dynamic *wait-time* 5000)
+(def ^:dynamic *work-collection* "jobs")
 
 (defn query-to-key
   "Converts a query to a key that can be used to look up the query
@@ -115,7 +120,35 @@ the same backing database have access to the same data."
                    {"$set" {:created (now)}}
                    :upsert true))))
 
-(defrecord QueryCache [database]
+(defn clean-cache
+  "Clean out the cache according to rules defined by the clean-fn or another fun.
+   Fun should take a cache and emit a seq of ids to clear."
+  ([cache] (clean-cache cache (:clean-fn cache)))
+  ([cache fun]
+     (mongo/with-db (:database cache)
+       (doseq [key (fun cache)]
+         ;; This order matters. Reasoning:
+         ;; - The existence of the collection is the how the cache looks up data.
+         ;; - Therefore, it should never be removed before work, as work is how
+         ;;   the queuing system determines whether to add something to the jobs.
+         ;;   If the data could not be found, but a job currently existed, a new one
+         ;;   would not be added.
+         ;; - The metadata is totally incidental and not used for consistency, so
+         ;;   it can be removed after the work.
+         (coll/remove-by-id *work-collection* key)         
+         (coll/drop key)
+         (coll/remove-by-id "metadata" key)))))
+
+(defn wipe-cache
+  "Wipe out the entire cache, including the list of jobs."
+  [cache]
+  (let [db (:database cache)
+        colls (->> (db/get-collection-names db)
+                   (remove #(re-find #"^system\." %)))]
+    (doseq [c colls]
+      (coll/drop db c))))
+
+(defrecord QueryCache [database clean-fn]
   cache/CacheProtocol
   (lookup [cache query]
     (let [key (query-to-key query)]
@@ -155,11 +188,9 @@ the same backing database have access to the same data."
 (defn create-query-cache
   "Create a query cache. If you do not specify a database, the default
 one of `query_cache` will be used."
-  ([] (create-query-cache (get-db "query_cache")))
-  ([database] (->QueryCache database)))
-
-(def ^:dynamic *wait-time* 5000)
-(def ^:dynamic *work-collection* "jobs")
+  ([] (->QueryCache (get-db "query_cache") (constantly [])))
+  ([database] (->QueryCache (get-db database) (constantly [])))
+  ([database clean-fn] (->QueryCache (get-db database) clean-fn)))
 
 (defrecord CacheWorker [cache ping processed kill])
 
@@ -176,7 +207,7 @@ one of `query_cache` will be used."
   "Given a map-reduce job, tells Mongo to perform the job.
    Returns true on success, false on failure."
   [worker job]
-  (add-to-cache (:cache worker) (:aggmap job)))
+  (add-to-cache (:cache worker) (edn/read-string (:aggmap job))))
 
 (defn- update-cache
   "Update the query cache to reflect that the map-reduce job is
@@ -184,12 +215,13 @@ one of `query_cache` will be used."
 
   Returns updated record."
   [worker job]
-  (let [cache (:cache worker)]
+  (let [cache (:cache worker)
+        aggmap (edn/read-string (:aggmap job))]
     (coll/update *work-collection*
                  {:_id (:_id job)}
                  {"$set" {:status "processed"
                           :finished (now)}})
-    (touch-cache cache (get-in job [:aggmap :query]))))
+    (touch-cache cache (:query aggmap))))
 
 (defn- process-next-job
   [worker]
@@ -201,7 +233,9 @@ one of `query_cache` will be used."
             (update-cache worker job)
             (send *agent* #(update-in % [:processed] inc))
             (log/info "Aggregation" (:_id job) "processed"))
-        (Thread/sleep *wait-time*))
+        (do
+          (clean-cache (:cache worker))
+          (Thread/sleep *wait-time*)))
       (send-off *agent* process-next-job)))
   (update-in worker [:ping] inc))
 
@@ -224,7 +258,7 @@ one of `query_cache` will be used."
       (coll/insert-and-return *work-collection* {:_id (:to aggmap)
                                                  :status "unprocessed"
                                                  :created (now)
-                                                 :aggmap aggmap})
+                                                 :aggmap (pr-str aggmap)})
       (catch MongoException$DuplicateKey e
         (coll/find-map-by-id *work-collection* (:to aggmap))))))
 
