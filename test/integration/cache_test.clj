@@ -21,7 +21,7 @@
 (def worker (c/create-worker cache))
 (def worker-agent (atom nil))
 
-(defn run-all-jobs []
+(defn run-all-jobs [worker]
   (reset! worker-agent (c/start-worker worker))
   (await @worker-agent)
   (swap! worker-agent c/stop-worker))
@@ -43,7 +43,7 @@
          (fact "it can be wiped"
                (do
                  (data/get-aggregation db coll agg)
-                 (run-all-jobs)
+                 (run-all-jobs worker)
                  (coll/exists? (:database cache) (:to agg)))
                => true
 
@@ -56,7 +56,7 @@
            (fact "it can be cleaned"
                (do
                  (data/get-aggregation db coll agg)
-                 (run-all-jobs)
+                 (run-all-jobs worker)
                  (coll/exists? (:database cache) (:to agg)))
                => true
 
@@ -68,14 +68,21 @@
            (fact "by default, it cleans nothing"
                  (do
                    (data/get-aggregation db coll agg)
-                   (run-all-jobs)
+                   (run-all-jobs worker)
                    (coll/exists? (:database cache) (:to agg)))
                => true
 
                (do
                  (c/clean-cache cache)
                  (coll/exists? (:database cache) (:to agg)))
-               => true))
+               => true)
+
+           (fact "it runs cleaning operations as part of the worker cycle"
+                 (let [cleanups (atom 0)
+                       cache (c/create-query-cache "query_cache" (fn [_] (swap! cleanups inc)))
+                       worker (c/create-worker cache)]                 
+                   (run-all-jobs worker)
+                   @cleanups) => 1))
     
     (facts "about add-to-queue"
            (fact "it adds a document to jobs"

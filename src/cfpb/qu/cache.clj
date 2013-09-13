@@ -127,8 +127,16 @@ the same backing database have access to the same data."
   ([cache fun]
      (mongo/with-db (:database cache)
        (doseq [key (fun cache)]
+         ;; This order matters. Reasoning:
+         ;; - The existence of the collection is the how the cache looks up data.
+         ;; - Therefore, it should never be removed before work, as work is how
+         ;;   the queuing system determines whether to add something to the jobs.
+         ;;   If the data could not be found, but a job currently existed, a new one
+         ;;   would not be added.
+         ;; - The metadata is totally incidental and not used for consistency, so
+         ;;   it can be removed after the work.
+         (coll/remove-by-id *work-collection* key)         
          (coll/drop key)
-         (coll/remove-by-id *work-collection* key)
          (coll/remove-by-id "metadata" key)))))
 
 (defn wipe-cache
@@ -225,7 +233,9 @@ one of `query_cache` will be used."
             (update-cache worker job)
             (send *agent* #(update-in % [:processed] inc))
             (log/info "Aggregation" (:_id job) "processed"))
-        (Thread/sleep *wait-time*))
+        (do
+          (clean-cache (:cache worker))
+          (Thread/sleep *wait-time*)))
       (send-off *agent* process-next-job)))
   (update-in worker [:ping] inc))
 
