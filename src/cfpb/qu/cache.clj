@@ -121,15 +121,15 @@ the same backing database have access to the same data."
                    :upsert true))))
 
 (defn clean-cache
-  "Clean out the cache according to rules defined by fun.
-
+  "Clean out the cache according to rules defined by the clean-fn or another fun.
    Fun should take a cache and emit a seq of ids to clear."
-  [cache fun]
-  (mongo/with-db (:database cache)
-    (doseq [key (fun cache)]
-      (coll/drop key)
-      (coll/remove-by-id *work-collection* key)
-      (coll/remove-by-id "metadata" key))))
+  ([cache] (clean-cache cache (:clean-fn cache)))
+  ([cache fun]
+     (mongo/with-db (:database cache)
+       (doseq [key (fun cache)]
+         (coll/drop key)
+         (coll/remove-by-id *work-collection* key)
+         (coll/remove-by-id "metadata" key)))))
 
 (defn wipe-cache
   "Wipe out the entire cache, including the list of jobs."
@@ -140,7 +140,7 @@ the same backing database have access to the same data."
     (doseq [c colls]
       (coll/drop db c))))
 
-(defrecord QueryCache [database]
+(defrecord QueryCache [database clean-fn]
   cache/CacheProtocol
   (lookup [cache query]
     (let [key (query-to-key query)]
@@ -180,8 +180,9 @@ the same backing database have access to the same data."
 (defn create-query-cache
   "Create a query cache. If you do not specify a database, the default
 one of `query_cache` will be used."
-  ([] (create-query-cache (get-db "query_cache")))
-  ([database] (->QueryCache database)))
+  ([] (->QueryCache (get-db "query_cache") (constantly [])))
+  ([database] (->QueryCache (get-db database) (constantly [])))
+  ([database clean-fn] (->QueryCache (get-db database) clean-fn)))
 
 (defrecord CacheWorker [cache ping processed kill])
 

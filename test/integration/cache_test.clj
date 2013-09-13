@@ -37,8 +37,7 @@
                (str (:database cache)) => "query_cache")
 
          (fact "you can use other databases"
-               (str (:database (c/create-query-cache
-                                (mongo/get-db "cashhhh"))))
+               (str (:database (c/create-query-cache "cashhhh")))
                => "cashhhh")
 
          (fact "it can be wiped"
@@ -51,9 +50,10 @@
                (do
                  (c/wipe-cache cache)
                  (coll/exists? (:database cache) (:to agg)))
-               => false)
+               => false))
 
-         (fact "it can be cleaned"
+    (facts "about cleaning cache"
+           (fact "it can be cleaned"
                (do
                  (data/get-aggregation db coll agg)
                  (run-all-jobs)
@@ -63,7 +63,19 @@
                (do
                  (c/clean-cache cache (constantly [(:to agg)]))
                  (coll/exists? (:database cache) (:to agg)))
-               => false))
+               => false)
+
+           (fact "by default, it cleans nothing"
+                 (do
+                   (data/get-aggregation db coll agg)
+                   (run-all-jobs)
+                   (coll/exists? (:database cache) (:to agg)))
+               => true
+
+               (do
+                 (c/clean-cache cache)
+                 (coll/exists? (:database cache) (:to agg)))
+               => true))
     
     (facts "about add-to-queue"
            (fact "it adds a document to jobs"
