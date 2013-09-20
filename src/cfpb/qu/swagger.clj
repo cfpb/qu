@@ -42,9 +42,15 @@
 
 (defn- api-param
   [data-type param-name & {:as m}]
-  (merge {:dataType (name data-type)
-          :name (name param-name)}
-         m))
+  (let [enum (:enum m)
+        m (if enum
+            (assoc m :allowableValues {:valueType "LIST"
+                                       :values enum})
+            m)
+        m (dissoc m :enum)]
+    (-> {:dataType (name data-type)
+         :name (name param-name)}
+        (merge m))))
 
 (defn data-declaration
   [req]
@@ -67,36 +73,42 @@
 
 (defn dataset-declaration
   [dataset req]
-  (-> {:resourcePath (urls/dataset-path :dataset dataset)
-       :produces ["application/json" "application/xml"]
-       :models []
-       :apis [(get-api :path (urls/dataset-path :dataset dataset)
-                       :nickname (str "getDataset" (capitalize dataset))
-                       :summary "Get metadata for this dataset."  
-                       :parameters [])
-              (get-api :path (urls/concept-path :dataset dataset :concept "{concept}")
-                       :nickname (str "getConcept" (capitalize dataset))
-                       :summary "Get information about a particular concept in this dataset."
-                       :parameters [(api-param :string "concept"
-                                               :paramType "path"
-                                               :description "Name of concept"
-                                               :required true)])
-              (get-api :path (urls/slice-query-path :dataset dataset :slice "{slice}")
-                       :nickname (str "querySlice" (capitalize dataset))
-                       :summary "Query a slice in this dataset."
-                       :parameters [(api-param :string "slice"
-                                               :paramType "path"
-                                               :description "Name of slice"
-                                               :required true)])
-              (get-api :path (urls/slice-metadata-path :dataset dataset :slice "{slice}")
-                       :nickname (str "getSliceMetadata" (capitalize dataset))
-                       :summary "Get the metadata for a slice in this dataset."
-                       :parameters [(api-param :string "slice"
-                                               :paramType "path"
-                                               :description "Name of slice"
-                                               :required true)])]}
-      (versions)
-      (base-path req)))
+  (let [metadata (data/get-metadata dataset)
+        slices (sort (map name (keys (:slices metadata))))
+        concepts (sort (map name (keys (:concepts metadata))))]
+    (-> {:resourcePath (urls/dataset-path :dataset dataset)
+         :produces ["application/json" "application/xml"]
+         :models []
+         :apis [(get-api :path (urls/dataset-path :dataset dataset)
+                         :nickname (str "getDataset" (capitalize dataset))
+                         :summary "Get metadata for this dataset."  
+                         :parameters [])
+                (get-api :path (urls/concept-path :dataset dataset :concept "{concept}")
+                         :nickname (str "getConcept" (capitalize dataset))
+                         :summary "Get information about a particular concept in this dataset."
+                         :parameters [(api-param :string "concept"
+                                                 :paramType "path"
+                                                 :description "Name of concept"
+                                                 :required true
+                                                 :enum concepts)])
+                (get-api :path (urls/slice-query-path :dataset dataset :slice "{slice}")
+                         :nickname (str "querySlice" (capitalize dataset))
+                         :summary "Query a slice in this dataset."
+                         :parameters [(api-param :string "slice"
+                                                 :paramType "path"
+                                                 :description "Name of slice"
+                                                 :required true
+                                                 :enum slices)])
+                (get-api :path (urls/slice-metadata-path :dataset dataset :slice "{slice}")
+                         :nickname (str "getSliceMetadata" (capitalize dataset))
+                         :summary "Get the metadata for a slice in this dataset."
+                         :parameters [(api-param :string "slice"
+                                                 :paramType "path"
+                                                 :description "Name of slice"
+                                                 :required true
+                                                 :enum slices)])]}
+        (versions)
+        (base-path req))))
 
 (defn resource-listing-json
   [req]
