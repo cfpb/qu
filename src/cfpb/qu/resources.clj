@@ -44,7 +44,7 @@ functions to return the resource that will be presented later."
                (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
                                      (hal/add-properties
-                                      (hal/new-resource (urls/dataset-path (:name dataset)))
+                                      (hal/new-resource (urls/dataset-path :dataset (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
                  (views/index (:media-type representation) resource))))
@@ -57,7 +57,7 @@ functions to return the resource that will be presented later."
               (let [concept (name concept)]
                 [concept
                  (-> data
-                     (assoc :url (urls/concept-path dataset concept))
+                     (assoc :url (urls/concept-path :dataset dataset :concept concept))
                      (dissoc :table))])))
        (into {})))
 
@@ -83,11 +83,13 @@ functions to return the resource that will be presented later."
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/index-path))
+                                  (hal/add-link :rel "up" :href (urls/datasets-path))
                                   (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata)))
                      slices (map (fn [[slice info]]
-                                     (-> (hal/new-resource (urls/slice-path dataset (name slice)))
+                                     (-> (hal/new-resource
+                                          (urls/slice-query-path :dataset dataset
+                                                                   :slice (name slice)))
                                          (hal/add-property :id (name slice))
                                          (hal/add-property
                                           :name
@@ -95,7 +97,9 @@ functions to return the resource that will be presented later."
                                          (hal/add-properties info))) (:slices metadata))
                      concepts (map (fn [[concept info]]
                                      (let [table (data/concept-data dataset concept)]
-                                       (-> (hal/new-resource (urls/concept-path dataset (name concept)))
+                                       (-> (hal/new-resource
+                                            (urls/concept-path :dataset dataset
+                                                                 :concept (name concept)))
                                            (hal/add-property :id (name concept))
                                            (hal/add-properties (-> info
                                                                    (dissoc :table)
@@ -140,7 +144,7 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset concept cdata request representation]}]
                (let [callback (get-in request [:params :$callback])
                      resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
                                   (hal/add-property :id concept)
                                   (hal/add-property :dataset dataset)
                                   (hal/add-properties (dissoc cdata :table)))
@@ -176,7 +180,7 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset slicedef slice request representation]}]
                (let [callback (get-in request [:params :$callback])
                      resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
                                   (hal/add-property :id (str dataset "/" (name slice)))
                                   (hal/add-property :dataset dataset)
                                   (hal/add-property :slice slice)
@@ -210,7 +214,7 @@ functions to return the resource that will be presented later."
         clauses (map (comp keyword :key) views/clauses)
         page (:page query)]
     (-> (hal/new-resource href)
-        (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+        (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
         (hal/add-link :rel "query"
                       :href (templated-url base-href clauses)
                       :templated true)
