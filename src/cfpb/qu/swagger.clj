@@ -30,15 +30,15 @@
          {:apis (concat [{:path (urls/swagger-api-declaration-url :api "data")
                           :description "Operations about datasets."}]
                         dataset-apis
+                        []
                         )})))))
 
 (defn- get-api
-  [& {:keys [path method nickname summary parameters]}]
+  [& {:keys [path] :as m}]
   {:path path
-   :operations [{:method "GET"
-                 :nickname nickname
-                 :summary summary
-                 :parameters parameters}]})
+   :operations [(-> m
+                    (assoc :method "GET")
+                    (dissoc :path))]})
 
 (defn- api-param
   [data-type param-name & {:as m}]
@@ -56,13 +56,16 @@
   [req]
   (-> {:resourcePath (urls/datasets-path)
        :produces ["application/json" "application/xml"]
+       :models {}
        :apis [(get-api :path (urls/datasets-path)
                        :nickname "getDatasets"
-                       :summary "Get a list of all datasets."                         
+                       :summary "Get a list of all datasets."
+                       :produces ["application/json" "application/xml"]
                        :parameters [])
               (get-api :path (urls/dataset-path :dataset "{dataset}")
                        :nickname "getDataset"
                        :summary "Get metadata about a dataset."
+                       :produces ["application/json" "application/xml"]
                        :parameters [(api-param :string "dataset"
                                                :paramType "path"
                                                :description "Name of dataset"
