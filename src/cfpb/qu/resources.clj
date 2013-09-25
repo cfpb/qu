@@ -38,8 +38,8 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [_] {:datasets (data/get-datasets)})
-  :etag (fn [{:keys [datasets]}]
-          (digest/md5 (str (vec datasets))))
+  :etag (fn [{:keys [datasets representation]}]
+          (digest/md5 (str (:media-type representation) (vec datasets))))
   :handle-ok (fn [{:keys [request representation datasets]}]
                (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
@@ -73,8 +73,8 @@ functions to return the resource that will be presented later."
                  {:dataset dataset
                   :metadata metadata}
                  [false {:dataset dataset}])))
-  :etag (fn [{:keys [dataset metadata]}]
-          (digest/md5 (str dataset metadata)))
+  :etag (fn [{:keys [dataset metadata representation]}]
+          (digest/md5 (str (:media-type representation) dataset metadata)))
   :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
@@ -134,8 +134,8 @@ functions to return the resource that will be presented later."
                   :concept concept
                   :cdata cdata}
                  [false {:dataset dataset :concept concept}])))
-  :etag (fn [{:keys [cdata]}]
-          (digest/md5 (str cdata)))
+  :etag (fn [{:keys [cdata representation]}]
+          (digest/md5 (str (:media-type representation) cdata)))
   :handle-not-found (fn [{:keys [dataset concept request representation]}]
                       (let [message (str "No such concept " concept " in dataset " dataset)]
                         (case (:media-type representation)
@@ -170,8 +170,8 @@ functions to return the resource that will be presented later."
                   :slice slice                  
                   :slicedef slicedef}
                  [false {:dataset dataset :slice slice}])))
-  :etag (fn [{:keys [slicedef]}]
-          (digest/md5 (str slicedef)))  
+  :etag (fn [{:keys [slicedef representation]}]
+          (digest/md5 (str (:media-type representation) slicedef)))  
   :handle-not-found (fn [{:keys [dataset slice request representation]}]
                       (let [message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)
