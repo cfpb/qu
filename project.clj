@@ -76,3 +76,4 @@ serve their public data sets."
                            {:env {:mongo-port 37017
                                   :integration true}
                             :embongo {:port 37017}}]})
+
