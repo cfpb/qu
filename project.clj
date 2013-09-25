@@ -25,7 +25,8 @@ serve their public data sets."
                  [cheshire "5.2.0"]
                  [clj-statsd "0.3.9"]                 
                  [clj-time "0.6.0"]
-                 [clojurewerkz/urly "1.0.0" :exclusions [com.google.guava/guava]]
+                 [clojurewerkz/route-one "1.0.0-rc2"]                 
+                 [clojurewerkz/urly "2.0.0-alpha5" :exclusions [com.google.guava/guava]]
                  [com.novemberain/monger "1.6.0"]
                  [com.stuartsierra/dependency "0.1.1"]                 
                  [com.taoensso/timbre "2.6.1" :exclusions [expectations]]
@@ -43,9 +44,11 @@ serve their public data sets."
                  [parse-ez "0.3.6"]
                  [ring "1.2.0"]                 
                  [ring.middleware.mime-extensions "0.2.0"]
+                 [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
                  [slingshot "0.10.3"]                 
-                 [stencil "0.3.2"]]
+                 [stencil "0.3.2"]
+                 ]
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
@@ -73,3 +76,4 @@ serve their public data sets."
                            {:env {:mongo-port 37017
                                   :integration true}
                             :embongo {:port 37017}}]})
+

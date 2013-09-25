@@ -16,7 +16,7 @@
    [halresource.resource :as hal]
    [cfpb.qu.project :refer [project]]
    [cfpb.qu.env :refer [env]]
-   [cfpb.qu.util :refer [->int]]
+   [cfpb.qu.util :refer :all]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
    [cfpb.qu.query.select :as select]
@@ -41,12 +41,6 @@
                   :build_url (@project :build-url)
                   :api_name (env :api-name)
                   :dev_mode (:dev env)})
-
-(defn- request-protocol
-  [request]
-  (if-let [proto (get-in request [:headers "x-forwarded-proto"])]
-    proto
-    (name (:scheme request))))
 
 (defn json-error
   ([status] (json-error status {}))
@@ -140,7 +134,7 @@
     (layout-html resource
                  (render-file "templates/dataset"
                               {:resource resource
-                               :url (urls/dataset-path dataset)
+                               :url (urls/dataset-path :dataset dataset)
                                :dataset dataset
                                :slices (->> (:embedded resource)
                                             (filter #(= (first %) "slice"))
@@ -176,7 +170,7 @@
     (layout-html resource
                  (render-file "templates/concept"
                               {:resource resource
-                               :url (urls/concept-path dataset concept)
+                               :url (urls/concept-path :dataset dataset :concept concept)
                                :dataset dataset
                                :concept concept
                                :columns columns
@@ -213,7 +207,7 @@
     (layout-html resource
                  (render-file "templates/slice-metadata"
                               {:resource resource
-                               :url (urls/slice-metadata-path dataset slice)
+                               :url (urls/slice-metadata-path :dataset dataset :slice slice)
                                :dataset dataset
                                :slice slice
                                :dimensions (:dimensions properties)
@@ -306,7 +300,7 @@
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
         query (get-in resource [:properties :query])
-        base-href (urls/slice-path dataset slice)
+        base-href (urls/slice-query-path :dataset dataset :slice slice)
         dimensions (:dimensions slicedef)
         metrics (:metrics slicedef)
         sample-dimension (first (sort #(< (count %1) (count %2)) dimensions))
@@ -349,9 +343,9 @@
      "text/html;charset=UTF-8"
      (layout-html resource
                   (slice-html
-                   {:action (str (request-protocol request) "://" (headers "host") base-href)
+                   {:action (str (base-url request) base-href)
                     :base-href base-href
-                    :metadata-href (urls/slice-metadata-path dataset slice)
+                    :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
                     :dataset dataset
                     :slice slice
                     :metadata slice-metadata

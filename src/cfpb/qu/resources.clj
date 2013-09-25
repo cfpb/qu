@@ -38,13 +38,13 @@ functions to return the resource that will be presented later."
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [_] {:datasets (data/get-datasets)})
-  :etag (fn [{:keys [datasets]}]
-          (digest/md5 (str (vec datasets))))
+  :etag (fn [{:keys [datasets representation]}]
+          (digest/md5 (str (:media-type representation) (vec datasets))))
   :handle-ok (fn [{:keys [request representation datasets]}]
                (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
                                      (hal/add-properties
-                                      (hal/new-resource (urls/dataset-path (:name dataset)))
+                                      (hal/new-resource (urls/dataset-path :dataset (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
                  (views/index (:media-type representation) resource))))
@@ -57,7 +57,7 @@ functions to return the resource that will be presented later."
               (let [concept (name concept)]
                 [concept
                  (-> data
-                     (assoc :url (urls/concept-path dataset concept))
+                     (assoc :url (urls/concept-path :dataset dataset :concept concept))
                      (dissoc :table))])))
        (into {})))
 
@@ -73,8 +73,8 @@ functions to return the resource that will be presented later."
                  {:dataset dataset
                   :metadata metadata}
                  [false {:dataset dataset}])))
-  :etag (fn [{:keys [dataset metadata]}]
-          (digest/md5 (str dataset metadata)))
+  :etag (fn [{:keys [dataset metadata representation]}]
+          (digest/md5 (str (:media-type representation) dataset metadata)))
   :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
@@ -83,11 +83,13 @@ functions to return the resource that will be presented later."
                           message)))
   :handle-ok (fn [{:keys [request dataset metadata representation]}]
                (let [resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/index-path))
+                                  (hal/add-link :rel "up" :href (urls/datasets-path))
                                   (hal/add-property :id dataset)
                                   (hal/add-properties (:info metadata)))
                      slices (map (fn [[slice info]]
-                                     (-> (hal/new-resource (urls/slice-path dataset (name slice)))
+                                     (-> (hal/new-resource
+                                          (urls/slice-query-path :dataset dataset
+                                                                   :slice (name slice)))
                                          (hal/add-property :id (name slice))
                                          (hal/add-property
                                           :name
@@ -95,7 +97,9 @@ functions to return the resource that will be presented later."
                                          (hal/add-properties info))) (:slices metadata))
                      concepts (map (fn [[concept info]]
                                      (let [table (data/concept-data dataset concept)]
-                                       (-> (hal/new-resource (urls/concept-path dataset (name concept)))
+                                       (-> (hal/new-resource
+                                            (urls/concept-path :dataset dataset
+                                                                 :concept (name concept)))
                                            (hal/add-property :id (name concept))
                                            (hal/add-properties (-> info
                                                                    (dissoc :table)
@@ -130,8 +134,8 @@ functions to return the resource that will be presented later."
                   :concept concept
                   :cdata cdata}
                  [false {:dataset dataset :concept concept}])))
-  :etag (fn [{:keys [cdata]}]
-          (digest/md5 (str cdata)))
+  :etag (fn [{:keys [cdata representation]}]
+          (digest/md5 (str (:media-type representation) cdata)))
   :handle-not-found (fn [{:keys [dataset concept request representation]}]
                       (let [message (str "No such concept " concept " in dataset " dataset)]
                         (case (:media-type representation)
@@ -140,7 +144,7 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset concept cdata request representation]}]
                (let [callback (get-in request [:params :$callback])
                      resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
                                   (hal/add-property :id concept)
                                   (hal/add-property :dataset dataset)
                                   (hal/add-properties (dissoc cdata :table)))
@@ -166,8 +170,8 @@ functions to return the resource that will be presented later."
                   :slice slice                  
                   :slicedef slicedef}
                  [false {:dataset dataset :slice slice}])))
-  :etag (fn [{:keys [slicedef]}]
-          (digest/md5 (str slicedef)))  
+  :etag (fn [{:keys [slicedef representation]}]
+          (digest/md5 (str (:media-type representation) slicedef)))  
   :handle-not-found (fn [{:keys [dataset slice request representation]}]
                       (let [message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)
@@ -176,7 +180,7 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset slicedef slice request representation]}]
                (let [callback (get-in request [:params :$callback])
                      resource (-> (hal/new-resource (:uri request))
-                                  (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+                                  (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
                                   (hal/add-property :id (str dataset "/" (name slice)))
                                   (hal/add-property :dataset dataset)
                                   (hal/add-property :slice slice)
@@ -210,7 +214,7 @@ functions to return the resource that will be presented later."
         clauses (map (comp keyword :key) views/clauses)
         page (:page query)]
     (-> (hal/new-resource href)
-        (hal/add-link :rel "up" :href (urls/dataset-path dataset))
+        (hal/add-link :rel "up" :href (urls/dataset-path :dataset dataset))
         (hal/add-link :rel "query"
                       :href (templated-url base-href clauses)
                       :templated true)
