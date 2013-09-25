@@ -3,6 +3,16 @@
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk]]))
 
+(defn request-protocol
+  [request]
+  (if-let [proto (get-in request [:headers "x-forwarded-proto"])]
+    proto
+    (name (:scheme request))))
+
+(defn base-url
+  [req]
+  (str (request-protocol req) "://" (get-in req [:headers "host"])))
+
 (defn str+
   [& args]
   (str/join (map name args)))
