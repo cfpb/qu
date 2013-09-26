@@ -101,7 +101,35 @@
                                                  :paramType "path"
                                                  :description "Name of slice"
                                                  :required true
-                                                 :enum slices)])
+                                                 :enum slices)
+                                      (api-param :string "$select"
+                                                 :paramType "query"
+                                                 :description "Fields to return, separated by commas."
+                                                 :required false)
+                                      (api-param :string "$where"
+                                                 :paramType "query"
+                                                 :description "Conditions to search for in the slice, in SQL WHERE style."
+                                                 :required false)
+                                      (api-param :string "$group"
+                                                 :paramType "query"
+                                                 :description "Fields to group by, summarizing the data, separated by commas."
+                                                 :required false)
+                                      (api-param :integer "$limit"
+                                                 :paramType "query"
+                                                 :description "Number of records to return, 100 by default. Enter 0 for no limit."
+                                                 :required false)
+                                      (api-param :integer "$offset"
+                                                 :paramType "query"
+                                                 :description "Number of records to skip."
+                                                 :required false)
+                                      (api-param :string "$orderBy"
+                                                 :paramType "query"
+                                                 :description "Fields to order by, separated by commas. ASC and DESC can be used to modify the order."
+                                                 :required false)
+                                      (api-param :string "$callback"
+                                                 :paramType "query"
+                                                 :description "JavaScript callback to invoke. Only useful with JSONP requests."
+                                                 :required false)])
                 (get-api :path (urls/slice-metadata-path :dataset dataset :slice "{slice}")
                          :nickname (str "getSliceMetadata" (capitalize dataset))
                          :summary "Get the metadata for a slice in this dataset."
