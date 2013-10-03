@@ -78,6 +78,13 @@ is nil unless specified."
        (map (fn [[k v]] [(fun k) v]))
        (into {})))
 
+(defn coll-wrap
+  "Given an argument, return it if coll? is true, else wrap it in a list."
+  [thing]
+  (if (coll? thing)
+    thing
+    (list thing)))
+
 (defn ->print
   [x]
   (println x)

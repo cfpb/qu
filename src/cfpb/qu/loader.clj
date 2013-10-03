@@ -187,15 +187,17 @@ transform that data into the form we want."
             {} (keys concepts))))
 
 (defn- join-maps
-  "Join two vectors of maps on a key."
-  [left lkey lval right rkey rval]
-  (let [lkey (keyword lkey)
-        lval (keyword lval)
-        rkey (keyword rkey)
-        rval (keyword rval)
-        rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
+  "Join two vectors of maps on some keys."
+  [lmaps lkeys lvals rmaps rkeys rvals]
+  {:pre [(= (count lkeys) (count rkeys))
+         (= (count lvals) (count rvals))]
+   :post [(= (count lmaps) (count %))]}
+  (let [joinmap (apply hash-map (apply concat (map (juxt (fn [row]
+                                                           ((apply juxt rkeys) row))
+                                                         (fn [row]
+                                                           ((apply juxt rvals) row))) rmaps)))]
     (map (fn [row]
-             (assoc row lval (get rmap (get row lkey)))) left)))
+           (merge row (zipmap lvals (get joinmap ((apply juxt lkeys) row))))) lmaps)))
 
 (defn- load-csv-file
   [file collection transform-fn]
@@ -219,9 +221,12 @@ transform that data into the form we want."
         add-concepts (fn [data]
                        (reduce (fn [data [column cdef]]
                                  (join-maps
-                                  data (:column cdef) column
+                                  data
+                                  (map keyword (coll-wrap (:column cdef)))
+                                  (map keyword (coll-wrap column))
                                   (get concepts (keyword (:concept cdef)))
-                                  :_id (:value cdef)))
+                                  [:_id]
+                                  (map keyword (coll-wrap (:value cdef)))))
                                data references))
         transform-keys (if keyfn
                          (partial map #(convert-keys % keyfn))
