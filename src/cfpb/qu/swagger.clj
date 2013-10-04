@@ -80,8 +80,13 @@
         slices (sort (map name (keys (:slices metadata))))
         concepts (sort (map name (keys (:concepts metadata))))]
     (-> {:resourcePath (urls/dataset-path :dataset dataset)
-         :produces ["application/json" "application/xml"]
-         :models []
+         :produces ["application/json" "application/xml" "text/javascript"]
+         :models {"QueryResponse"
+                  {:id "QueryResponse"
+                   :description "Response to a slice query."
+                   :required ["total" "size"]
+                   :properties {:total {:type "integer"}
+                                :size {:type "integer"}}}}
          :apis [(get-api :path (urls/dataset-path :dataset dataset)
                          :nickname (str "getDataset" (capitalize dataset))
                          :summary "Get metadata for this dataset."  
@@ -97,6 +102,8 @@
                 (get-api :path (urls/slice-query-path :dataset dataset :slice "{slice}")
                          :nickname (str "querySlice" (capitalize dataset))
                          :summary "Query a slice in this dataset."
+                         :type "QueryResponse"
+                         :produces ["application/json" "application/xml" "text/javascript" "text/csv"]
                          :parameters [(api-param :string "slice"
                                                  :paramType "path"
                                                  :description "Name of slice"
