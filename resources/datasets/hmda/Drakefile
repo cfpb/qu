@@ -98,6 +98,7 @@ hmda_ts_2011.zip, hmda_ts_2010.zip, hmda_ts_2009.zip, hmda_ts_2008.zip, hmda_ts_
   curl http://www.ffiec.gov/hmdarawdata/OTHER/2008HMDAInstitutionRecords.zip > $OUTPUT3
   curl http://www.ffiec.gov/hmdarawdata/OTHER/2007HMDAInstitutionRecords.zip > $OUTPUT4
 
+hmda_ts_2012.csv <- hmda_ts_2012.zip [method:unzip]
 hmda_ts_2011.txt <- hmda_ts_2011.zip [method:unzip]
 hmda_ts_2010.txt <- hmda_ts_2010.zip [method:unzip]
 hmda_ts_2009.txt <- hmda_ts_2009.zip [method:unzip]

@@ -1,6 +1,7 @@
 (ns cfpb.qu.logging
   (:require
    [clojure.string :as str]
+   [cfpb.qu.metrics :as metrics]
    [clj-statsd :as sd]
    [environ.core :refer [env]]   
    [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
@@ -47,7 +48,7 @@
 
 (defn- log-exception
   [req ex total]
-  (sd/increment "qu.request.exception")
+  (metrics/increment "request.exception")
   (error (log-request-msg "Exception" req) (str total "ms"))
   (error ex)
   (error "--- END STACKTRACE ---"))
@@ -65,7 +66,7 @@
   [handler]
     (fn [request]
       (binding [*log-id* (make-log-id)]
-        (sd/with-timing "qu.request.time"
+        (metrics/with-timing "request.time"
           (let [start (System/currentTimeMillis)]
             (try
               (log-request request)
