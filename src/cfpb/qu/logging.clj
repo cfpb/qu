@@ -62,22 +62,31 @@
      (log/log ~level ~msg (str ms# "ms"))
      result#))
 
+(defn metrics-path
+  [uri]
+  (let [parts (str/split uri #"\.")]
+    (cond
+      (str/blank? (first parts)) "/data.html"
+      (= 1 (count parts)) (str uri ".html")
+      :else uri))
+  )
+
 (defn wrap-with-logging
   [handler]
     (fn [request]
       (binding [*log-id* (make-log-id)]
-        (metrics/with-timing "request.time"
-          (let [start (System/currentTimeMillis)]
-            (try
-              (log-request request)
-              (let [response (handler request)
-                    finish (System/currentTimeMillis)
-                    total  (- finish start)]
-                (log-response request response total)
-                response)
-              (catch Throwable ex
-                (let [finish (System/currentTimeMillis)
-                      total (- finish start)]
-                  (log-exception request ex total))
-                (throw ex))))))))
+          (metrics/with-timing (str "request.url." (metrics-path (:uri request)) ".time")
+            (let [start (System/currentTimeMillis)]
+              (try
+                (log-request request)
+                (let [response (handler request)
+                      finish (System/currentTimeMillis)
+                      total  (- finish start)]
+                  (log-response request response total)
+                  response)
+                (catch Throwable ex
+                  (let [finish (System/currentTimeMillis)
+                        total (- finish start)]
+                    (log-exception request ex total))
+                  (throw ex))))))))
 
