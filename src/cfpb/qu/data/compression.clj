@@ -3,10 +3,10 @@
 coming out of Mongo."
   (:require
    [cfpb.qu.util :refer :all]
+   [cfpb.qu.metrics :as metrics]
    [taoensso.timbre :as log]
    [clojure.string :as str]
    [clojure.walk :refer [postwalk]]
-   [clj-statsd :as sd]
    [monger.key-compression :as mzip]))
 
 (defn- slice-columns
@@ -18,7 +18,7 @@ coming out of Mongo."
   field names."
   [slicedef]
   (let [fields (slice-columns slicedef)]
-    (sd/with-timing "qu.queries.fields.zip"
+    (metrics/with-timing "queries.fields.zip"
       (mzip/compression-fn fields))))
 
 (defn field-unzip-fn
@@ -26,7 +26,7 @@ coming out of Mongo."
   field names."
   [slicedef]
   (let [fields (slice-columns slicedef)]
-    (sd/with-timing "qu.queries.fields.unzip"
+    (metrics/with-timing "queries.fields.unzip"
       (mzip/decompression-fn fields))))
 
 (defn compress-fields
