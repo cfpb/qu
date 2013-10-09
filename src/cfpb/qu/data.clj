@@ -12,7 +12,7 @@ after retrieval."
             [cfpb.qu.cache :as qc :refer [create-query-cache add-to-cache]]
             [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.compression :as compression]
-            [clj-statsd :as sd]
+            [cfpb.qu.metrics :as metrics]
             [cheshire.core :as json]
             [monger
              [core :as mongo :refer [with-db get-db]]
@@ -123,7 +123,7 @@ stored in a Mongo database called 'metadata'."
    :size - Number of documents for the input query after skip and limit are applied
    :data - Seq of maps with the IDs stripped out"
   [database collection find-map]
-  (sd/with-timing "qu.queries.find"
+  (metrics/with-timing "queries.find"
     (let [zipfn (field-zip-fn database collection)
           find-map (compression/compress-find find-map zipfn)
           unzipfn (field-unzip-fn database collection)]
@@ -154,7 +154,7 @@ stored in a Mongo database called 'metadata'."
 
   After adding the compression processing, $match MUST come before $group."
   [database collection {:keys [query] :as aggmap}]
-  (sd/with-timing "qu.queries.aggregation"
+  (metrics/with-timing "queries.aggregation"
     (let [cache (create-query-cache)]
       (when-not (cache/has? cache query)
         (qc/add-to-queue cache aggmap))

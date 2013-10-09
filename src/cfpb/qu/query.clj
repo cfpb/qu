@@ -3,7 +3,7 @@
   (:require [monger.query :as q]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]
-            [clj-statsd :as sd]            
+            [cfpb.qu.metrics :as metrics]
             [cfpb.qu.data :as data]
             [cfpb.qu.util :refer [->int ->num]]            
             [cfpb.qu.query.mongo :as mongo]
@@ -135,14 +135,14 @@ can query with."
   "Execute the query against the provided collection."
   [{:keys [dataset slice] :as query}]
 
-  (sd/with-timing "qu.queries.execute"
+  (metrics/with-timing "queries.execute"
     (let [_ (log/info "Execute query" (str (into {} (dissoc query :metadata :slicedef))))
           query (prepare query)]
       (assoc query :result
              (cond
               (not (valid? query))
                (do
-                 (sd/increment "qu.queries.invalid")
+                 (metrics/increment "queries.invalid")
                  [])
 
               (is-aggregation? query)

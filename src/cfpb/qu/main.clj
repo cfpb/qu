@@ -12,7 +12,7 @@
     [logging :as logging :refer [wrap-with-logging]]]
    [cfpb.qu.cache :as qc]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
-   [clj-statsd :as sd]
+   [cfpb.qu.metrics :as metrics]
    [clojure.string :as str]
    [org.httpkit.server :refer [run-server]]   
    [ring.middleware
@@ -55,8 +55,8 @@
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
   to be in the project.clj file."
   []
-  (log/info (str "Configuring statsd: " (env :statsd-host) ":" (env :statsd-port)))
-  (sd/setup (env :statsd-host) (env :statsd-port)))
+  (log/info (str "Configuring metrics collection: " (env :statsd-host) ":" (env :statsd-port)))
+  (metrics/setup (env :statsd-host) (env :statsd-port)))
 
 (defn start-cache-worker
   "Startup a query cache worker."
