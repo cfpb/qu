@@ -12,8 +12,10 @@
   
   (fact "the index URL redirects to /data"
         (app (request :get "/"))
-        => (contains {:status 302
-                      :headers {"Location" "/data"}}))
+        => (contains {:status 302})
+
+        (:headers (app (request :get "/")))
+        => (contains {"Location" "/data"}))
 
   (facts "about /data"
        (fact "it returns successfully"

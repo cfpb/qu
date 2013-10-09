@@ -1178,7 +1178,7 @@
     },    
     "hmda_lar": {
       "sources": [
-        "hmda_lar_2012",
+        "hmda_lar_2012.csv",
         "hmda_lar_2011.csv",
         "hmda_lar_2010.csv",
         "hmda_lar_2009.csv",

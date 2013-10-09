@@ -15,14 +15,20 @@
    [cfpb.qu.metrics :as metrics]
    [clojure.string :as str]
    [org.httpkit.server :refer [run-server]]   
-   [ring.adapter.jetty :refer [run-jetty]]
    [ring.middleware
     [mime-extensions :refer [wrap-convert-extension-to-accept-header]]
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [reload :as reload]    
     [stacktrace :refer [wrap-stacktrace]]]
+   [ring.util.response :as response]
    [taoensso.timbre :as log]))
+
+(defn- wrap-cors
+  [handler]
+  (fn [req]
+    (let [resp (handler req)]
+      (response/header resp "access-control-allow-origin" "*"))))
 
 (def ^{:doc "The entry point into the web API. We look for URI
   suffixes and strip them to set the Accept header, then create a
@@ -35,7 +41,8 @@
       wrap-params
       wrap-with-logging
       wrap-etag
-      wrap-convert-extension-to-accept-header))
+      wrap-convert-extension-to-accept-header
+      wrap-cors))
 
 (defn init
   []

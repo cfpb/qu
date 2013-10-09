@@ -60,51 +60,58 @@ gaz_counties.zip <- [-timecheck]
 gaz_counties.csv <- gaz_counties.zip
   unzip -p $INPUT | iconv -f ISO-8859-2 -t UTF-8 | perl -lpe 's/\s*$//;s/\t/,/g' > $OUTPUT
 
-hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip, hmda_lar_2008.zip, hmda_lar_2007.zip <- [-timecheck]
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT0
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT1
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT2
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2008HMDALAR%20-%20National.zip > $OUTPUT3
-  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2007HMDALAR%20-%20National.zip > $OUTPUT4
+hmda_lar_2012.zip, hmda_lar_2011.zip, hmda_lar_2010.zip, hmda_lar_2009.zip, hmda_lar_2008.zip, hmda_lar_2007.zip <- [-timecheck]
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2012HMDALAR%20-%20National.zip > $OUTPUT0
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2011HMDALAR%20-%20National.zip > $OUTPUT1
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2010HMDALAR%20-%20National.zip > $OUTPUT2
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2009HMDALAR%20-%20National.zip > $OUTPUT3
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2008HMDALAR%20-%20National.zip > $OUTPUT4
+  curl http://www.ffiec.gov/hmdarawdata/LAR/National/2007HMDALAR%20-%20National.zip > $OUTPUT5
 
+hmda_lar_all_2012_no_fips.csv <- hmda_lar_2012.zip [method:add_headers_and_unzip]
 hmda_lar_all_2011_no_fips.csv <- hmda_lar_2011.zip [method:add_headers_and_unzip]
 hmda_lar_all_2010_no_fips.csv <- hmda_lar_2010.zip [method:add_headers_and_unzip]
 hmda_lar_all_2009_no_fips.csv <- hmda_lar_2009.zip [method:add_headers_and_unzip]
 hmda_lar_all_2008_no_fips.csv <- hmda_lar_2008.zip [method:add_headers_and_unzip]
 hmda_lar_all_2007_no_fips.csv <- hmda_lar_2007.zip [method:add_headers_and_7unzip]
 
+hmda_lar_all_2012.csv <- hmda_lar_all_2012_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2011.csv <- hmda_lar_all_2011_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2010.csv <- hmda_lar_all_2010_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2009.csv <- hmda_lar_all_2009_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2008.csv <- hmda_lar_all_2008_no_fips.csv [method:add_fips_column]
 hmda_lar_all_2007.csv <- hmda_lar_all_2007_no_fips.csv [method:add_fips_column]
 
+hmda_lar_sample_2012.csv <- hmda_lar_all_2012.csv [method:sample_keep_headers]
 hmda_lar_sample_2011.csv <- hmda_lar_all_2011.csv [method:sample_keep_headers]
 hmda_lar_sample_2010.csv <- hmda_lar_all_2010.csv [method:sample_keep_headers]
 hmda_lar_sample_2009.csv <- hmda_lar_all_2009.csv [method:sample_keep_headers]
 hmda_lar_sample_2008.csv <- hmda_lar_all_2008.csv [method:sample_keep_headers]
 hmda_lar_sample_2007.csv <- hmda_lar_all_2007.csv [method:sample_keep_headers]
 
+hmda_lar_2012.csv <- hmda_lar_sample_2012.csv [method:link]
 hmda_lar_2011.csv <- hmda_lar_sample_2011.csv [method:link]
 hmda_lar_2010.csv <- hmda_lar_sample_2010.csv [method:link]
 hmda_lar_2009.csv <- hmda_lar_sample_2009.csv [method:link]
 hmda_lar_2008.csv <- hmda_lar_sample_2008.csv [method:link]
 hmda_lar_2007.csv <- hmda_lar_sample_2007.csv [method:link]
 
-hmda_ts_2011.zip, hmda_ts_2010.zip, hmda_ts_2009.zip, hmda_ts_2008.zip, hmda_ts_2007.zip <- [-timecheck]
-  curl http://www.ffiec.gov/hmdarawdata/OTHER/2011HMDAInstitutionRecords.zip > $OUTPUT0
-  curl http://www.ffiec.gov/hmdarawdata/OTHER/2010HMDAInstitutionRecords.zip > $OUTPUT1
-  curl http://www.ffiec.gov/hmdarawdata/OTHER/2009HMDAInstitutionRecords.zip > $OUTPUT2
-  curl http://www.ffiec.gov/hmdarawdata/OTHER/2008HMDAInstitutionRecords.zip > $OUTPUT3
-  curl http://www.ffiec.gov/hmdarawdata/OTHER/2007HMDAInstitutionRecords.zip > $OUTPUT4
+hmda_ts_2012.zip, hmda_ts_2011.zip, hmda_ts_2010.zip, hmda_ts_2009.zip, hmda_ts_2008.zip, hmda_ts_2007.zip <- [-timecheck]
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2012HMDAInstitutionRecords.zip > $OUTPUT0
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2011HMDAInstitutionRecords.zip > $OUTPUT1
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2010HMDAInstitutionRecords.zip > $OUTPUT2
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2009HMDAInstitutionRecords.zip > $OUTPUT3
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2008HMDAInstitutionRecords.zip > $OUTPUT4
+  curl http://www.ffiec.gov/hmdarawdata/OTHER/2007HMDAInstitutionRecords.zip > $OUTPUT5
 
-hmda_ts_2012.csv <- hmda_ts_2012.zip [method:unzip]
+hmda_ts_2012.txt <- hmda_ts_2012.zip [method:unzip]
 hmda_ts_2011.txt <- hmda_ts_2011.zip [method:unzip]
 hmda_ts_2010.txt <- hmda_ts_2010.zip [method:unzip]
 hmda_ts_2009.txt <- hmda_ts_2009.zip [method:unzip]
 hmda_ts_2008.txt <- hmda_ts_2008.zip [method:unzip]
 hmda_ts_2007.txt <- hmda_ts_2007.zip [method:unzip]
 
+hmda_ts_2012.csv <- hmda_ts_2012.txt [method:convert_ts_to_csv]
 hmda_ts_2011.csv <- hmda_ts_2011.txt [method:convert_ts_to_csv]
 hmda_ts_2010.csv <- hmda_ts_2010.txt [method:convert_ts_to_csv]
 hmda_ts_2009.csv <- hmda_ts_2009.txt [method:convert_ts_to_csv]
