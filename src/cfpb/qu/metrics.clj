@@ -3,16 +3,17 @@
   (:require
     [clj-statsd :as sd]))
 
-(def prefix (str "qu." (.getHostName (java.net.InetAddress/getLocalHost)) "."))
+(def prefix (atom ""))
 
 (defn setup
   [host port]
+  (swap! prefix str "qu." (.getHostName (java.net.InetAddress/getLocalHost)) ".")
   (sd/setup host port))
 
 (defn prefix-metric
   "Ensure consistent prefix for all metrics"
   [key]
-  (str prefix key))
+  (str @prefix key))
 
 (defn increment
   [key & args]
