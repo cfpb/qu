@@ -40,7 +40,7 @@
                   :build_number (@project :build-number)
                   :build_url (@project :build-url)
                   :api_name (env :api-name)
-                  :dev_mode (:dev env)})
+                  :dev_mode (env :dev)})
 
 (defn json-error
   ([status] (json-error status {}))

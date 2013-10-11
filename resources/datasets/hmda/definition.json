@@ -187,6 +187,12 @@
       "description": "MSA/MD",
       "table": "msamd",
       "properties": {
+        "code": {
+          "type": "string"
+        },
+        "year": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -543,8 +549,9 @@
           "value": "name"
         },
         "msamd_name": {
-          "column": "msamd",
+          "column": ["msamd", "as_of_year"],
           "concept": "msamd",
+          "id": ["code", "year"],
           "value": "name"
         },
         "owner_occupancy_name": {
@@ -1028,9 +1035,13 @@
     "msamd": {
       "sources": ["code_sheets/msamd.csv"],
       "columns": {
-        "_id": {
+        "code": {
           "type": "string",
-          "name": "_id"
+          "name": "code"
+        },
+        "year": {
+          "type": "integer",
+          "name": "year"
         },
         "name": {
           "type": "string",

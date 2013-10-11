@@ -225,7 +225,7 @@ transform that data into the form we want."
                                   (map keyword (coll-wrap (:column cdef)))
                                   (map keyword (coll-wrap column))
                                   (get concepts (keyword (:concept cdef)))
-                                  [:_id]
+                                  (map keyword (coll-wrap (:id cdef :_id)))
                                   (map keyword (coll-wrap (:value cdef)))))
                                data references))
         transform-keys (if keyfn
