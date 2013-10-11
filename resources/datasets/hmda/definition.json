@@ -10,6 +10,9 @@
       "type": "integer",
       "table": "action_taken",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -20,6 +23,9 @@
       "type": "integer",
       "table": "agency",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "abbr": {
           "type": "string"
         },        
@@ -89,6 +95,9 @@
       "type": "integer",
       "table": "denial_reason",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -108,6 +117,9 @@
       "type": "integer",
       "table": "edit_status",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -117,6 +129,9 @@
       "type": "integer",
       "table": "ethnicity",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -126,6 +141,9 @@
       "type": "string",
       "table": "fips",
       "properties": {
+        "_id": {
+          "type": "string"
+        },
         "state_abbr": {
           "type": "string"
         },
@@ -139,6 +157,9 @@
       "type": "integer",
       "table": "hoepa",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -152,6 +173,9 @@
       "type": "integer",
       "table": "lien_status",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -165,6 +189,9 @@
       "type": "integer",
       "table": "loan_purpose",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -175,6 +202,9 @@
       "type": "integer",
       "table": "loan_type",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -209,6 +239,9 @@
       "type": "integer",
       "table": "owner_occupancy",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -222,6 +255,9 @@
       "type": "integer",
       "table": "preapproval",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -232,6 +268,9 @@
       "type": "integer",
       "table": "property_type",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -242,6 +281,9 @@
       "type": "integer",
       "table": "purchaser_type",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -251,6 +293,9 @@
       "type": "integer",
       "table": "race",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -269,6 +314,9 @@
       "type": "integer",
       "table": "sex",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "name": {
           "type": "string"
         }
@@ -279,6 +327,9 @@
       "type": "integer",
       "table": "states",
       "properties": {
+        "_id": {
+          "type": "integer"
+        },
         "abbr": { "type": "string" },
         "name": { "type": "string" }
       }

@@ -166,7 +166,7 @@
         table (:table properties)
         dataset (:dataset properties)
         concept (:id properties)
-        columns (map name (concat [:_id] (keys (:properties properties {}))))]
+        columns (map name (keys (:properties properties {})))]
     (layout-html resource
                  (render-file "templates/concept"
                               {:resource resource
