@@ -428,12 +428,53 @@ transform that data into the form we want."
       (log/info "Writing concept data")      
       (write-concept-data concepts))))
 
+(defn ez-load-ref-column
+  [dataset slice refcol]
+  (ez-load-concepts dataset)
+  (with-db (get-db dataset)
+           (let [dataset (name dataset)
+                 definition (read-definition dataset)
+                 concepts (read-concepts definition)
+                 slicedef (get-in definition [:slices (keyword slice)])
+                 refdef (get-in slicedef [:references (keyword refcol)])
+                 concept (:concept refdef)
+                 id (keyword (:id refdef))
+                 slice-cols (map keyword (coll-wrap (:column refdef)))
+                 concept-cols (map keyword (coll-wrap (:id refdef :_id)))
+                 value (keyword (:value refdef))
+                 concept-data (->> (coll/find-maps (data/concept-collection concept))
+                                   (map (fn [row]
+                                          [(into {} (zipmap slice-cols ((apply juxt concept-cols) row)))
+                                           {value (value row)}])))]
+             (log/info "Writing" refcol "for" dataset slice)
+             (doseq [[find-map update-map] concept-data]
+               (coll/update (name slice)
+                            find-map
+                            {"$set" update-map}
+                            :multi true)))))
+
+(defn- set-reference-column
+  [dataset slice column columndef concepts]
+  (let [concept (keyword (:concept columndef))
+        concept-def (concepts concept)
+        collection (concept-collection concept)
+        value (keyword (:value columndef))
+        concept-data (->> (coll/find-maps collection)
+                          (map (fn [row]
+                                 [(concept row)
+                                  (value row)])))]
+    (doseq [[key value] concept-data]
+      (coll/update (name slice)
+                   {(keyword (:column columndef)) key}
+                   {"$set" {(keyword column) value}}
+                   :multi true))))
+
 (defn ez-load-slice
-  [dataset slice]
   "Load one slice for a dataset.
   Does not run Drake to process data first. Also does not run other
   slices that the slice may depend on, so make sure you have all the
   data you need before running this."
+  [dataset slice]
   (let [dataset (name dataset)
         definition (read-definition dataset)
         concepts (read-concepts definition)]
