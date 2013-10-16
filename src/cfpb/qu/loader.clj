@@ -453,22 +453,6 @@ transform that data into the form we want."
                             {"$set" update-map}
                             :multi true)))))
 
-(defn- set-reference-column
-  [dataset slice column columndef concepts]
-  (let [concept (keyword (:concept columndef))
-        concept-def (concepts concept)
-        collection (concept-collection concept)
-        value (keyword (:value columndef))
-        concept-data (->> (coll/find-maps collection)
-                          (map (fn [row]
-                                 [(concept row)
-                                  (value row)])))]
-    (doseq [[key value] concept-data]
-      (coll/update (name slice)
-                   {(keyword (:column columndef)) key}
-                   {"$set" {(keyword column) value}}
-                   :multi true))))
-
 (defn ez-load-slice
   "Load one slice for a dataset.
   Does not run Drake to process data first. Also does not run other
