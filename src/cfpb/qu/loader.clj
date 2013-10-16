@@ -3,30 +3,30 @@
 datasets into MongoDB. This includes parsing CSV files and
 transforming the data within."
   (:require
-   [cfpb.qu
-    [util :refer :all]
-    [data :as data]]
-   [cfpb.qu.data.compression :refer [field-zip-fn]]
-   [cfpb.qu.data.aggregation :refer [generate-map-reduce]]   
-   [cfpb.qu.query.where :as where]
-   [taoensso.timbre :as log]
-   [clojure.string :as str]
-   [clojure.java.io :as io]
-   [clojure.data.csv :as csv]
-   [clojure.core.reducers :as r]
-   [cheshire.core :as json]
-   [cheshire.factory :as factory]   
-   [com.stuartsierra.dependency :as dep]
-   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]   
-   [drake.core :as drake]
-   [clj-time.core :refer [default-time-zone now]]
-   [clj-time.format :as time]
-   [monger
-    [core :as mongo :refer [with-db get-db]]
-    [query :as q]
-    [collection :as coll]
-    [joda-time]
-    [key-compression :refer [compression-map]]])
+    [cfpb.qu
+     [util :refer :all]
+     [data :as data]]
+    [cfpb.qu.data.compression :refer [field-zip-fn]]
+    [cfpb.qu.data.aggregation :refer [generate-map-reduce]]
+    [cfpb.qu.query.where :as where]
+    [taoensso.timbre :as log]
+    [clojure.string :as str]
+    [clojure.java.io :as io]
+    [clojure.data.csv :as csv]
+    [clojure.core.reducers :as r]
+    [cheshire.core :as json]
+    [cheshire.factory :as factory]
+    [com.stuartsierra.dependency :as dep]
+    [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
+    [drake.core :as drake]
+    [clj-time.core :refer [default-time-zone now]]
+    [clj-time.format :as time]
+    [monger
+     [core :as mongo :refer [with-db get-db]]
+     [query :as q]
+     [collection :as coll]
+     [joda-time]
+     [key-compression :refer [compression-map]]])
   (:import [org.bson.types ObjectId]))
 
 (def ^:dynamic *chunk-size* 256)
@@ -54,18 +54,18 @@ in MongoDB."
 (defn- build-types-for-slices
   [definition]
   (letfn [(build-types-for-slice [slice definition]
-            (let [slice-def (get-in definition [:slices slice])
-                  table-name (:table slice-def)
-                  table-def (get-in definition [:tables (keyword table-name)])]
-              (reduce (fn [definition column]
-                        (if (and (:name column)
-                                 ((set (data/slice-columns slice-def)) (:name column)))
-                          (assoc-in definition
-                                    [:slices slice :types (keyword (:name column))]
-                                    (slice-type-for-table-type (:type column)))
-                          definition))
-                      definition
-                      (vals (:columns table-def)))))]
+                                 (let [slice-def (get-in definition [:slices slice])
+                                       table-name (:table slice-def)
+                                       table-def (get-in definition [:tables (keyword table-name)])]
+                                   (reduce (fn [definition column]
+                                             (if (and (:name column)
+                                                      ((set (data/slice-columns slice-def)) (:name column)))
+                                               (assoc-in definition
+                                                         [:slices slice :types (keyword (:name column))]
+                                                         (slice-type-for-table-type (:type column)))
+                                               definition))
+                                           definition
+                                           (vals (:columns table-def)))))]
     (let [slices (keys (:slices definition))]
       (reduce (fn [definition slice]
                 (build-types-for-slice slice definition))
@@ -100,9 +100,9 @@ in MongoDB."
                            (:slices definition))
         definition (dissoc definition :tables)]
     (with-db (get-db "metadata")
-      (coll/update "datasets" {:name name}
-                   definition
-                   :upsert true))))
+             (coll/update "datasets" {:name name}
+                          definition
+                          :upsert true))))
 
 (defmulti cast-value (fn [_ valuedef] (:type valuedef)))
 
@@ -118,15 +118,15 @@ in MongoDB."
 
 (defmethod cast-value "boolean" [value _]
   (cond
-   (str/blank? value) nil
-   (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
-   :default true))
+    (str/blank? value) nil
+    (re-matches #"^[Ff]|[Nn]|[Nn]o|[Ff]alse$" (str/trim value)) false
+    :default true))
 
 (defmethod cast-value "date" [value {:keys [format]}]
   (cond
-   (str/blank? value) nil
-   format (time/parse (time/formatter format) value)
-   :default (time/parse default-date-parser value)))
+    (str/blank? value) nil
+    format (time/parse (time/formatter format) value)
+    :default (time/parse default-date-parser value)))
 
 (defmethod cast-value "lookup" [value {:keys [lookup]}]
   ;; Have to call keyword on value because Cheshire turns keys into keywords
@@ -186,6 +186,12 @@ transform that data into the form we want."
               (assoc acc concept (read-concept-data concept definition)))
             {} (keys concepts))))
 
+(defn- emit-post-load-sample
+  [dataset slice]
+  (let [result (data/get-find dataset slice {:limit 1 :query {} :fields {}})]
+    (log/info "Slice loaded. " (:total result)  "records found. Sample record:" (:data result))
+    ))
+
 (defn- join-maps
   "Join two vectors of maps on a key."
   [left lkey lval right rkey rval]
@@ -195,7 +201,7 @@ transform that data into the form we want."
         rval (keyword rval)
         rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
     (map (fn [row]
-             (assoc row lval (get rmap (get row lkey)))) left)))
+           (assoc row lval (get rmap (get row lkey)))) left)))
 
 (defn- load-csv-file
   [file collection transform-fn]
@@ -214,23 +220,23 @@ transform that data into the form we want."
   (let [tdef (get-in definition [:tables (keyword table)])
         dir (:dir definition)
         sources (:sources tdef)
-        columns (:columns tdef)        
+        columns (:columns tdef)
         cast-data (partial map #(cast-data % columns))
         add-concepts (fn [data]
                        (reduce (fn [data [column cdef]]
                                  (join-maps
-                                  data (:column cdef) column
-                                  (get concepts (keyword (:concept cdef)))
-                                  :_id (:value cdef)))
+                                   data (:column cdef) column
+                                   (get concepts (keyword (:concept cdef)))
+                                   :_id (:value cdef)))
                                data references))
         transform-keys (if keyfn
                          (partial map #(convert-keys % keyfn))
                          identity)
         remove-nils (fn [data]
                       (map
-                       (fn [row]
-                         (into {} (remove (fn [[k v]] (nil? v)) row)))
-                       data))
+                        (fn [row]
+                          (into {} (remove (fn [[k v]] (nil? v)) row)))
+                        data))
         transform-fn (comp remove-nils transform-keys add-concepts cast-data)
         agent-error-handler (fn [agent exception]
                               (log/error "Error in table loading agent"
@@ -246,11 +252,11 @@ transform that data into the form we want."
     (apply await agents)))
 
 (defmulti load-slice
-  (fn [slice _ definition]
-    (get-in definition [:slices (keyword slice) :type])))
+          (fn [slice _ definition]
+            (get-in definition [:slices (keyword slice) :type])))
 
 (defmethod load-slice "table"
-  [slice concepts definition]
+           [slice concepts definition]
   (let [sdef (get-in definition [:slices (keyword slice)])
         table (:table sdef)
         references (:references sdef)
@@ -261,7 +267,7 @@ transform that data into the form we want."
   [slice definition]
   (let [sdef (get-in definition [:slices (keyword slice)])
         dataset (:database definition)
-        
+
         from-collection (:slice sdef)
         to-collection slice
         to-zip-fn (field-zip-fn sdef)
@@ -273,7 +279,7 @@ transform that data into the form we want."
                      (where/parse)
                      (where/mongo-eval))
                  {})
-        
+
         map-reduce (generate-map-reduce {:dataset dataset
                                          :from from-collection
                                          :to to-collection
@@ -281,14 +287,14 @@ transform that data into the form we want."
                                          :aggregations aggregations
                                          :filter filter
                                          :slicedef sdef})
-        
+
         finalize-reduce-fn (fn [obj-name fields]
                              (reduce (fn [acc field]
                                        (merge acc
                                               {(name (to-zip-fn field))
                                                (js*
-                                                (elimNaN (aget (clj obj-name)
-                                                               (clj (name field)))))}))
+                                                 (elimNaN (aget (clj obj-name)
+                                                                (clj (name field)))))}))
                                      {} fields))
         finalize-dims (finalize-reduce-fn :key dimensions)
         finalize-aggs (finalize-reduce-fn :value (keys aggregations))
@@ -303,7 +309,7 @@ transform that data into the form we want."
                   {:finalize (cljs finalize-fn)}))))
 
 (defmethod load-slice "derived"
-  [slice concepts definition]
+           [slice concepts definition]
   (let [mr (derived-slice-map-reduce slice definition)
         slicedef (get-in definition [:slices (keyword slice)])
         fields (data/slice-columns slicedef)
@@ -319,7 +325,7 @@ transform that data into the form we want."
     (coll/update slice {} {"$unset" {"value" 1}} :multi true)))
 
 (defmethod load-slice :default
-  [slice concepts definition]
+           [slice concepts definition]
   (let [type (get-in definition [:slices (keyword slice) :type])]
     (log/error "Cannot load slice" slice "with type" type)))
 
@@ -336,21 +342,22 @@ transform that data into the form we want."
 
 (defn- load-slices
   ([definition]
-     (log/info "Loading concepts")
-     (load-slices (read-concepts definition) definition))  
+   (log/info "Loading concepts")
+   (load-slices (read-concepts definition) definition))
   ([concepts definition]
-     (let [slices (:slices definition)
-           slice-graph (reduce (fn [graph [slice slicedef]]
-                                 (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
-                               (dep/graph)
-                               slices)
-           slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
-       (doseq [slice slice-load-order]
-         (log/info "Dropping slice" slice)
-         (coll/drop slice)
-         (log/info "Loading slice" slice)
-         (load-slice slice concepts definition)
-         (index-slice slice definition)))))
+   (let [slices (:slices definition)
+         slice-graph (reduce (fn [graph [slice slicedef]]
+                               (dep/depend graph slice (keyword (get-in slicedef [:slice] :top))))
+                             (dep/graph)
+                             slices)
+         slice-load-order (remove #(= :top %) (dep/topo-sort slice-graph))]
+     (doseq [slice slice-load-order]
+       (log/info "Dropping slice" slice)
+       (coll/drop slice)
+       (log/info "Loading slice" slice)
+       (load-slice slice concepts definition)
+       (index-slice slice definition)
+       (emit-post-load-sample (:database definition) slice)))))
 
 (defn- write-concept-data
   [concepts]
@@ -386,17 +393,17 @@ transform that data into the form we want."
 
     (let [concepts (read-concepts definition)]
       (with-db (get-db dataset)
-        (log/info "Writing concept data")
-        (write-concept-data concepts)
-        (log/info "Loading slices for dataset" dataset)
-        (load-slices concepts definition)))))
+               (log/info "Writing concept data")
+               (write-concept-data concepts)
+               (log/info "Loading slices for dataset" dataset)
+               (load-slices concepts definition)))))
 
 (defn ez-prepare-data
   "Prepare all data you need for a dataset."
   [dataset]
   (let [dataset (name dataset)
         definition (read-definition dataset)
-        dir (:dir definition)        
+        dir (:dir definition)
         drakefile (-> (str dir "/Drakefile")
                       (io/resource)
                       (io/as-file))]
@@ -420,21 +427,26 @@ transform that data into the form we want."
         definition (read-definition dataset)
         concepts (read-concepts definition)]
     (with-db (get-db dataset)
-      (log/info "Writing concept data")      
-      (write-concept-data concepts))))
+             (log/info "Writing concept data")
+             (write-concept-data concepts))))
 
 (defn ez-load-slice
-  [dataset slice]
-  "Load one slice for a dataset.
-  Does not run Drake to process data first. Also does not run other
-  slices that the slice may depend on, so make sure you have all the
-  data you need before running this."
-  (let [dataset (name dataset)
-        definition (read-definition dataset)
-        concepts (read-concepts definition)]
-    (with-db (get-db dataset)
-      (log/info "Dropping slice" slice)
-      (coll/drop slice)
-      (log/info "Loading slice" slice)
-      (load-slice slice concepts definition)
-      (index-slice slice definition))))
+  ([dataset slice]
+   (ez-load-slice dataset slice false))
+  ([dataset slice delete]
+   "Load one slice for a dataset.
+   Does not run Drake to process data first. Also does not run other
+   slices that the slice may depend on, so make sure you have all the
+   data you need before running this. True to drop any existing data in
+   the dataset prior to loading; false to skip deletion (default is false)."
+   (let [dataset (name dataset)
+         definition (read-definition dataset)
+         concepts (read-concepts definition)]
+     (with-db (get-db dataset)
+              (when delete
+                (log/info "Dropping slice" slice)
+                (coll/drop slice))
+              (log/info "Loading slice" slice)
+              (load-slice slice concepts definition)
+              (index-slice slice definition)
+              (emit-post-load-sample dataset slice)))))
