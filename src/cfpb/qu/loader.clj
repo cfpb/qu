@@ -193,15 +193,17 @@ transform that data into the form we want."
     ))
 
 (defn- join-maps
-  "Join two vectors of maps on a key."
-  [left lkey lval right rkey rval]
-  (let [lkey (keyword lkey)
-        lval (keyword lval)
-        rkey (keyword rkey)
-        rval (keyword rval)
-        rmap (apply hash-map (flatten (map (juxt rkey rval) right)))]
+  "Join two vectors of maps on some keys."
+  [lmaps lkeys lvals rmaps rkeys rvals]
+  {:pre [(= (count lkeys) (count rkeys))
+         (= (count lvals) (count rvals))]
+   :post [(= (count lmaps) (count %))]}
+  (let [joinmap (apply hash-map (apply concat (map (juxt (fn [row]
+                                                           ((apply juxt rkeys) row))
+                                                         (fn [row]
+                                                           ((apply juxt rvals) row))) rmaps)))]
     (map (fn [row]
-           (assoc row lval (get rmap (get row lkey)))) left)))
+           (merge row (zipmap lvals (get joinmap ((apply juxt lkeys) row))))) lmaps)))
 
 (defn- load-csv-file
   [file collection transform-fn]
@@ -225,9 +227,12 @@ transform that data into the form we want."
         add-concepts (fn [data]
                        (reduce (fn [data [column cdef]]
                                  (join-maps
-                                   data (:column cdef) column
-                                   (get concepts (keyword (:concept cdef)))
-                                   :_id (:value cdef)))
+                                  data
+                                  (map keyword (coll-wrap (:column cdef)))
+                                  (map keyword (coll-wrap column))
+                                  (get concepts (keyword (:concept cdef)))
+                                  (map keyword (coll-wrap (:id cdef :_id)))
+                                  (map keyword (coll-wrap (:value cdef)))))
                                data references))
         transform-keys (if keyfn
                          (partial map #(convert-keys % keyfn))
@@ -429,6 +434,31 @@ transform that data into the form we want."
     (with-db (get-db dataset)
              (log/info "Writing concept data")
              (write-concept-data concepts))))
+
+(defn ez-load-ref-column
+  [dataset slice refcol]
+  (ez-load-concepts dataset)
+  (with-db (get-db dataset)
+           (let [dataset (name dataset)
+                 definition (read-definition dataset)
+                 concepts (read-concepts definition)
+                 slicedef (get-in definition [:slices (keyword slice)])
+                 refdef (get-in slicedef [:references (keyword refcol)])
+                 concept (:concept refdef)
+                 id (keyword (:id refdef))
+                 slice-cols (map keyword (coll-wrap (:column refdef)))
+                 concept-cols (map keyword (coll-wrap (:id refdef :_id)))
+                 value (keyword (:value refdef))
+                 concept-data (->> (coll/find-maps (data/concept-collection concept))
+                                   (map (fn [row]
+                                          [(into {} (zipmap slice-cols ((apply juxt concept-cols) row)))
+                                           {value (value row)}])))]
+             (log/info "Writing" refcol "for" dataset slice)
+             (doseq [[find-map update-map] concept-data]
+               (coll/update (name slice)
+                            find-map
+                            {"$set" update-map}
+                            :multi true)))))
 
 (defn ez-load-slice
   ([dataset slice]
