@@ -274,6 +274,7 @@ transform that data into the form we want."
         dataset (:database definition)
 
         from-collection (:slice sdef)
+        from-slicedef (get-in definition [:slices (keyword from-collection)])
         to-collection slice
         to-zip-fn (field-zip-fn sdef)
 
@@ -291,7 +292,7 @@ transform that data into the form we want."
                                          :group dimensions
                                          :aggregations aggregations
                                          :filter filter
-                                         :slicedef sdef})
+                                         :slicedef from-slicedef})
 
         finalize-reduce-fn (fn [obj-name fields]
                              (reduce (fn [acc field]
