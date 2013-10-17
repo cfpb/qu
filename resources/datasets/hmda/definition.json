@@ -626,6 +626,23 @@
         }
       }
     },
+    "census_tracts": {
+      "info": {
+        "name": "Census Tracts",
+        "description": "Distinct collection of Census Tracts for MSAMD and State Code, derived from the HMDA LAR data"
+      },
+      "type": "derived",
+      "slice": "hmda_lar",
+      "dimensions": [
+        "state_code", 
+        "msamd", 
+        "census_tract_number"
+      ],
+      "metrics": ["census_tracts"],
+      "aggregations": {
+        "census_tracts": ["count"]
+      }
+    },
     "application_groups": {
       "info": {
         "name": "HMDA Loan Application Records Grouped",
