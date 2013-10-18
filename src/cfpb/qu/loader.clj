@@ -196,14 +196,16 @@ transform that data into the form we want."
   "Join two vectors of maps on some keys."
   [lmaps lkeys lvals rmaps rkeys rvals]
   {:pre [(= (count lkeys) (count rkeys))
-         (= (count lvals) (count rvals))]
-   :post [(= (count lmaps) (count %))]}
-  (let [joinmap (apply hash-map (apply concat (map (juxt (fn [row]
-                                                           ((apply juxt rkeys) row))
-                                                         (fn [row]
-                                                           ((apply juxt rvals) row))) rmaps)))]
-    (map (fn [row]
-           (merge row (zipmap lvals (get joinmap ((apply juxt lkeys) row))))) lmaps)))
+         (= (count lvals) (count rvals))]}
+  (let [get-lkeys (apply juxt lkeys)
+        get-rkeys (apply juxt rkeys)
+        get-rvals (apply juxt rvals)
+        joinmap (reduce (fn [m row]
+                          (assoc m (get-rkeys row) (get-rvals row)))
+                        {} rmaps)]
+    (map (fn [row]        
+           (let [joindata (zipmap lvals (get joinmap (get-lkeys row)))]
+             (merge row joindata))) lmaps)))
 
 (defn- load-csv-file
   [file collection transform-fn]
