@@ -432,11 +432,13 @@
                       (response/set-headers {"Link" (str/join ", " links)})
                       (response/set-headers {"X-Computing" computing}))
         data (concat (vector columns) rows)]
-    (if (should-stream? resource)
-      (stream-slice-query-csv request response data)
-      (->> (str (write-csv (vector columns)) (write-csv rows))
-           (response/content-type "text/csv; charset=utf-8")
-           (response/set-headers {"Link" (str/join ", " links)})))))
+    (if (query/valid? query)
+      (if (should-stream? resource)
+        (stream-slice-query-csv request response data)
+        (->> (str (write-csv (vector columns)) (write-csv rows))
+             (response/content-type "text/csv; charset=utf-8")
+             (response/set-headers {"Link" (str/join ", " links)})))
+      (response/content-type "text/plain" ""))))
 
 (defmethod slice-query "application/json"
   [_ resource {:keys [request]}]
