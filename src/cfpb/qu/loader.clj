@@ -447,14 +447,23 @@ transform that data into the form we want."
                  concepts (read-concepts definition)
                  slicedef (get-in definition [:slices (keyword slice)])
                  refdef (get-in slicedef [:references (keyword refcol)])
+                 zipfn (field-zip-fn slicedef)
                  concept (:concept refdef)
                  id (keyword (:id refdef))
-                 slice-cols (map keyword (coll-wrap (:column refdef)))
-                 concept-cols (map keyword (coll-wrap (:id refdef :_id)))
+                 slice-cols (->> (:column refdef)
+                                 (coll-wrap)
+                                 (map keyword)
+                                 (map zipfn))
+                 concept-cols (->> (:id refdef :_id)
+                                   (coll-wrap)
+                                   (map keyword))
                  value (keyword (:value refdef))
-                 concept-data (->> (coll/find-maps (data/concept-collection concept))
+                 concept-data (->> (data/concept-collection concept)
+                                   (coll/find-maps)
                                    (map (fn [row]
-                                          [(into {} (zipmap slice-cols ((apply juxt concept-cols) row)))
+                                          [(into {}
+                                                 (zipmap slice-cols
+                                                         ((apply juxt concept-cols) row)))
                                            {value (value row)}])))]
              (log/info "Writing" refcol "for" dataset slice)
              (doseq [[find-map update-map] concept-data]
