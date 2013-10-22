@@ -464,8 +464,9 @@ transform that data into the form we want."
                                           [(into {}
                                                  (zipmap slice-cols
                                                          ((apply juxt concept-cols) row)))
-                                           {value (value row)}])))]
+                                           {(zipfn refcol) (value row)}])))]
              (log/info "Writing" refcol "for" dataset slice)
+             (log/info concept-data)
              (doseq [[find-map update-map] concept-data]
                (coll/update (name slice)
                             find-map
