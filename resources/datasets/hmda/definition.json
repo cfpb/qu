@@ -351,6 +351,7 @@
         "agency_code",
         "agency_abbr",
         "applicant_ethnicity",
+        "applicant_income_000s",
         "applicant_race_1",
         "applicant_race_2",
         "applicant_race_3",
@@ -393,6 +394,7 @@
         "agency_name",
         "applicant_ethnicity",
         "applicant_ethnicity_name",
+        "applicant_income_000s",
         "applicant_race_1",
         "applicant_race_2",
         "applicant_race_3",
@@ -457,7 +459,6 @@
         "state_name"
       ],
       "metrics": [
-        "applicant_income_000s",
         "hud_median_family_income",
         "loan_amount_000s",
         "number_of_1_to_4_family_units",
@@ -1244,12 +1245,7 @@
     },    
     "hmda_lar": {
       "sources": [
-        "hmda_lar_2012.csv",
-        "hmda_lar_2011.csv",
-        "hmda_lar_2010.csv",
-        "hmda_lar_2009.csv",
-        "hmda_lar_2008.csv",
-        "hmda_lar_2007.csv"
+        "min.csv"
       ],
       "columns": {        
         "as_of_year": {
