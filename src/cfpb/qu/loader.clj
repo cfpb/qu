@@ -493,3 +493,10 @@ transform that data into the form we want."
               (load-slice slice concepts definition)
               (index-slice slice definition)
               (emit-post-load-sample dataset slice)))))
+
+(defn ez-index-slice
+  [dataset slice]
+  "Given a dataset name and slice name, create indexes for the slice."
+  (let [definition (read-definition dataset)]
+    (with-db (get-db dataset)
+             (index-slice slice definition))))
