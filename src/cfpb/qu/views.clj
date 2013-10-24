@@ -404,8 +404,8 @@
     (with-channel request ch
       (send! ch (assoc response :body (str callback "(")) false)
       (with-open [writer (ch->writer ch)]
-        (json/generate-stream resource writer))
-      (send! ch ");" true))
+        (json/generate-stream resource writer)
+        (send! ch ");" true)))
     response))
 
 (defn- stream-slice-query-xml
