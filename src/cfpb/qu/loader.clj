@@ -342,11 +342,15 @@ transform that data into the form we want."
   [slice definition]
   (log/info "Indexing slice" slice)
   (let [sdef (get-in definition [:slices (keyword slice)])
-        indexes (or (:index_only sdef)
+        indexes (or (:indexes sdef)
+                    (:index_only sdef) ; deprecated
                     (:dimensions sdef))
         zipfn (field-zip-fn sdef)]
     (doseq [index indexes]
-      (coll/ensure-index slice {(zipfn index) 1}))))
+      (if (sequential? index)
+        (let [index-map (apply array-map (interleave (map zipfn index) (repeat 1)))]
+          (coll/ensure-index slice index-map))
+        (coll/ensure-index slice {(zipfn index) 1})))))
 
 (defn- load-slices
   ([definition]

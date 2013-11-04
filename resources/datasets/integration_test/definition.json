@@ -33,6 +33,14 @@
       "dimensions": [
         "state_abbr", "state_name", "county"
       ],
+      "indexes": [
+        ["state_abbr", "state_name"],
+        ["county", "state_name"],
+        ["state_abbr", "county"],
+        "state_abbr",
+        "state_name",
+        "county"
+      ],
       "metrics": [
         "tax_returns",
         "adjusted_gross_income",
