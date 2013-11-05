@@ -384,7 +384,12 @@
         "respondent_id",        
         "sequence_number",
         "state_code",
-        "state_abbr"
+        "state_abbr",
+        ["as_of_year", "state_code"],
+        ["as_of_year", "property_type", "action_taken", "owner_occupancy", "lien_status"],
+        ["as_of_year", "property_type", "owner_occupancy", "lien_status", "action_taken"],
+        ["as_of_year", "state_code", "action_taken"],
+        ["property_type", "owner_occupancy", "lien_status"]
       ],
       "dimensions": [
         "action_taken",
