@@ -346,7 +346,7 @@
       },
       "type": "table",
       "table": "hmda_lar",
-      "index_only": [
+      "indexes": [
         "action_taken",
         "agency_code",
         "agency_abbr",
