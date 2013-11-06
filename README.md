@@ -1,30 +1,21 @@
-# Project Name Documentation
+Public Data Platform
+====================
 
-This is a documentation site for [Project Name]. Copy or clone me and adapt for your project
-that needs documentation guides similar to [rubyamqp.info](http://rubyamqp.info), [clojuremongodb.info](http://clojuremongodb.info) and so on.
+This is the documentation repository for the Public Data Platform API. It is a separate effort from Qu, the software that powers this API. That documentation lives [here](http://cfpb.github.io/qu/).
 
+Check out the [gh-pages view](https://github.cfpb.gov/pages/data-platform/public-data-platform.io/). 
 
-## Install Dependencies
+Thanks to the eregs team and their documentation work for starting us off with a great codebase.
 
-With Bundler:
+## Using JavaScript and Bower
 
-    bundle install --binstubs
+If you are going to work on the JavaScript for this site, you need to do the following:
 
+* Run `npm install -g bower` to install Bower.
+* Run `npm install -g grunt-cli` to install Grunt.
+* Run `npm install` in the directory to install other tools.
+* Run `bower install` to install dependencies.
 
-## How to run a development server
-
-    ./bin/jekyll --auto --server
-
-
-## How to regenerate the site
-
-In order to modify contents and launch dev environment, run:
-
-    ./bin/jekyll
+After changing the JavaScript, run `grunt` to rebuild the minified JS.
 
 
-## License & Copyright
-
-Copyright (C) 2011-2012 Alexander Petrov, Michael S. Klishin.
-
-Distributed under the Eclipse Public License, the same as Clojure.

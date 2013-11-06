@@ -1,6 +1,6 @@
 ---
-title: "CFPB - Qu: Data Publishing"
-layout: article
+title: "Data Publishing"
+layout: default
 ---
 
 ## Getting and manipulating data files

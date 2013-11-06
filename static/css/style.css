@@ -1,0 +1,367 @@
+/*
+Style.css
+==================================
+Begin with generic 'mobile first' styles
+*/
+
+
+/*
+@font-face
+==================================
+*/
+
+@font-face{
+    font-family: "Avenir Next";
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/e9167238-3b3f-4813-a04a-a384394eed42.eot");
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/e9167238-3b3f-4813-a04a-a384394eed42.eot?#iefix") format("embedded-opentype"),
+         url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/1e9892c0-6927-4412-9874-1b82801ba47a.woff") format("woff");
+    font-weight: 400;
+    font-style: normal;
+}
+
+@font-face{
+    font-family: "Avenir Next Italic";
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/d1fddef1-d940-4904-8f6c-17e809462301.eot");
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/d1fddef1-d940-4904-8f6c-17e809462301.eot?#iefix") format("embedded-opentype"),
+         url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/92b66dbd-4201-4ac2-a605-4d4ffc8705cc.woff") format("woff");
+    font-weight: 400;
+    font-style: italic;
+}
+
+@font-face{
+    font-family: "Avenir Next Demi";
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/12d643f2-3899-49d5-a85b-ff430f5fad15.eot");
+    src: url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/12d643f2-3899-49d5-a85b-ff430f5fad15.eot?#iefix") format("embedded-opentype"),
+         url("http://www.consumerfinance.gov/wp-content/themes/cfpb_nemo/fonts/91b50bbb-9aa1-4d54-9159-ec6f19d14a7c.woff") format("woff");
+    font-weight: 600;
+    font-style: normal;
+}
+
+/*
+Normalize the box model
+==================================
+*/
+*,
+*:before,
+*:after {
+  -moz-box-sizing: border-box; -webkit-box-sizing: border-box; box-sizing: border-box;
+ }
+
+/*
+Typography
+==================================
+*/
+
+body {
+    font-family: "Avenir Next", Arial, sans-serif;
+    font-weight: 400;
+    font-style: normal;
+    line-height: 1.875;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+strong {
+    font-family: "Avenir Next Demi", Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal;
+}
+
+h1 {
+    font-size: 1.25em;
+    color: #75787B;
+    margin: 0;
+    line-height: 58px;
+    display: inline-block;
+    float: left;
+}
+
+h2 {
+    font-size: 1.375em;
+    margin: 1.4em 0 0 0;
+}
+
+/*
+Lists
+--------------------------------
+*/
+.main-content ul {
+    padding-left: 1.1em;
+}
+
+.main-content li {
+    margin-bottom: 1em;
+}
+
+li h3,
+li h4 {
+    margin: 0;
+}
+
+li p {
+    margin-top: 0;
+}
+
+/*
+Links
+==================================
+*/
+
+a {
+    -webkit-transition: .2s; -moz-transition: .2s;
+    transition: .2s;
+}
+
+a,
+a:link,
+a:visited {
+    color: #0072ce;
+    border-bottom: 1px dotted #0072ce;
+    text-decoration: none; 
+}
+
+a:hover {
+    border-bottom: 1px solid #7eb8dd; 
+    color: #7eb8dd; 
+    text-decoration: none;
+}
+
+a:active {
+    border-bottom: 1px solid #002d72; 
+    color: #002d72; 
+    text-decoration: none;
+}
+
+a:focus {
+    border-bottom: 1px solid #0072ce; 
+    color: #0072ce; 
+    outline: thin dotted; 
+    text-decoration: none;
+}
+
+/*
+Navigation
+==================================
+*/
+
+ nav a {
+    display: block;
+    padding: .5em 0;
+    -webkit-transition: .4s; -moz-transition: .4s;
+    transition: .4s;
+}
+
+nav a,
+nav a:link,
+nav a:visited {
+    border-bottom: none;
+}
+
+nav ul {
+    margin: 0;
+    padding: 0;
+    border-top: 1px solid #CDE3F1;
+}
+
+nav li {
+    list-style: none;
+    border-bottom: 1px solid #CDE3F1;
+}
+
+
+/*
+Layout
+==================================
+*/
+
+/* offset the fixed position header for jump links */
+section:before {
+    display: block; 
+    content: ""; 
+    height: 60px; 
+    margin: -60px 0 0; 
+}
+
+.wrap {
+    max-width: 960px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+header {
+    width: 100%;
+    border-top: 4px solid #2CB34A;
+    border-bottom: 1px solid #BABBBD;
+    background-color: #fff;
+    position: fixed;
+    top: 0;
+    z-index: 99999;
+    height: 3.625em;
+}
+
+.content {
+    margin-top: 80px;
+}
+
+
+/*
+Style
+==================================
+*/
+
+.e {
+    font-family: "Avenir Next", Arial, sans-serif;
+    font-weight: 400;
+    font-style: normal; 
+}
+
+.intro {
+    color: #75787B;
+}
+
+.logo {
+    width: 150px;
+    margin-top: .75em; /*this is a pretty hacky job of vertically centering the logo */
+    padding-right: 20px;
+    float: right;
+}
+
+footer {
+    font-size: 0.75em;
+    color: #75787B;
+}
+
+footer a,
+footer a:link,
+footer a:visited {
+    border-bottom: none;
+}
+
+li h4 {
+    margin: 0;
+}
+
+.license {
+    font-family: "Avenir Next Demi", Arial, sans-serif;
+    font-weight: normal;
+    font-style: normal; 
+}
+
+/*
+Repo list
+----------------------------------
+*/
+
+ul.repo-list {
+    margin: .5em 0 1em 0;
+    padding: 0;
+}
+
+.repo-list li {
+    list-style: none;
+}
+
+.repo-list p {
+    margin: 0;
+    font-size: 0.875em;
+}
+
+/*
+Desktop Styles
+==================================
+*/
+@media screen and (min-width: 40.5em) and (min-height: 32.5em) {
+
+    /*
+    Typography
+    ==============================
+    */
+
+    h1 {
+        font-size: 1.625em;
+        margin: 0;
+    }
+
+    /*
+    Layout
+    ==============================
+    */
+
+    .logo {
+        float: right;
+    }
+
+    aside {
+        position: fixed;
+        top: 82px;
+        width: 245px;
+        padding-right: 15px;
+        height: 100%;
+    }
+
+    footer {
+        border-top: 1px solid #666;
+        margin-top: 50px;
+    }
+
+    .main-content {
+        width: 67%;
+        float: right;
+        margin-bottom: 120px;
+    }
+
+    /*
+    Navigation
+    ==============================
+    */
+
+    nav a:hover {
+        color: #4D5F87;
+        border-bottom: none;
+        background-color: #CDE3F1;
+        padding-left: 10px;
+    }
+
+    /*
+    Style
+    ==============================
+    */
+
+    /*
+    Repo list
+    ------------------------------
+    */
+
+    .repo-list li {
+        list-style: none;
+        display: table-cell;
+        vertical-align:middle;
+        padding: .625em 1em;
+        background-color: #E7E7E6;
+        border-left: 1px solid #BABBBD;
+    }
+
+    .repo-list li:first-child {
+        border-left: none;
+    }
+
+}
+
+/*
+Mobile Styles
+==================================
+*/
+@media screen and (max-width: 40.5em) {
+
+    .list-icon {
+        display: none;
+    }
+
+    .main-content {
+        margin-top: 1.5em;
+    }
+
+}

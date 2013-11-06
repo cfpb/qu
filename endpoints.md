@@ -1,6 +1,6 @@
 ---
-title: "CFPB - Qu: API Endpoints"
-layout: article
+title: "API Endpoints"
+layout: default
 ---
 
 ## Endpoints

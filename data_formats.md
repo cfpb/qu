@@ -1,6 +1,6 @@
 ---
-title: "CFPB - Qu: Data Formats"
-layout: article
+title: "Data Formats"
+layout: default
 ---
 
 ## Data formats

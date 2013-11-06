@@ -1,6 +1,6 @@
 ---
-title: "CFPB - Qu: Query API"
-layout: article
+title: "Query API"
+layout: default
 ---
 
 

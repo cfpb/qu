@@ -1,11 +1,11 @@
 ---
 title: "Getting Started"
-layout: article
+layout: default
 ---
 
-# Getting started
+## Getting started
 
-## Prerequisites
+### Prerequisites
 
 In order to install and use _qu_, you need the following languages and
 tools installed:
@@ -20,7 +20,7 @@ tools installed:
 [Leiningen]: http://leiningen.org/
 [MongoDB]: http://www.mongodb.org/
 
-## Setup
+### Setup
 
 Once you have the prerequisites installed and the code downloaded and
 expanded into a directory (which we will call "qu"), run the following
@@ -52,7 +52,7 @@ Before starting the API, you will want to start MongoDB and load some
 data into it. Currently, _qu_ only supports connecting to a local
 MongoDB connection.
 
-## Loading data
+### Loading data
 
 Make sure you have MongoDB started. To load some sample data, run
 `lein repl` and enter the following:
