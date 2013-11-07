@@ -2,8 +2,7 @@
 
 [![Build Status](https://travis-ci.org/cfpb/qu.png)](https://travis-ci.org/cfpb/qu)
 
-_qu_ is an **in-progress** data platform created to
-serve our public data sets.
+_qu_ is an **in-progress** data platform created to serve our public data sets. You can use it to serve your data sets, as well.
 
 The goals of this platform are to:
 * Import data in our

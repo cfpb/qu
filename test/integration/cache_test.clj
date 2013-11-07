@@ -82,7 +82,7 @@
                        cache (c/create-query-cache "query_cache" (fn [_] (swap! cleanups inc)))
                        worker (c/create-worker cache)]                 
                    (run-all-jobs worker)
-                   @cleanups) => 1))
+                   @cleanups) >= 1))
     
     (facts "about add-to-queue"
            (fact "it adds a document to jobs"
