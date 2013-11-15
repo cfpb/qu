@@ -1,9 +1,10 @@
 (ns cfpb.qu.logging
   (:require
    [clojure.string :as str]
-   [cfpb.qu.metrics :as metrics]
+   [cfpb.qu
+    [metrics :as metrics]
+    [env :refer [env]]]
    [clj-statsd :as sd]
-   [environ.core :refer [env]]   
    [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
 
 (def ^:dynamic *log-id* "------")
@@ -18,10 +19,12 @@
 
 (defn config
   []
+
   (let [log-file (:log-file env)
         log-level (:log-level env)]
     (log/set-level! log-level)
     (when log-file
+      (println "Sending log output to" (:log-file env) )
       (log/set-config! [:appenders :spit :enabled?] true)
       (log/set-config! [:shared-appender-config :spit-filename] log-file)
       (log/set-config! [:appenders :standard-out :enabled?] false)))
