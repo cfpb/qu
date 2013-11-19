@@ -9,7 +9,7 @@
             any attempt multi* series
             number dq-str sq-str
             chr chr-in
-            parens sep-by
+            parens sep-by sep-by*
             word word-in
             string string-in
             regex starts-with?]]))
@@ -48,6 +48,12 @@ numeric expressions, strings, and booleans."
   []
   (any date-literal number string-literal boolean-literal))
 
+(defn list-of-values
+  []
+  (let [_ (chr \()
+        values (sep-by* value #(chr \,) #(chr \)))]
+    values))
+
 (defn- comparison-operator []
   (let [op (string-in [">" ">=" "=" "!=" "<" "<=" "LIKE" "ILIKE"])]
     (keyword op)))
@@ -75,12 +81,19 @@ underscores."
         is-null (ci-string "IS NOT NULL")]
     {:comparison [identifier :!= nil]}))
 
+(defn- comparison-in []
+  (let [identifier (identifier)
+        _ (ci-string "IN")
+        values (list-of-values)]
+    {:comparison [identifier :IN values]}))
+
 (defn comparison
   "Parse function for comparisons in WHERE queries. Comparisons are
 made up of an identifier and then either a comparison operator and a
 value or the phrases 'IS NULL' or 'IS NOT NULL'."
   []
   (any comparison-normal
+       comparison-in
        comparison-null
        comparison-not-null))
 
