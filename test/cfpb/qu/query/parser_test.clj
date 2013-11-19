@@ -30,6 +30,7 @@
        (fact "identifiers must start with a letter"
              (p/parse identifier "3times") => (throws Exception #"^Parse Error")))
 
+
 (facts "about comparisons"
        (fact "simple comparisons can be parsed"
              (p/parse comparison "length > 3") => {:comparison [:length :> 3]}
@@ -49,6 +50,10 @@
              
              (p/parse comparison "name ILIKE 'mar%'") =>
              {:comparison [:name :ILIKE "mar%"]})
+
+       (fact "IN comparisons can be parsed"
+             (p/parse comparison "length IN (1, 2, 3)") =>
+             {:comparison [:length :IN [1 2 3]]})
 
        (fact "spaces are irrelevant"
              (p/parse comparison "length>3") => {:comparison [:length :> 3]}))
