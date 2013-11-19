@@ -11,7 +11,7 @@ functions to return the resource that will be presented later."
    [taoensso.timbre :as log]
    [liberator.core :refer [defresource request-method-in]]
    [liberator.representation :refer [ring-response]]
-   [noir.response :refer [status]]
+   [ring.util.response :refer [response status]]
    [protoflex.parse :refer [parse]]
    [halresource.resource :as hal]
    [clojurewerkz.urly.core :as url :refer [url-like]]
@@ -28,9 +28,10 @@ functions to return the resource that will be presented later."
   ([] (not-found "Route not found"))
   ([msg]
      (status
-      404
-      (views/layout-html
-       (views/not-found-html msg)))))
+      (response
+       (views/layout-html
+        (views/not-found-html msg)))
+      404)))
 
 (defresource
   ^{:doc "Resource for the collection of datasets."}
@@ -270,4 +271,4 @@ functions to return the resource that will be presented later."
                  (ring-response
                   (if (query/valid? query)
                     response
-                    (assoc response :status 400))))))
+                    (status response 400))))))
