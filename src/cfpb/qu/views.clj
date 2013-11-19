@@ -9,7 +9,7 @@
    [compojure
     [response :refer [render]]]
    [stencil.core :refer [render-file]]
-   [noir.response :as response]
+   [ring.util.response :as response]
    [clojure.data.csv :as csv]
    [clojure.data.xml :as xml]
    monger.json
@@ -46,8 +46,8 @@
   ([status] (json-error status {}))
   ([status body]
      (response/status
-      status
-      (response/json body))))
+      (json-response body)
+      status)))
 
 (defn layout-html
   ([content] (layout-html {} content))
@@ -105,11 +105,10 @@
 
 (defn format-not-found [format]
   (ring-response
-   (response/status
-    406
-    (response/content-type
-     "text/plain"
-     (str "Format not found: " format ".")))))
+   (-> (str "Format not found: " format ".")
+       (response/response)
+       (response/status 406)
+       (response/content-type "text/plain"))))
 
 (defmulti index (fn [format _] format))
 
@@ -340,26 +339,27 @@
         pagination (create-pagination resource)
         computing? (get-in resource [:properties :computing])]
     (response/content-type
-     "text/html;charset=UTF-8"
-     (layout-html resource
-                  (slice-html
-                   {:action (str (base-url request) base-href)
-                    :base-href base-href
-                    :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
-                    :dataset dataset
-                    :slice slice
-                    :metadata slice-metadata
-                    :dimensions dimension-form-data
-                    :clauses clauses
-                    :columns columns
-                    :start start
-                    :end end
-                    :total total
-                    :pagination pagination
-                    :has-data? has-data?
-                    :has-more-data? has-more-data?
-                    :computing? computing?
-                    :data data})))))
+     (response/response
+      (layout-html resource
+                   (slice-html
+                    {:action (str (base-url request) base-href)
+                     :base-href base-href
+                     :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
+                     :dataset dataset
+                     :slice slice
+                     :metadata slice-metadata
+                     :dimensions dimension-form-data
+                     :clauses clauses
+                     :columns columns
+                     :start start
+                     :end end
+                     :total total
+                     :pagination pagination
+                     :has-data? has-data?
+                     :has-more-data? has-more-data?
+                     :computing? computing?
+                     :data data})))
+     "text/html;charset=UTF-8")))
 
 (defn- should-stream?
   [resource]
@@ -427,35 +427,32 @@
                       [{:href (:href resource) :rel "self"}]
                       (:links resource))
         links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
-        response (->> {}
-                      (response/content-type "text/csv;charset=UTF-8")
-                      (response/set-headers {"Link" (str/join ", " links)})
-                      (response/set-headers {"X-Computing" computing}))
-        data (concat (vector columns) rows)]
+        respond #(-> (response/response %)
+                     (response/content-type "text/csv;charset=UTF-8")
+                     (response/header "Link" (str/join ", " links))
+                     (response/header "X-Computing" computing))]
     (if (query/valid? query)
       (if (should-stream? resource)
-        (stream-slice-query-csv request response data)
-        (->> (str (write-csv (vector columns)) (write-csv rows))
-             (response/content-type "text/csv; charset=utf-8")
-             (response/set-headers {"Link" (str/join ", " links)})))
-      (response/content-type "text/plain" ""))))
+        (stream-slice-query-csv request (respond "") (concat (vector columns) rows))
+        (respond (str (write-csv (vector columns)) (write-csv rows))))
+      (response/content-type (response/response "") "text/plain"))))
 
 (defmethod slice-query "application/json"
   [_ resource {:keys [request]}]
-  (let [response (response/content-type "application/json;charset=UTF-8" {})]
+  (let [response (response/content-type {} "application/json;charset=UTF-8")]
     (if (should-stream? resource)
       (stream-slice-query-json request response resource)
       (assoc response :body (hal/resource->representation resource :json)))))
 
 (defmethod slice-query "text/javascript" [_ resource {:keys [request callback]}]
-  (let [response (response/content-type "text/javascript;charset=UTF-8" {})
+  (let [response (response/content-type {} "text/javascript;charset=UTF-8")
         callback (if (str/blank? callback) "callback" callback)]
     (if (should-stream? resource)
       (stream-slice-query-jsonp request response resource callback)
       (assoc response :body (str callback "(" (hal/resource->representation resource :json) ");")))))
 
 (defmethod slice-query "application/xml" [_ resource {:keys [request]}]
-  (let [response (response/content-type "application/xml;charset=UTF-8" {})
+  (let [response (response/content-type {} "application/xml;charset=UTF-8")
         xml-resource (hal/xml-representation resource)]
     (if (should-stream? resource)
       (stream-slice-query-xml request response xml-resource)

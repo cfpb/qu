@@ -4,7 +4,7 @@
     [core :refer [defroutes GET routes]]
     [route :as route]]
    [clojure.java.io :as io]
-   [noir.response :as response]
+   [ring.util.response :refer [redirect]]
    [cfpb.qu.resources :as resources]
    [cfpb.qu.urls :refer :all]
    [cfpb.qu.swagger :as swagger]))
@@ -13,7 +13,7 @@
   "Create the app routes. Provides GET-only access to the list of
 datasets, individual datasets, and slices. Static files are served
 through Jetty, not through another web server."
-  (GET "/" [] (response/redirect datasets-template))   
+  (GET "/" [] (redirect datasets-template))   
   (GET "/data.:extension" [] resources/index)
   (GET datasets-template [] resources/index)
   (GET "/data/:dataset.:extension" [dataset] resources/dataset)
