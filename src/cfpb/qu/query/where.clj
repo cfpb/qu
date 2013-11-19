@@ -5,8 +5,7 @@ into a Monger query."
    [clojure.string :as str]
    [taoensso.timbre :as log]   
    [protoflex.parse :as p]
-   [cfpb.qu.query.parser :refer [where-expr]]
-   [slingshot.slingshot :refer [throw+]])
+   [cfpb.qu.query.parser :refer [where-expr]])
   (:import (java.util.regex Pattern)))
 
 (defn parse
@@ -118,5 +117,4 @@ a valid Monger query."
    (mongo-not (mongo-eval ast))
 
    :default
-   (throw+ {:type ::mongo-eval
-            :message (str "Cannot evaluate " ast " in a negative context for Mongo.")})))
+   (throw (Exception. (str "Cannot evaluate " ast " in a negative context for Mongo.")))))
