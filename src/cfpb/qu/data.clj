@@ -12,6 +12,7 @@ after retrieval."
             [cfpb.qu.cache :as qc :refer [create-query-cache add-to-cache]]
             [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.compression :as compression]
+            [cfpb.qu.data.definition :as definition]
             [cfpb.qu.metrics :as metrics]
             [cheshire.core :as json]
             [monger

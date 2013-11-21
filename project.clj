@@ -41,6 +41,7 @@ serve their public data sets."
                  [org.clojure/data.csv "0.1.2"]
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
                  [parse-ez "0.3.6"]
+                 [prismatic/schema "0.1.8"]
                  [ring "1.2.1"]                 
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring-middleware-format "0.3.1"]
