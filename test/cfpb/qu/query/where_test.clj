@@ -103,6 +103,10 @@
                       {"$or" [{:height {"$lt" 4.5}}
                               {:name "Pete"}]}]})
 
+       (fact "handles IN comparisons"
+             (mongo-eval (parse "name IN (\"Pete\", \"Sam\")")) =>
+             {:name {"$in" ["Pete" "Sam"]}})
+
        (fact "handles simple comparisons with NOT"
              (mongo-eval (parse "NOT name = \"Pete\"")) =>
              {:name {"$ne" "Pete"}}

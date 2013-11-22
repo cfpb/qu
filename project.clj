@@ -4,7 +4,7 @@
                     (System/getenv "TRAVIS_COMMIT")))
 (def app-url (or (System/getenv "APP_URL") ""))
 
-(defproject qu "0.9.4"
+(defproject qu "0.9.5"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :build-number ~build-number
@@ -30,7 +30,7 @@ serve their public data sets."
                  [com.novemberain/monger "1.6.0"]
                  [com.stuartsierra/dependency "0.1.1"]                 
                  [com.taoensso/timbre "2.7.1" :exclusions [expectations]]
-                 [compojure "1.1.6" :exclusions [ring/ring-core clout]]
+                 [compojure "1.1.6" :exclusions [ring/ring-core]]
                  [digest "1.4.3"]
                  [environ "0.4.0"]
                  [halresource "0.1.1-20130809.164342-1"]

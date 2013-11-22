@@ -14,6 +14,7 @@ after retrieval."
             [cfpb.qu.data.compression :as compression]
             [cfpb.qu.metrics :as metrics]
             [cheshire.core :as json]
+            [cheshire.generate :refer [add-encoder encode-str]]
             [monger
              [core :as mongo :refer [with-db get-db]]
              [query :as q]
@@ -21,6 +22,9 @@ after retrieval."
              [conversion :as conv]
              joda-time
              json]))
+
+;; Prevent encoding regexes in JSON in the logs from throwing an error.
+(add-encoder java.util.regex.Pattern encode-str)
 
 (defn- authenticate-mongo
   [auth]

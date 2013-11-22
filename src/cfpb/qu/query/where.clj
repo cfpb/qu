@@ -18,6 +18,7 @@ for use in constructing Mongo queries."
 (def mongo-operators
   {:AND "$and"
    :OR "$or"
+   :IN "$in"
    :< "$lt"
    :<= "$lte"
    :> "$gt"
