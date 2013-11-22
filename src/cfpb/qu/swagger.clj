@@ -4,7 +4,7 @@
    [cfpb.qu.util :refer :all]
    [cfpb.qu.data :as data]
    [cfpb.qu.urls :as urls]
-   [noir.response :as response]
+   [ring.util.response :refer [not-found]]
    [lonocloud.synthread :as ->]
    [clojurewerkz.route-one.core :as route]
    [clojurewerkz.urly.core :as urly :refer [url-like]]))
@@ -150,12 +150,12 @@
 
 (defn resource-listing-json
   [req]
-  (response/json (resource-listing req)))
+  (json-response (resource-listing req)))
 
 (defn api-declaration-json
   [api req]
   (let [datasets (set (data/get-dataset-names))]
     (cond
-     (= api "data") (response/json (data-declaration req))
-     (contains? datasets api) (response/json (dataset-declaration api req))
-     :else (response/status 404 ""))))
+     (= api "data") (json-response (data-declaration req))
+     (contains? datasets api) (json-response (dataset-declaration api req))
+     :else (not-found ""))))

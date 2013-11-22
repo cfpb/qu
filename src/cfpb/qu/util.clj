@@ -1,7 +1,15 @@
 (ns cfpb.qu.util
   "Utility functions for use throughout Qu."
   (:require [clojure.string :as str]
-            [clojure.walk :refer [postwalk]]))
+            [clojure.walk :refer [postwalk]]
+            [cheshire.core :as json]            
+            [ring.util.response :refer [content-type]]))
+
+(defn json-response
+  "Wraps the response in the json content type and generates JSON from the content"
+  [content]
+  (content-type "application/json; charset=utf-8"
+                (json/generate-string content)))
 
 (defn request-protocol
   [request]
