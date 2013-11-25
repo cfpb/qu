@@ -8,8 +8,8 @@
 (defn json-response
   "Wraps the response in the json content type and generates JSON from the content"
   [content]
-  (content-type "application/json; charset=utf-8"
-                (json/generate-string content)))
+  (content-type {:body (json/generate-string content)}
+                "application/json; charset=utf-8"))
 
 (defn request-protocol
   [request]
