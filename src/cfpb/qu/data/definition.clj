@@ -7,17 +7,42 @@
             [cheshire.core :as json]
             [cheshire.factory :as factory]))
 
+(def InfoS {(s/required-key :name) s/String
+            (s/optional-key :description) s/String
+            (s/optional-key :url) s/String
+            s/Keyword s/Any
+            })
+
+(def TypeS (s/enum "string" "integer" "date" "dollars" "number"))
+
 (def IndexS (s/either s/String [s/String]))
 
-(def TableSliceS {(s/required-key :type) (s/eq "table")
+(defn ref-col-count-eq?
+  "Make sure that if you have multiple columns in a reference that you
+  have the same number of columns in the id."
+  [ref]
+  (if (coll? (:column ref))
+    (= (count (:column ref)) (count (:id ref)))
+    (not (coll? (:id ref)))))
+
+(def ReferenceS (s/both (s/pred ref-col-count-eq?)
+                        {(s/required-key :column) (s/either s/String [s/String])
+                         (s/required-key :concept) s/String
+                         (s/optional-key :id) (s/either s/String [s/String])
+                         (s/required-key :value) s/String
+                         }))
+
+(def TableSliceS {(s/optional-key :info) {s/Keyword s/String}
+                  (s/required-key :type) (s/eq "table")
                   (s/required-key :table) s/String
                   (s/required-key :dimensions) [s/String]
                   (s/required-key :metrics) [s/String]
                   (s/optional-key :indexes) [IndexS]
-                  (s/optional-key :references) s/Any ;; TODO
+                  (s/optional-key :references) {s/Keyword ReferenceS}
                   })
 
-(def DerivedSliceS {(s/required-key :type) (s/eq "derived")
+(def DerivedSliceS {(s/optional-key :info) {s/Keyword s/String}
+                    (s/required-key :type) (s/eq "derived")
                     (s/required-key :slice) s/String
                     (s/required-key :dimensions) [s/String]
                     (s/required-key :metrics) [s/String] ;; TODO remove metrics from here
@@ -27,10 +52,27 @@
 
 (def SliceS (s/either TableSliceS DerivedSliceS))
 
-(def DataDefinitionS {(s/required-key :info) {s/Keyword s/Any} ;; TODO
+(def SimpleConceptS {(s/optional-key :description) s/String
+                     (s/optional-key :type) TypeS})
+(def TableConceptS (merge SimpleConceptS
+                          {(s/required-key :table) s/String
+                           (s/required-key :properties) {s/Keyword
+                                                         {(s/required-key :type) TypeS
+                                                          s/Keyword s/String}}}))
+(def ConceptS (s/either SimpleConceptS TableConceptS))
+
+(def ColumnS {(s/optional-key :name) s/String
+              (s/optional-key :skip) boolean
+              (s/optional-key :type) TypeS
+              (s/optional-key :format) s/String})
+
+(def TableS {:sources [s/String]
+             :columns {s/Keyword ColumnS}})
+
+(def DataDefinitionS {(s/required-key :info) InfoS
                       (s/required-key :slices) {s/Keyword SliceS}
-                      (s/optional-key :concepts) {s/Keyword s/Any} ;; TODO
-                      (s/required-key :tables) {s/Keyword s/Any} ;; TODO
+                      (s/optional-key :concepts) {s/Keyword ConceptS}
+                      (s/required-key :tables) {s/Keyword TableS}
                       })
 
 (defn read-definition
@@ -60,3 +102,5 @@
   (apply concat ((juxt dimensions metrics) definition slice)))
 
 ;; (read-definition (io/resource "datasets/integration_test/definition.json"))
+;; (read-definition (io/resource "datasets/hmda/definition.json"))
+;; (s/explain DataDefinitionS)
