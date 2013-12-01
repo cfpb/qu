@@ -8,6 +8,7 @@ transforming the data within."
      [data :as data]]
     [cfpb.qu.data.compression :refer [field-zip-fn]]
     [cfpb.qu.data.aggregation :refer [generate-map-reduce]]
+    [cfpb.qu.data.definition :as definition]
     [cfpb.qu.query.where :as where]
     [taoensso.timbre :as log]
     [clojure.string :as str]
@@ -28,6 +29,7 @@ transforming the data within."
      [joda-time]
      [key-compression :refer [compression-map]]])
   (:import [org.bson.types ObjectId]))
+
 
 (def ^:dynamic *chunk-size* 256)
 (def default-date-parser (time/formatter (default-time-zone)
@@ -75,30 +77,27 @@ in MongoDB."
 (defn read-definition
   "Read the definition of a dataset from disk."
   [dataset]
-  (binding [factory/*json-factory* (factory/make-json-factory {:allow-comments true})]
-    (let [dataset (name dataset)
-          dir (str "datasets/" dataset)]
-      (-> (str dir "/definition.json")
-          io/resource
-          slurp
-          (json/parse-string true)
-          (assoc :dir dir)
-          (assoc :database dataset)
-          (build-types-for-slices)))))
+  (let [dataset (name dataset)
+        dir (str "datasets/" dataset)]
+    (-> (str dir "/definition.json")
+        io/resource
+        definition/read-definition
+        (assoc :dir dir)
+        (assoc :database dataset))))
 
 (defn save-dataset-definition
   "Save the definition of a dataset into the 'metadata' database."
   [name definition]
-  (let [definition (assoc definition
-                     :name name
-                     :last-modified (now))
+  (let [definition (-> definition
+                       build-types-for-slices
+                       (assoc :name name :last-modified (now))
+                       (dissoc :tables))
         definition (reduce (fn [def [slice sdef]]
                              (assoc-in def
                                        [:compression-map slice]
                                        (compression-map (data/slice-columns sdef))))
                            definition
-                           (:slices definition))
-        definition (dissoc definition :tables)]
+                           (:slices definition))]
     (with-db (get-db "metadata")
              (coll/update "datasets" {:name name}
                           definition
