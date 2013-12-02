@@ -10,19 +10,7 @@ Our query language is based on Socrata's [SoQL][] language. Queries are simple G
 
 [SoQL]: http://dev.socrata.com/consumers/getting-started#queryingwithsoql
 
-### Dimensions
-
-Certain fields of a slice are _dimensions_. Dimensions are usually fields that have one of a series of values, such as a `state` field having one of the 50 US States, or a `marital_status` field having Single, Widowed, Divorced, or Separated.
-
-To perform an equality query on a dimension, use the dimension name as a GET parameter with your filter as the value. To query the census population estimates with a `state` of `Nebraska`, you would use this query:
-
-```
-/data/census/slice/population_estimates?state=Nebraska
-```
-
 ### Clauses
-
-Most queries will involve more than simple equality queries. For these, we have a set of _clauses_ you can use.
 
 <table class="table table-bordered table-striped">
 <thead>
