@@ -15,9 +15,9 @@
 
 (def query (make-test-query {}))
 
-(fact "parse-params puts clauses under :clauses"
-      (let [params {:$select "age,race"}]
-        (parse-params params {}) => (contains {:clauses {:$select "age,race"}})))
+(fact "parse-params pulls out clauses"
+      (let [params {:$select "age,race" :$foo "1"}]
+        (parse-params params) => {:$select "age,race"}))
 
 (facts "about is-aggregation?"
        (fact "returns true if we have a group key"
@@ -25,13 +25,6 @@
 
        (fact "returns false if we don't have a group key"
              {} =not=> is-aggregation?))
-
-(facts "about params->Query"
-       (fact "it stores dimensions in the query"
-             (params->Query {:state "AL"}
-                            metadata
-                            :county_taxes)
-             => (contains {:dimensions {:state "AL"}})))
 
 (facts "about mongo-find"
        (fact "it populates fields if :select exists"
