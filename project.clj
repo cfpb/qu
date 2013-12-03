@@ -22,6 +22,7 @@ serve their public data sets."
             [slothcfg "1.0.1"]
             [codox "0.6.4"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
+                 [caribou/antlers "0.6.0"]                 
                  [cheshire "5.2.0"]
                  [clj-statsd "0.3.10"]                 
                  [clj-time "0.6.0"]
@@ -46,7 +47,6 @@ serve their public data sets."
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
-                 [stencil "0.3.2"]
                  ]
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"

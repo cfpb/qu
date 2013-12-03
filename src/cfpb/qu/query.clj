@@ -16,7 +16,7 @@
     Much of this comes from requests to the system. The rest is
     accreted throughout the query parsing and verification process."}
     Query
-  [select group where orderBy limit offset callback dimensions
+  [select group where orderBy limit offset callback
    mongo errors
    dataset slice metadata slicedef
    result])
@@ -30,40 +30,14 @@
   [query]
   (validation/valid? query))
 
-(defn- cast-value
-  [value type]
-  (case type
-    "integer" (->int value)
-    "number" (->num value)
-    value))
-
-(defn- cast-dimensions
-  "Given a slice definition and a set of dimensions from the request,
-cast the requested dimensions into the right type for comparison when
-querying the database."
-  [slice-def dimensions]
-  (into {}
-        (for [[dimension value] dimensions]
-          (vector dimension (cast-value
-                             value
-                             (get-in slice-def [:types dimension]))))))
-
 (defn parse-params
   "Given a slice definition and the request parameters, convert those
-parameters into something we can use. Specifically, pull out the
-dimensions and clauses and cast the dimension values into something we
-can query with."
-  [params slice]
-  (let [dimensions (set (:dimensions slice))]
-    {:dimensions (->> (into {} (filter (fn [[key value]]
-                                         (and
-                                          (not= value "")
-                                          (dimensions (name key)))) params))
-                      (cast-dimensions slice))
-     :clauses (into {} (filter (fn [[key value]]
-                                 (and
-                                  (not= value "")
-                                  (allowed-clauses key))) params))}))
+parameters into something we can use. Specifically, pull out the clauses."
+  [params]
+  (into {} (filter (fn [[key value]]
+                     (and
+                      (not= value "")
+                      (allowed-clauses key))) params)))
 
 (defn mongo-find
   "Create a Mongo find map from the query."
@@ -158,7 +132,7 @@ can query with."
   [params metadata slice]
   (let [slicedef (get-in metadata [:slices (keyword slice)])
         dataset (:name metadata)
-        {:keys [dimensions clauses]} (parse-params params slicedef)
+        clauses (parse-params params)
         {select :$select
          group :$group
          orderBy :$orderBy
@@ -177,7 +151,6 @@ can query with."
                  :perPage perPage
                  :orderBy orderBy
                  :callback callback
-                 :dimensions dimensions
                  :metadata metadata
                  :dataset dataset
                  :slice slice

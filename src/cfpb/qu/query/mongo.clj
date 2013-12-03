@@ -40,16 +40,11 @@ this namespace."
 
 (defn match
   "Add the :match provision of the Mongo query. Assemble the match
-  from both :where and :dimensions of the origin query."
+  from the :where of the origin query."
   [query]
-  (if (or (:where query)
-          (:dimensions query))
-    (let [parse #(if %
-                   (where/mongo-eval (where/parse %))
-                   {})
-          match (-> (str (:where query))
-                    parse
-                    (merge (:dimensions query {})))]
+  (if (:where query)
+    (let [parse #(where/mongo-eval (where/parse %))
+          match (parse (str (:where query)))]
       (assoc-in query [:mongo :match] match))
     query))
 

@@ -67,36 +67,25 @@
       </label>
     </fieldset>
 
-    <fieldset class="span5 dimension-fields">
-      <legend>Dimensions</legend>
-
-      <p class="text-info">Enter a value for any of these dimensions to filter
-        the search, returning only rows that match that value.</p>
-
-        <!-- replicate for each dimension -->
-        {{#dimensions}}
-          <div class="dimension-field">
-            <label for="field-{{key}}">{{name}}</label>
-            <input id="field-{{key}}" name="{{key}}" type="text" value="{{value}}" />
-          </div>
-        {{/dimensions}}
-    </fieldset>
-
-    <fieldset class="span5 clause-fields">
+    <fieldset class="span10 clause-fields">
       <legend>Clauses</legend>
 
       {{#clauses}}
-        <div class="control-group{{#errors}} error{{/errors}}">
+        {{#even? loop.index}}<div class="row">{{/even? loop.index}}
+        <div class="span5 control-group{{#errors}} error{{/errors}}">
           <label class="control-label" for="field-{{key}}">{{label}}</label>
           <input id="field-{{key}}"
           name="${{key}}"
           type="text"
+          class="span5"
           placeholder="{{placeholder}}"
           value="{{value}}" />
           {{#errors}}
             <span class="help-inline">{{.}}</span>
           {{/errors}}
         </div>
+        {{#odd? loop.index}}</div><!-- end row -->{{/odd? loop.index}}
+        {{#even? loop.index}}{{#loop.last}}</div><!-- end row -->{{/loop.last}}{{/even? loop.index}}
       {{/clauses}}
     </fieldset>
   </div>

@@ -7,11 +7,9 @@
             [environ.core :refer [env]]
             [cfpb.qu.main :as main]
             [cfpb.qu.data :as data :refer [ensure-mongo-connection]]
-            [cfpb.qu.loader :as loader :refer [load-dataset]]
-            stencil.loader))
+            [cfpb.qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
-(stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0))
 
 (def server (atom nil))
 

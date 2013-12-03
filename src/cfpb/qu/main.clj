@@ -47,8 +47,6 @@
 (defn init
   []
   (let [dev (:dev env)]
-    (when dev
-      (stencil.loader/set-cache (clojure.core.cache/ttl-cache-factory {} :ttl 0)))
     (logging/config)))
 
 (defn setup-statsd

@@ -8,7 +8,7 @@
    [clojure.java.io :as io]
    [compojure
     [response :refer [render]]]
-   [stencil.core :refer [render-file]]
+   [antlers.core :as antlers]
    [ring.util.response :as response]
    [clojure.data.csv :as csv]
    [clojure.data.xml :as xml]
@@ -52,12 +52,12 @@
 (defn layout-html
   ([content] (layout-html {} content))
   ([resource content]
-     (render-file "templates/layout"
+     (antlers/render-file "templates/layout"
                   (merge layout-info {:content content
                                       :resource resource}))))
 
 (defn not-found-html [message]
-  (render-file "templates/404" {:message message}))
+  (antlers/render-file "templates/404" {:message message}))
 
 (defn- write-csv [data]
   (with-out-str (csv/write-csv *out* data)))
@@ -83,7 +83,7 @@
 
 (defn slice-html
   [view-map]
-  (render-file "templates/slice" view-map))
+  (antlers/render-file "templates/slice" view-map))
 
 (defn concept-name
   "Each dataset has a list of concepts. A concept is a definition of a
@@ -114,7 +114,7 @@
 
 (defmethod index "text/html" [_ resource]
   (layout-html resource
-               (render-file "templates/index" {:api_name (env :api-name)
+               (antlers/render-file "templates/index" {:api_name (env :api-name)
                                                :datasets (map second (:embedded resource))})))
 
 (defmethod index "application/json" [_ resource]
@@ -131,7 +131,7 @@
 (defmethod dataset "text/html" [_ resource _]
   (let [dataset (get-in resource [:properties :id])]
     (layout-html resource
-                 (render-file "templates/dataset"
+                 (antlers/render-file "templates/dataset"
                               {:resource resource
                                :url (urls/dataset-path :dataset dataset)
                                :dataset dataset
@@ -167,7 +167,7 @@
         concept (:id properties)
         columns (map name (keys (:properties properties {})))]
     (layout-html resource
-                 (render-file "templates/concept"
+                 (antlers/render-file "templates/concept"
                               {:resource resource
                                :url (urls/concept-path :dataset dataset :concept concept)
                                :dataset dataset
@@ -204,7 +204,7 @@
                           {:column (name column) :data data})
                         (:references properties))]
     (layout-html resource
-                 (render-file "templates/slice-metadata"
+                 (antlers/render-file "templates/slice-metadata"
                               {:resource resource
                                :url (urls/slice-metadata-path :dataset dataset :slice slice)
                                :dataset dataset
@@ -244,11 +244,7 @@
                      (into [])
                      (map (fn [[k v]]
                             (str "$" (name k) "=" v))))
-        dimensions (->> (get-in resource [:properties :dimensions])
-                        (into [])
-                        (map (fn [[k v]]
-                               (str (name k) "=" v))))
-        query (str/join "&" (concat clauses dimensions))]
+        query (str/join "&" clauses)]
     (url/mutate-query (:href resource) query)))
 
 (defn- href-for-page [resource page]
@@ -294,7 +290,7 @@
 (defmulti slice-query (fn [format _ _] format))
 
 (defmethod slice-query "text/html"
-  [_ resource {:keys [request query metadata slicedef headers dimensions]}]
+  [_ resource {:keys [request query metadata slicedef headers]}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
@@ -342,7 +338,9 @@
      (response/response
       (layout-html resource
                    (slice-html
-                    {:action (str (base-url request) base-href)
+                    {:even? even?
+                     :odd? odd?
+                     :action (str (base-url request) base-href)
                      :base-href base-href
                      :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
                      :dataset dataset
