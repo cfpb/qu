@@ -19,7 +19,6 @@
 
 (defn config
   []
-
   (let [log-file (:log-file env)
         log-level (:log-level env)]
     (log/set-level! log-level)
@@ -71,8 +70,7 @@
     (cond
       (str/blank? (first parts)) "/data.html"
       (= 1 (count parts)) (str uri ".html")
-      :else uri))
-  )
+      :else uri)))
 
 (defn wrap-with-logging
   [handler]

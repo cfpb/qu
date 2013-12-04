@@ -59,6 +59,13 @@
 (defn not-found-html [message]
   (antlers/render-file "templates/404" {:message message}))
 
+(defn error-html
+  ([] (error-html 500))
+  ([status]
+     (-> (response/response (layout-html (antlers/render-file "templates/500" {})))
+         (response/status status)
+         (response/content-type "text/html"))))
+
 (defn- write-csv [data]
   (with-out-str (csv/write-csv *out* data)))
 
