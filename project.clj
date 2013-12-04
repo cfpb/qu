@@ -53,7 +53,8 @@ serve their public data sets."
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
-  :profiles {:uberjar {:aot [cfpb.qu.main]}
+  :profiles {:uberjar {:aot [cfpb.qu.main]
+                       :env {:dev false}}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}

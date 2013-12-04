@@ -12,6 +12,7 @@
     [logging :as logging :refer [wrap-with-logging]]]
    [cfpb.qu.cache :as qc]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
+   [cfpb.qu.middleware.stacktrace :as prod-stacktrace]
    [cfpb.qu.metrics :as metrics]
    [clojure.string :as str]
    [org.httpkit.server :refer [run-server]]   
@@ -20,7 +21,7 @@
     [nested-params :refer [wrap-nested-params]]
     [params :refer [wrap-params]]
     [reload :as reload]    
-    [stacktrace :refer [wrap-stacktrace]]]
+    [stacktrace :as dev-stacktrace]]
    [ring.util.response :as response]
    [taoensso.timbre :as log]))
 
@@ -72,15 +73,16 @@
   (let [handler (if (:dev env)
                   (-> app
                       reload/wrap-reload
-                      wrap-stacktrace)
-                  app)
+                      dev-stacktrace/wrap-stacktrace-web)
+                  (-> app
+                      prod-stacktrace/wrap-stacktrace-web))
         options {:ip (:http-ip env)
                  :port (->int (:http-port env))
                  :thread (->int (:http-threads env))
                  :queue-size (->int (:http-queue-size env))}]
     (log/info "Starting server on" (str (:ip options) ":" (:port options)))
-    (when (:dev env)
-      (log/info "Dev mode enabled"))
+    (when (:dev env)      
+      (log/info "Dev mode enabled" (:dev env)))
     (start-cache-worker)
     (run-server handler options)))
 

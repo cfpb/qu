@@ -6,6 +6,8 @@
 (def default-env
   {:mongo-host "127.0.0.1"
    :mongo-port 27017
+   :mongo-options {:connect-timeout 2000
+                   :socket-timeout 2000}
    :statsd-port 8125
    :http-ip "127.0.0.1"
    :http-port 3000
