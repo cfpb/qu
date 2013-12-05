@@ -60,7 +60,7 @@ serve their public data sets."
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
-                   :embongo {:version "2.4.5"}
+                   :embongo {:version "2.4.8"}
                    :codox {:output-dir "doc/codox"
                            :src-dir-uri "https://github.com/cfpb/qu/blob/master"
                            :src-linenum-anchor-prefix "L"
