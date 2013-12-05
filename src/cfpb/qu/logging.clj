@@ -19,7 +19,6 @@
 
 (defn config
   []
-
   (let [log-file (:log-file env)
         log-level (:log-level env)]
     (log/set-level! log-level)

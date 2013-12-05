@@ -1,6 +1,6 @@
 language: clojure
 lein: lein2
-script: lein2 with-profile integration embongo midje
+script: lein2 inttest
 jdk:
   - oraclejdk7
   - openjdk7

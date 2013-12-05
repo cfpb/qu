@@ -48,12 +48,16 @@ serve their public data sets."
                  [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
                  ]
+  :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
+  :test-selectors {:default (fn [t] (not (:integration t)))
+                   :all (constantly true)}  
   :profiles {:uberjar {:aot [cfpb.qu.main]}
+             :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
                    :embongo {:version "2.4.5"}
@@ -72,7 +76,8 @@ serve their public data sets."
                                   [codox-md "0.2.0"]
                                   ]}
              :integration [:default
-                           {:env {:mongo-port 37017
+                           {:test-selectors {:default (constantly true)}
+                            :env {:mongo-port 37017
                                   :integration true}
                             :embongo {:port 37017}}]})
 

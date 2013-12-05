@@ -195,25 +195,23 @@ Make sure you have MongoDB started. To load some sample data, run
 
 ### Testing
 
-We use [Midje](https://github.com/marick/Midje) to test this project,
-so to execute the tests, run:
+To execute the project's tests, run:
 
 ```sh
-lein midje
-```
-
-If you want the tests to automatically run whenever you change the
-code, eliminating the JVM startup time and generally being great, run:
-
-```sh
-lein midje :autotest
+lein test
 ```
 
 We also have integration tests that run tests against a Mongo database.
 To run these tests:
 
 ```sh
-lein with-profile integration embongo midje
+lein with-profile integration embongo test
+```
+
+or, even more easily:
+
+```sh
+lein inttest
 ```
 
 ### Nginx
