@@ -55,7 +55,8 @@ serve their public data sets."
              :config-source-path "src"}
   :test-selectors {:default (fn [t] (not (:integration t)))
                    :all (constantly true)}  
-  :profiles {:uberjar {:aot [cfpb.qu.main]}
+  :profiles {:uberjar {:aot [cfpb.qu.main]
+                       :env {:dev false}}
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}

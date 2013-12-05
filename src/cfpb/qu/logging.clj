@@ -70,8 +70,7 @@
     (cond
       (str/blank? (first parts)) "/data.html"
       (= 1 (count parts)) (str uri ".html")
-      :else uri))
-  )
+      :else uri)))
 
 (defn wrap-with-logging
   [handler]
