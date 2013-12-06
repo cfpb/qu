@@ -29,3 +29,5 @@ dev/cfpb/qu/project.clj
 .sly
 .nrepl-port
 .vagrant
+build.xml
+test-results/
