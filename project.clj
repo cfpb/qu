@@ -18,6 +18,7 @@ serve their public data sets."
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-embongo "0.2.1"]
+            [lein-cloverage "1.0.2"]            
             [test2junit "1.0.1"]            
             [slothcfg "1.0.1"]
             [codox "0.6.4"]]
