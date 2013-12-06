@@ -18,6 +18,7 @@ serve their public data sets."
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-embongo "0.2.1"]
+            [test2junit "1.0.1"]            
             [slothcfg "1.0.1"]
             [codox "0.6.4"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
@@ -47,14 +48,16 @@ serve their public data sets."
                  [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
                  ]
-  :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]}
+  :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]
+            "jenkins" ["with-profile" "integration" "embongo" "test2junit"]}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
   :test-selectors {:default (fn [t] (not (:integration t)))
-                   :all (constantly true)}  
+                   :all (constantly true)}
+  :test2junit-output-dir "test-results"  
   :profiles {:uberjar {:aot [cfpb.qu.main]
                        :env {:dev false}}
              :test {:injections [(taoensso.timbre/set-level! :error)]}
