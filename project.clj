@@ -17,7 +17,6 @@ serve their public data sets."
   :main cfpb.qu.main
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
-            [lein-midje "3.1.1"]
             [lein-embongo "0.2.1"]
             [slothcfg "1.0.1"]
             [codox "0.6.4"]]
@@ -48,32 +47,35 @@ serve their public data sets."
                  [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
                  ]
+  :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
   :slothcfg {:namespace cfpb.qu.project
              :config-source-path "src"}
+  :test-selectors {:default (fn [t] (not (:integration t)))
+                   :all (constantly true)}  
   :profiles {:uberjar {:aot [cfpb.qu.main]
                        :env {:dev false}}
+             :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
-                   :embongo {:version "2.4.5"}
+                   :embongo {:version "2.4.8"}
                    :codox {:output-dir "doc/codox"
                            :src-dir-uri "https://github.com/cfpb/qu/blob/master"
                            :src-linenum-anchor-prefix "L"
                            :writer codox-md.writer/write-docs}                   
                    :dependencies [[alembic "0.2.0"]
                                   [clj-http "0.7.7"]
-                                  [factual/drake "0.1.4-SNAPSHOT"]                                  
-                                  [midje "1.6-SNAPSHOT"]
-                                  [midje-junit-formatter "0.1.0-SNAPSHOT"]
+                                  [factual/drake "0.1.4-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
                                   [ring-mock "0.1.5"]
                                   [codox-md "0.2.0"]
                                   ]}
              :integration [:default
-                           {:env {:mongo-port 37017
+                           {:test-selectors {:default (constantly true)}
+                            :env {:mongo-port 37017
                                   :integration true}
                             :embongo {:port 37017}}]})
 
