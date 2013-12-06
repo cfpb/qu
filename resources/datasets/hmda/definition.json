@@ -2,7 +2,8 @@
   "info": {
     "url": "http://www.ffiec.gov/hmda/hmdaproducts.htm", 
     "name": "2007-2012 HMDA LAR",
-    "description": "Home Mortgage Disclosure Act Data for the years 2007-2012."
+    "description": "Home Mortgage Disclosure Act Data for the years 2007-2012.",
+    "swagger_description": "LAR data"
   },
   "concepts": {
     "action_taken": {

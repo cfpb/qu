@@ -22,13 +22,17 @@
   [req]
   (let [base-url (base-url req)]
     (route/with-base-url base-url
-      (let [datasets (data/get-dataset-names)
+      (let [datasets (data/get-datasets)
+            dataset-descriptions {"hmda" "Operations about mortgage data"}
             dataset-apis (map #(into {} {:path (route/with-base-url base-url
-                                                 (urls/swagger-api-declaration-url :api %))
-                                         :summary (str "Operations about " %)}) datasets)]
+                                                 (urls/swagger-api-declaration-url :api (:name %)))
+                                         :description (str "Operations about "
+                                                           (or (get-in % [:info :swagger_description])
+                                                               (:name %)))}) datasets)]
+        
         (versions
          {:apis (concat [{:path (urls/swagger-api-declaration-url :api "data")
-                          :description "Operations about datasets."}]
+                          :description "Operations about datasets"}]
                         dataset-apis
                         []
                         )})))))
