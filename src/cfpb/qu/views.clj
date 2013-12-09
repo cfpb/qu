@@ -438,7 +438,7 @@
                      (response/header "X-Computing" computing))]
     (if (query/valid? query)
       (if (should-stream? resource)
-        (stream-slice-query-csv request (respond "") (concat (vector columns) rows))
+        (stream-slice-query-csv request (respond (write-csv (vector columns))) rows)
         (respond (str (write-csv (vector columns)) (write-csv rows))))
       (response/content-type (response/response "") "text/plain"))))
 
