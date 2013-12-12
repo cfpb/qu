@@ -23,7 +23,8 @@
     [reload :as reload]    
     [stacktrace :as dev-stacktrace]]
    [ring.util.response :as response]
-   [taoensso.timbre :as log]))
+   [taoensso.timbre :as log])
+  (:import [java.lang.management.ManagementFactory]))
 
 (defn- wrap-cors
   [handler]
@@ -64,6 +65,15 @@
         worker (qc/create-worker cache)]
     (qc/start-worker worker)))
 
+(defn add-shutdown-hook
+  "Add a shutdown hook that prints all live threads"
+  []
+  (let [mx-bean (java.lang.management.ManagementFactory/getThreadMXBean)
+        stack (.dumpAllThreads mx-bean true true)]
+    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (areduce stack i ret nil (println (aget stack i))))))))
+
+
+
 (defn -main
   [& args]
   (ensure-mongo-connection)  
@@ -83,6 +93,7 @@
     (log/info "Starting server on" (str (:ip options) ":" (:port options)))
     (when (:dev env)      
       (log/info "Dev mode enabled" (:dev env)))
+    (add-shutdown-hook)
     (start-cache-worker)
     (run-server handler options)))
 
