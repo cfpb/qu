@@ -65,14 +65,18 @@
         worker (qc/create-worker cache)]
     (qc/start-worker worker)))
 
+(defn- print-live-threads
+  []
+  (let [mx-bean (java.lang.management.ManagementFactory/getThreadMXBean)
+        stack (seq (.dumpAllThreads mx-bean true true))]
+    (fn []
+      (doseq [thread stack]
+        (println thread)))))
+
 (defn add-shutdown-hook
   "Add a shutdown hook that prints all live threads"
   []
-  (let [mx-bean (java.lang.management.ManagementFactory/getThreadMXBean)
-        stack (.dumpAllThreads mx-bean true true)]
-    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (areduce stack i ret nil (println (aget stack i))))))))
-
-
+  (.addShutdownHook (Runtime/getRuntime) (Thread. (print-live-threads))))
 
 (defn -main
   [& args]
