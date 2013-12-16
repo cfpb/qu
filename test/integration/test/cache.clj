@@ -1,5 +1,6 @@
 (ns ^:integration integration.test.cache
   (:require [clojure.test :refer :all]
+            [clojure.core.cache :as cache]
             [cfpb.qu.test-util :refer :all]
             [cfpb.qu.data :as data]
             [cfpb.qu.query :as q]
@@ -18,10 +19,9 @@
            :group "state_abbr"})
 (def ^:dynamic cache nil)
 (def ^:dynamic worker nil)
-(def worker-agent (atom nil))
 (def ^:dynamic query nil)
 (def ^:dynamic agg nil)
-
+(def worker-agent (atom nil))
 
 (defn run-all-jobs [worker]
   (reset! worker-agent (c/start-worker worker))
@@ -34,7 +34,7 @@
   (loader/load-dataset db)
   (binding [cache (c/create-query-cache)]
     (db/drop-db (:database cache))
-    (let [query (q/prepare (q/make-query qmap))]
+    (binding [query (q/prepare (q/make-query qmap))]
       (binding [worker (c/create-worker cache)
                 agg (q/mongo-aggregation query)]
         (test)))))
@@ -86,6 +86,22 @@
     (c/clean-cache cache (constantly [(:to agg)]))    
     (does-contain (conv/from-db-object (c/add-to-queue cache agg) true)
                   {:_id (:to agg) :status "unprocessed"})))
+
+(deftest ^:integration test-add-to-cache
+  (testing "it puts the aggregation results into the cache"
+    (c/add-to-cache cache agg)
+    (is (coll/exists? (:database cache) (:to agg)))))
+
+(deftest ^:integration test-lookup
+  (testing "it returns an empty result if not in the cache"
+    (c/clean-cache cache (constantly [(:to agg)]))
+    (is (nil? (cache/lookup cache query))))
+  
+  (testing "it returns the cached results if they exist"
+    (c/add-to-cache cache agg)
+    (let [result (cache/lookup cache query)]
+      (is (not (nil? result)))
+      (is (= 4 (:total result))))))
 
 (deftest ^:integration test-worker
   (testing "it will process jobs"

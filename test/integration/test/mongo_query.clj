@@ -13,7 +13,8 @@
             [cfpb.qu.query :as query :refer [params->Query]]
             [cfpb.qu.cache :as qc]
             [clojure.core.cache :as cache]
-            [monger.core :as mongo]))
+            [monger.core :as mongo]
+            [monger.collection :as coll]))
 
 (def db "integration_test")
 (def coll "incomes")
@@ -120,8 +121,16 @@
 
 (deftest ^:integration test-execute-and-aggregation
   (let [metadata (data/get-metadata db)
-        query (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
-        agg-map (query/mongo-aggregation (query/prepare query))
+        query (-> {:dataset db
+                   :slice :incomes
+                   :select (str "state_abbr, SUM(tax_returns), COUNT(tax_returns), "
+                                "MIN(tax_returns), MAX(tax_returns)")
+                   :group "state_abbr"
+                   :orderBy "state_abbr"}
+                  query/make-query
+                  query/prepare)
+        query (query/prepare query)
+        agg-map (query/mongo-aggregation query)
         cache (qc/create-query-cache)]
 
     (testing "returns a :computing result at first"
