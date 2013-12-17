@@ -3,16 +3,6 @@
     "description": "State population by age, sex, race, and Hispanic origin.",
     "url": "http://www.census.gov/popest/data/datasets.html"
   },
-  "concepts": {
-    "state": {
-      "type": "string",
-      "attributes": {
-        "name": {
-          "type": "string"
-        }
-      }
-    }
-  },
   "slices": {
     "population_raw": {      
       "type": "table",
@@ -186,23 +176,19 @@
         },
         "CENSUS2010POP": {
           "name": "population_2010",
-          "type": "integer",
-          "description": "4/1/2010 resident Census 2010 population"
+          "type": "integer"
         },
         "ESTIMATESBASE2010": {
           "skip": true,
-          "type": "integer",
-          "description": "4/1/2010 resident population estimates base"
+          "type": "integer"
         },
         "POPESTIMATE2010": {
           "name": "population_estimate_2010",
-          "type": "integer",
-          "description": "7/1/2010 resident population estimate"
+          "type": "integer"
         },
         "POPESTIMATE2011": {
           "name": "population_estimate_2011",
-          "type": "integer",
-          "description": "7/1/2011 resident population estimate"
+          "type": "integer"
         }
       }
     }
