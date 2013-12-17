@@ -13,7 +13,7 @@
             s/Keyword s/Any
             })
 
-(def TypeS (s/enum "string" "integer" "date" "dollars" "number"))
+(def TypeS (s/enum "string" "integer" "date" "dollars" "number" "boolean" "lookup"))
 
 (def IndexS (s/either String [String]))
 
@@ -48,11 +48,13 @@
                     (s/required-key :metrics) [String] ;; TODO remove metrics from here
                     (s/optional-key :indexes) [IndexS]
                     (s/required-key :aggregations) {s/Keyword [String]}
+                    (s/optional-key :where) String
                     })
 
 (def SliceS (s/either TableSliceS DerivedSliceS))
 
-(def SimpleConceptS {(s/optional-key :description) String
+(def SimpleConceptS {(s/optional-key :name) String
+                     (s/optional-key :description) String
                      (s/optional-key :type) TypeS})
 (def TableConceptS (merge SimpleConceptS
                           {(s/required-key :table) String
@@ -64,6 +66,7 @@
 (def ColumnS {(s/optional-key :name) String
               (s/optional-key :skip) boolean
               (s/optional-key :type) TypeS
+              (s/optional-key :lookup) {s/Any s/Any}
               (s/optional-key :format) String})
 
 (def TableS {:sources [String]
