@@ -43,14 +43,15 @@ serve their public data sets."
                  [org.clojure/data.csv "0.1.2"]
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
                  [parse-ez "0.3.6"]
-                 [prismatic/schema "0.1.8"]
+                 [prismatic/schema "0.1.9"]
                  [ring "1.2.1"]                 
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring-middleware-format "0.3.1"]
                  [scriptjure "0.1.24"]
                  ]
   :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]
-            "jenkins" ["with-profile" "integration" "embongo" "test2junit"]}
+            "jenkins" ["with-profile" "integration" "embongo" "test2junit"]
+            "coverage" ["with-profile" "integration" "embongo" "cloverage"]}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
@@ -70,7 +71,7 @@ serve their public data sets."
                            :src-linenum-anchor-prefix "L"
                            :writer codox-md.writer/write-docs}                   
                    :dependencies [[alembic "0.2.0"]
-                                  [clj-http "0.7.7"]
+                                  [clj-http "0.7.8"]
                                   [factual/drake "0.1.4-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.1"]
