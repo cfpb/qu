@@ -43,7 +43,7 @@ lein repl
 In order to run the API as a web server, run:
 
 ```sh
-lein ring server
+lein run
 ```
 
 Go to http://localhost:3000 and you should see the app running.
