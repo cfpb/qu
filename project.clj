@@ -41,6 +41,7 @@ serve their public data sets."
                  [lonocloud/synthread "1.0.5"]
                  [org.clojure/core.cache "0.6.3"]                
                  [org.clojure/data.csv "0.1.2"]
+                 [org.clojure/data.json "0.2.3"]
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
                  [parse-ez "0.3.6"]
                  [prismatic/schema "0.1.9"]
