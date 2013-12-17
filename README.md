@@ -187,7 +187,7 @@ Make sure you have MongoDB started. To load some sample data, run
 ```clojure
 (require 'cfpb.qu.loader)
 (in-ns 'cfpb.qu.loader)
-(ensure-mongo-connection)
+(mongo/connect!)
 (load-dataset "county_taxes")
 (load-dataset "census") ; Takes quite a while to run; can skip.
 (mongo/disconnect!)
