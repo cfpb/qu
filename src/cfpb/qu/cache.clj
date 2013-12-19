@@ -12,6 +12,7 @@ the same backing database have access to the same data."
             [cfpb.qu.util :refer :all]
             [cfpb.qu.data.result :refer [->DataResult]]
             [cfpb.qu.data.aggregation :as agg]
+            [cfpb.qu.metrics :as metrics]
             [clojure.string :as str]
             [clojure.core.cache :as cache :refer [defcache]]
             [clj-time.core :refer [now]]
@@ -92,9 +93,11 @@ the same backing database have access to the same data."
   ([database query not-found]
      (with-db database
        (let [collection (query-to-key query)]
-         (if (coll/exists? collection)   
-           (extract-result collection query)
-           not-found)))))
+         (if (coll/exists? collection)
+           (do (metrics/increment "cache.hit")
+             (extract-result collection query))
+           (do (metrics/increment "cache.wait")
+               not-found))))))
 
 (defn add-to-cache
   "Add the specified aggregation to the cache by running it through
@@ -259,6 +262,7 @@ one of `query_cache` will be used."
                                                  :status "unprocessed"
                                                  :created (now)
                                                  :aggmap (pr-str aggmap)})
+      (metrics/increment "cache.queue")
       (catch MongoException$DuplicateKey e
         (coll/find-map-by-id *work-collection* (:to aggmap))))))
 
