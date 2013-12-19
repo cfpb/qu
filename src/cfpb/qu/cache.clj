@@ -258,11 +258,11 @@ one of `query_cache` will be used."
   [cache aggmap]
   (with-db (:database cache)
     (try
+      (metrics/increment "cache.queue")
       (coll/insert-and-return *work-collection* {:_id (:to aggmap)
                                                  :status "unprocessed"
                                                  :created (now)
                                                  :aggmap (pr-str aggmap)})
-      (metrics/increment "cache.queue")
       (catch MongoException$DuplicateKey e
         (coll/find-map-by-id *work-collection* (:to aggmap))))))
 
