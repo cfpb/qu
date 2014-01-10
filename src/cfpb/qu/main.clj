@@ -13,6 +13,7 @@
    [cfpb.qu.cache :as qc]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [cfpb.qu.middleware.stacktrace :as prod-stacktrace]
+   [cfpb.qu.middleware.uri-rewrite :refer [wrap-ignore-trailing-slash]]
    [cfpb.qu.metrics :as metrics]
    [clojure.string :as str]
    [org.httpkit.server :refer [run-server]]   
@@ -38,6 +39,7 @@
   Compojure."}
   app
   (-> app-routes
+      wrap-ignore-trailing-slash
       wrap-keyword-params
       wrap-nested-params
       wrap-params
