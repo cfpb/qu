@@ -200,11 +200,20 @@ one of `query_cache` will be used."
 (defn- find-and-claim-unprocessed
   "Find the next unprocessed map-reduce job and claim it.
    Returns job."
-  [worker]
+  []
   (coll/find-and-modify *work-collection*
                         {:status "unprocessed"}
                         {"$set" {:status "processing"}}
                         :sort {:created 1}))
+
+(defn- reset-job
+  "Reset a job being processed back to unprocessed."
+  [job-id]
+  (coll/find-and-modify *work-collection*
+                        {:_id job-id :status "processing"}
+                        {"$set" {:status "unprocessed"
+                                 :created (now)}
+                         "$inc" {:reset_count 1}}))
 
 (defn- work-job
   "Given a map-reduce job, tells Mongo to perform the job.
@@ -230,12 +239,14 @@ one of `query_cache` will be used."
   [worker]
   (when-not (:kill worker)
     (with-db (get-in worker [:cache :database])
-      (if-let [job (find-and-claim-unprocessed worker)]
-        (do (log/info "Aggregation" (:_id job) "started")
-            (work-job worker job)
-            (update-cache worker job)
-            (send *agent* #(update-in % [:processed] inc))
-            (log/info "Aggregation" (:_id job) "processed"))
+      (if-let [job (find-and-claim-unprocessed)]
+        (let [job-id (:_id job)]
+          (log/info "Aggregation" job-id "started")
+          (send *agent* #(assoc-in % [:last-job-id] job-id))
+          (work-job worker job)
+          (update-cache worker job)
+          (send *agent* #(update-in % [:processed] inc))
+          (log/info "Aggregation" job-id "processed"))
         (do
           (clean-cache (:cache worker))
           (Thread/sleep *wait-time*)))
@@ -275,10 +286,13 @@ one of `query_cache` will be used."
   (let [worker-agent (agent worker
                             :error-mode :continue
                             :error-handler (fn [the-agent exception]
-                                             (log/warn "Error with cache worker" @the-agent)
-                                             (log/warn (.getMessage exception))
-                                             (log/warn "=== END EXCEPTION ===")
-                                             (send-off the-agent process-next-job)))]
+                                             (let [job-id (:last-job-id @the-agent)]
+                                               (log/error "Error with cache worker" @the-agent)
+                                               (log/error "Last job ID" job-id)
+                                               (log/error exception)
+                                               (log/error "=== END EXCEPTION ===")
+                                               (reset-job job-id)
+                                               (send-off the-agent process-next-job))))]
     (send worker-agent #(assoc % :kill false))
     (send-off worker-agent process-next-job)))
 
