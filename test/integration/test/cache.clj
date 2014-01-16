@@ -76,7 +76,7 @@
 
   (testing "it runs cleaning operations as part of the worker cycle"
     (let [cleanups (atom 0)
-          cache (c/create-query-cache "query_cache" (fn [_] (swap! cleanups inc)))
+          cache (c/create-query-cache "query_cache" (fn [_] (swap! cleanups inc) []))
           worker (c/create-worker cache)]                 
       (run-all-jobs worker)
       (does= @cleanups 1))))
