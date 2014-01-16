@@ -79,10 +79,11 @@ within Mongo."
 
   If you want map and reduce already stringified, to send through
   Monger, run `generate-map-reduce`."  
-  [{:keys [dataset from to group aggregations filter slicedef] :or {aggregations {}}}]
-  {:pre [(every? #(not (nil? %)) [dataset from to group aggregations])
+  [{:keys [dataset from to group aggregations filter slicedef] :as aggmap}]
+  {:pre [(every? #(not (nil? %)) [dataset from to group])
          (sequential? group)]}
-  (let [field-zip-fn (if slicedef
+  (let [aggregations (or aggregations {})
+        field-zip-fn (if slicedef
                        (field-zip-fn slicedef)
                        identity)
         query (if filter
