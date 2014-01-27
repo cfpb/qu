@@ -147,7 +147,7 @@
                                             (map second))
                                :concepts (->> (:embedded resource)
                                               (filter #(= (first %) "concept"))
-                                              (map second))                               
+                                              (map second))
                                :definition (with-out-str (pprint (:properties resource)))}))))
 
 (defmethod dataset "application/json" [_ resource _]
@@ -180,7 +180,7 @@
                                :dataset dataset
                                :concept concept
                                :columns columns
-                               :table (data/get-data-table (:data table) columns)        
+                               :table (data/get-data-table (:data table) columns)
                                :has-table? (not (empty? table))}))))
 
 (defmethod concept "application/json" [_ resource _]
@@ -384,43 +384,55 @@
 (defn- ch->writer [ch]
   (io/writer (ch->outputstream ch)))
 
+(defn stream-data
+  [request response write-fn]
+  (with-channel request ch
+    (log/info "Channel opened")
+    (send! ch response false)
+    (let [ch-future (future (write-fn ch))]
+      (on-close ch (fn [status]
+                     (log/info "Channel closed" status)
+                     (if-not (= status :server-close)
+                       (future-cancel ch-future))))
+      (try
+        (deref ch-future)
+        (catch java.util.concurrent.CancellationException ex
+          (log/info "Channel closed early: future cancelled")))))
+  response)
+
 (defn- stream-slice-query-csv
   [request response data]
-  (with-channel request ch
-    (send! ch response false)
-    (with-open [writer (ch->writer ch)]
-      (csv/write-csv writer data))
-    (close ch))
-  response)
+  (stream-data request response
+               (fn [ch]
+                 (with-open [writer (ch->writer ch)]
+                   (csv/write-csv writer data))
+                 (close ch))))
 
 (defn- stream-slice-query-json
   [request response resource]
-  (let [resource (hal/json-representation resource)]        
-    (with-channel request ch
-      (send! ch response false)
-      (with-open [writer (ch->writer ch)]
-        (json/generate-stream resource writer))
-      (close ch))
-    response))
+  (let [resource (hal/json-representation resource)]
+    (stream-data request response
+                 (fn [ch]
+                   (with-open [writer (ch->writer ch)]
+                     (json/generate-stream resource writer))
+                   (close ch)))))
 
 (defn- stream-slice-query-jsonp
-  [request response resource callback]  
+  [request response resource callback]
   (let [resource (hal/json-representation resource)]
-    (with-channel request ch
-      (send! ch (assoc response :body (str callback "(")) false)
-      (with-open [writer (ch->writer ch)]
-        (json/generate-stream resource writer)
-        (send! ch ");" true)))
-    response))
+    (stream-data request response
+                 (fn [ch]
+                   (send! ch (assoc response :body (str callback "(")) false)
+                   (with-open [writer (ch->writer ch)]
+                     (json/generate-stream resource writer)
+                     (send! ch ");" true))))))
 
 (defn- stream-slice-query-xml
   [request response resource]
-  (with-channel request ch
-    (send! ch response false)
-    (with-open [writer (ch->writer ch)]
-      (xml/emit resource writer))
-    (close ch))
-  response)
+  (stream-data request response (fn [ch]
+                                  (with-open [writer (ch->writer ch)]
+                                    (xml/emit resource writer))
+                                  (close ch))))
 
 (defmethod slice-query "text/csv" [_ resource {:keys [request query slicedef]}]
   (let [table (:table slicedef)
