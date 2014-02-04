@@ -115,9 +115,6 @@ stored in a Mongo database called 'metadata'."
         slicedef (get-in metadata [:slices (keyword slice)])]
     (compression/field-unzip-fn slicedef)))
 
-(defn- strip-id [data]
-  (map #(dissoc % :_id) data))
-
 (defn- text? [text]
   (or (string? text)
       (symbol? text)))
@@ -147,9 +144,9 @@ stored in a Mongo database called 'metadata'."
             (.size cursor)
             (->> cursor
                  (map (fn [x] (-> x
-                                  (conv/from-db-object true)
-                                  (convert-keys unzipfn))))
-                 strip-id))))))))
+                                  (conv/from-db-object false)
+                                  (convert-keys unzipfn)
+                                  (dissoc :_id))))))))))))
 
 (defn get-aggregation
   "Given a collection and a Mongo aggregation, return a Result of the form:
@@ -171,7 +168,6 @@ stored in a Mongo database called 'metadata'."
 that data, return a seq of seqs representing the data in columnar
 format."
   [data columns]
-  (map (fn [row]
-         (map (fn [column]
-                (str (row (keyword column)))) columns)) data))
-
+  (let [columns (map keyword columns)]
+    (map (fn [row]
+           (map (fn [column] (column row)) columns)) data)))

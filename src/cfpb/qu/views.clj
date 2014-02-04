@@ -28,7 +28,8 @@
    [liberator.representation :refer [ring-response]]
    [org.httpkit.server :refer :all])
   (:import [clojurewerkz.urly UrlLike]
-           [java.io PipedOutputStream PipedInputStream PipedWriter PipedReader]))
+           [java.io ByteArrayInputStream]
+           [java.nio ByteBuffer]))
 
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)
@@ -377,19 +378,26 @@
        (close ch))
     (write
       ([^bytes bs] ;; bytes of byte
-         (send! ch (String. bs) false))
+         (let [bb (ByteBuffer/wrap bs)]
+           (send! ch bb false)))
       ([^bytes bs off len]
-         (send! ch (String. bs off len) false)))))
+         (let [bb (ByteBuffer/wrap bs off len)]
+           (send! ch bb false))))))
 
 (defn- ch->writer [ch]
   (io/writer (ch->outputstream ch)))
 
+(defn future-stream
+  [ch write-fn data]
+  (future (write-fn ch data)))
+
 (defn stream-data
-  [request response write-fn]
+  [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
     (send! ch response false)
-    (let [ch-future (future (write-fn ch))]
+
+    (let [ch-future (future-stream ch write-fn data)]
       (on-close ch (fn [status]
                      (log/info "Channel closed" status)
                      (if-not (= status :server-close)
@@ -402,17 +410,17 @@
 
 (defn- stream-slice-query-csv
   [request response data]
-  (stream-data request response
-               (fn [ch]
+  (stream-data request response data
+               (fn [ch data]
                  (with-open [writer (ch->writer ch)]
-                   (csv/write-csv writer data))
+                   (csv/write-csv writer data :quote? (constantly true)))
                  (close ch))))
 
 (defn- stream-slice-query-json
   [request response resource]
   (let [resource (hal/json-representation resource)]
-    (stream-data request response
-                 (fn [ch]
+    (stream-data request response resource
+                 (fn [ch resource]
                    (with-open [writer (ch->writer ch)]
                      (json/generate-stream resource writer))
                    (close ch)))))
@@ -420,8 +428,8 @@
 (defn- stream-slice-query-jsonp
   [request response resource callback]
   (let [resource (hal/json-representation resource)]
-    (stream-data request response
-                 (fn [ch]
+    (stream-data request response resource
+                 (fn [ch resource]
                    (send! ch (assoc response :body (str callback "(")) false)
                    (with-open [writer (ch->writer ch)]
                      (json/generate-stream resource writer)
@@ -429,20 +437,21 @@
 
 (defn- stream-slice-query-xml
   [request response resource]
-  (stream-data request response (fn [ch]
-                                  (with-open [writer (ch->writer ch)]
-                                    (xml/emit resource writer))
-                                  (close ch))))
+  (stream-data request response resource
+               (fn [ch resource]
+                 (with-open [writer (ch->writer ch)]
+                   (xml/emit resource writer))
+                 (close ch))))
 
-(defmethod slice-query "text/csv" [_ resource {:keys [request query slicedef]}]
+(defmethod slice-query "text/csv" [_ {:keys [properties href links] :as resource} {:keys [request query slicedef]}]
   (let [table (:table slicedef)
-        data (get-in resource [:properties :results])
+        computing (:computing properties)
+        data (:results properties)
         columns (columns-for-view query slicedef)
         rows (data/get-data-table data columns)
-        computing (get-in resource [:properties :computing])
         links (reduce conj
-                      [{:href (:href resource) :rel "self"}]
-                      (:links resource))
+                      [{:href href :rel "self"}]
+                      links)
         links (map #(str "<" (:href %) ">; rel=" (:rel %)) links)
         respond #(-> (response/response %)
                      (response/content-type "text/csv;charset=UTF-8")

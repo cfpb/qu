@@ -18,8 +18,7 @@
     Query
   [select group where orderBy limit offset callback
    mongo errors
-   dataset slice metadata slicedef
-   result])
+   dataset slice metadata slicedef])
 
 (def default-limit 100)
 (def default-offset 0)
@@ -103,7 +102,8 @@ parameters into something we can use. Specifically, pull out the clauses."
   (-> query
       validation/validate
       resolve-limit-and-offset
-      mongo/process))
+      mongo/process
+      (assoc :prepared? true)))
 
 (defn execute
   "Execute the query against the provided collection."
@@ -111,20 +111,19 @@ parameters into something we can use. Specifically, pull out the clauses."
 
   (metrics/with-timing "queries.execute"
     (let [_ (log/info "Execute query" (str (into {} (dissoc query :metadata :slicedef))))
-          query (prepare query)]
-      (assoc query :result
-             (cond
-              (not (valid? query))
-               (do
-                 (metrics/increment "queries.invalid")
-                 [])
+          query (if (:prepared? query) query (prepare query))]
+      (cond
+        (not (valid? query))
+        (do
+          (metrics/increment "queries.invalid")
+          [])
 
-              (is-aggregation? query)
-              (let [agg (mongo-aggregation query)]
-                (data/get-aggregation dataset slice agg))
+        (is-aggregation? query)
+        (let [agg (mongo-aggregation query)]
+          (data/get-aggregation dataset slice agg))
 
-              :default
-              (data/get-find dataset slice (mongo-find query)))))))
+        :default
+        (data/get-find dataset slice (mongo-find query))))))
 
 (defn params->Query
   "Convert params from a web request plus a dataset definition and a
