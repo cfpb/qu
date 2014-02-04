@@ -387,16 +387,17 @@
 (defn- ch->writer [ch]
   (io/writer (ch->outputstream ch)))
 
+(defn future-stream
+  [ch write-fn data]
+  (future (write-fn ch data)))
+
 (defn stream-data
   [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
     (send! ch response false)
-    (on-close ch (fn [status]
-                   (log/info "Channel closed" status)))
-    (write-fn ch data)
 
-    #_(let [ch-future (future (write-fn ch data))]
+    (let [ch-future (future-stream ch write-fn data)]
       (on-close ch (fn [status]
                      (log/info "Channel closed" status)
                      (if-not (= status :server-close)
