@@ -202,7 +202,7 @@ functions to return the resource that will be presented later."
 
 (defn- slice-resource
   "Build a HAL resource for a slice."
-  [dataset slice request query]
+  [dataset slice request query results]
   (let [base-href (base-url request)
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
@@ -211,7 +211,6 @@ functions to return the resource that will be presented later."
         ;; We prevent that by using the base-href in that case.
         href (or href
                  (url-like base-href))
-        result (:result query)
         clauses (map (comp keyword :key) views/clauses)
         page (:page query)]
     (-> (hal/new-resource href)
@@ -221,14 +220,14 @@ functions to return the resource that will be presented later."
                       :templated true)
         (hal/add-properties {:dataset dataset
                              :slice (name slice)
-                             :computing (= (:data result) :computing)
-                             :size (:size result)
-                             :total (:total result)
+                             :computing (= (:data results) :computing)
+                             :size (:size results)
+                             :total (:total results)
                              :page page
                              :query (select-keys query clauses)
                              :errors (:errors query)
                              :dimensions (:dimensions query)
-                             :results (:data result)}))))
+                             :results (:data results)}))))
 
 (defresource
   ^{:doc "Resource for a query on an individual slice."}
@@ -253,9 +252,11 @@ functions to return the resource that will be presented later."
   :handle-ok (fn [{:keys [dataset metadata slice request representation]}]
                (let [headers (:headers request)
                      slicedef (get-in metadata [:slices slice])
-                     query (params->Query (:params request) metadata slice)
-                     query (query/execute query)
-                     resource (slice-resource dataset slice request query)
+                     query (-> (:params request)
+                               (params->Query metadata slice)
+                               (query/prepare))
+                     results (query/execute query)
+                     resource (slice-resource dataset slice request query results)
                      view-map {:base-href (:uri request)
                                :query query
                                :metadata metadata
