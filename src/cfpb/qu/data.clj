@@ -170,4 +170,4 @@ format."
   [data columns]
   (let [columns (map keyword columns)]
     (map (fn [row]
-           (map (fn [column] (str (column row))) columns)) data)))
+           (map (fn [column] (column row)) columns)) data)))
