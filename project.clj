@@ -4,7 +4,7 @@
                     (System/getenv "TRAVIS_COMMIT")))
 (def app-url (or (System/getenv "APP_URL") ""))
 
-(defproject qu "1.0.2"
+(defproject qu "1.0.3"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :build-number ~build-number
