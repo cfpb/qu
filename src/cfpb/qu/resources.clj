@@ -221,7 +221,6 @@ functions to return the resource that will be presented later."
         (hal/add-properties {:dataset dataset
                              :slice (name slice)
                              :computing (:computing results)
-                             :status (:status results)
                              :size (:size results)
                              :total (:total results)
                              :page page

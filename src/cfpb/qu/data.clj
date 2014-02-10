@@ -159,10 +159,9 @@ stored in a Mongo database called 'metadata'."
   (metrics/with-timing "queries.aggregation"
     (let [cache (create-query-cache)
           cache-record (when-not (cache/has? cache query)
-                         (qc/add-to-queue cache aggmap))]      
+                         (qc/add-to-queue cache aggmap))]
       (cache/lookup cache query
-                    (map->DataResult {:computing true
-                                      :status (:status cache-record)})))))
+                    (map->DataResult {:computing (dissoc cache-record :aggmap)})))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from

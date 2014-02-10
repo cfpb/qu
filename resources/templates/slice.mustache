@@ -95,7 +95,13 @@
 <div class="alert alert-block">
 <h2>Data computing</h2>
 <p>Your aggregation is currently computing. Feel free to refresh this page to see if it is available. We will refresh this page every 10 seconds until it is.</p>
-<p><strong>Current status</strong>: {{computing-status}}
+{{#computing}}
+<dl>
+<dt>Status</dt><dd>{{status}}</dd>
+<dt>Created</dt><dd>{{created}}</dd>
+<dt>Started</dt><dd>{{started}}</dd>
+</dl>
+{{/computing}}
 <script type="text/javascript">
 var timer = setTimeout('window.location.reload()', 10000);
 </script>

@@ -105,10 +105,10 @@
 
 (deftest ^:integration test-worker
   (testing "it will process jobs"
-    (c/clean-cache cache (constantly [(:to agg)]))    
-    (does-contain (data/get-aggregation db coll agg) {:data :computing})
+    (c/clean-cache cache (constantly [(:to agg)]))
+    (is (:computing (data/get-aggregation db coll agg)))
              
     (run-all-jobs worker)
-    (does-not= (:data (data/get-aggregation db coll agg)) :computing)))
+    (is (not (:computing (data/get-aggregation db coll agg))))))
 
 ;; (run-tests)
