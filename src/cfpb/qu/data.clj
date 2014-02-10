@@ -10,7 +10,7 @@ after retrieval."
             [cfpb.qu.logging :refer [log-with-time]]
             [cfpb.qu.env :refer [env]]
             [cfpb.qu.cache :as qc :refer [create-query-cache add-to-cache]]
-            [cfpb.qu.data.result :refer [->DataResult]]
+            [cfpb.qu.data.result :refer [->DataResult map->DataResult]]
             [cfpb.qu.data.compression :as compression]
             [cfpb.qu.data.definition :as definition]
             [cfpb.qu.metrics :as metrics]
@@ -157,11 +157,12 @@ stored in a Mongo database called 'metadata'."
   After adding the compression processing, $match MUST come before $group."
   [database collection {:keys [query] :as aggmap}]
   (metrics/with-timing "queries.aggregation"
-    (let [cache (create-query-cache)]
-      (when-not (cache/has? cache query)
-        (qc/add-to-queue cache aggmap))
+    (let [cache (create-query-cache)
+          cache-record (when-not (cache/has? cache query)
+                         (qc/add-to-queue cache aggmap))]      
       (cache/lookup cache query
-                    (->DataResult nil nil :computing)))))
+                    (map->DataResult {:computing true
+                                      :status (:status cache-record)})))))
 
 (defn get-data-table
   "Given retrieved data (a seq of maps) and the columns you want from
