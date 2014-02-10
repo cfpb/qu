@@ -64,6 +64,11 @@ is nil unless specified."
            (catch NumberFormatException e default))
       :default default)))
 
+(defn ->bool
+  "Convert anything to a boolean."
+  [val]
+  (not (not val)))
+
 (defn first-or-identity
   "If the argument is a collection, return the first element in the
   collection, else return the argument."
