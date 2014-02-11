@@ -3,13 +3,15 @@
 
   var buildQueryUrl = function () {
     var formVals = _($form.serializeArray())
+      .chain()
       .reject(function (field) {
         return $.trim(field.value) === "";
       })
       .reduce(function (memo, field) {
         memo[field.name] = field.value;
         return memo;
-      }, {});
+      }, {})
+      .value();
     
     var href = $form.data('href');
     
