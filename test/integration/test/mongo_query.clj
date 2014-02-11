@@ -133,7 +133,7 @@
       (cache/evict cache query)
       (let [q (params->Query {:$select "state_abbr, SUM(tax_returns), COUNT(tax_returns), MIN(tax_returns), MAX(tax_returns)", :$group "state_abbr", :$orderBy "state_abbr"} metadata :incomes)
             query_result (query/execute (query/prepare q))]
-        (does= (:data query_result) :computing)))
+        (is (:computing query_result))))
 
     (testing "once added to the cache, returns result containing aggregation"
       (qc/add-to-cache cache agg-map)

@@ -341,7 +341,8 @@
         has-data? (pos? (- end start))
         has-more-data? (> data-size 100)
         pagination (create-pagination resource)
-        computing? (get-in resource [:properties :computing])]
+        computing (get-in resource [:properties :computing])
+        computing? (->bool computing)]
     (response/content-type
      (response/response
       (layout-html resource
@@ -364,6 +365,7 @@
                      :has-data? has-data?
                      :has-more-data? has-more-data?
                      :computing? computing?
+                     :computing computing
                      :data data})))
      "text/html;charset=UTF-8")))
 
@@ -456,7 +458,7 @@
         respond #(-> (response/response %)
                      (response/content-type "text/csv;charset=UTF-8")
                      (response/header "Link" (str/join ", " links))
-                     (response/header "X-Computing" computing))]
+                     (response/header "X-Computing" (->bool computing)))]
     (if (query/valid? query)
       (if (should-stream? resource)
         (stream-slice-query-csv request (respond (write-csv (vector columns))) rows)

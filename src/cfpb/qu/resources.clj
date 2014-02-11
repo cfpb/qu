@@ -220,7 +220,7 @@ functions to return the resource that will be presented later."
                       :templated true)
         (hal/add-properties {:dataset dataset
                              :slice (name slice)
-                             :computing (= (:data results) :computing)
+                             :computing (:computing results)
                              :size (:size results)
                              :total (:total results)
                              :page page

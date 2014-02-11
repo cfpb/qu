@@ -203,7 +203,8 @@ one of `query_cache` will be used."
   []
   (coll/find-and-modify *work-collection*
                         {:status "unprocessed"}
-                        {"$set" {:status "processing"}}
+                        {"$set" {:status "processing"
+                                 :started (now)}}
                         :sort {:created 1}))
 
 (defn- reset-job

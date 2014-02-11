@@ -104,6 +104,14 @@
   [definition slice]
   (apply concat ((juxt dimensions metrics) definition slice)))
 
+(defn indexes
+  "Get the list of indexed fields for a slice."
+  [definition slice]
+  (let [slicedef (get-in definition [:slices slice])]
+    (or (:indexes slicedef)
+        (:index_only slicedef) ; deprecated
+        (:dimensions slicedef))))
+
 ;; (read-definition (io/resource "datasets/integration_test/definition.json"))
 ;; (read-definition (io/resource "datasets/hmda/definition.json"))
 ;; (s/explain DataDefinitionS)

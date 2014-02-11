@@ -3,6 +3,7 @@
 within Mongo."
   (:require
    [cfpb.qu.data.compression :refer [compress-where field-zip-fn]]
+   [cfpb.qu.data.definition :refer [indexes]]
    [cfpb.qu.util :refer :all]
    [taoensso.timbre :as log]   
    [com.reasonr.scriptjure :refer [cljs cljs* js js*]]))
@@ -95,6 +96,12 @@ within Mongo."
                         (map (juxt first (comp second second)))
                         (remove #(nil? (second %)))
                         (into {}))
+        ;; sleight-of-hand to make it look like we have the full metadata
+        indexed-fields (set (remove coll? (indexes {:slices {:from slicedef}} :from)))
+        ;; filter has been overwritten here, which is a shame, but roll with it.
+        sort-map (if-let [choices (clojure.core/filter #(contains? indexed-fields (name %)) group)]
+                   (array-map (first (map (comp name field-zip-fn) choices)) 1)
+                   {})
         map-fn (generate-map-fn
                 (zipmap group group)
                 agg-fields
@@ -105,6 +112,7 @@ within Mongo."
                :reduce reduce-fn
                :out (name to)
                :query query
+               :sort sort-map
                :verbose true)))
 
 (defn generate-map-reduce
