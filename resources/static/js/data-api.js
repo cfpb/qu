@@ -3,13 +3,15 @@
 
   var buildQueryUrl = function () {
     var formVals = _($form.serializeArray())
+      .chain()
       .reject(function (field) {
         return $.trim(field.value) === "";
       })
       .reduce(function (memo, field) {
         memo[field.name] = field.value;
         return memo;
-      }, {});
+      }, {})
+      .value();
     
     var href = $form.data('href');
     
@@ -18,11 +20,14 @@
     
     var action = href + "." + format;
     
-    var formString = _(formVals).pairs()
+    var formString = _(formVals)
+      .chain()
+      .pairs()
       .map(function (pair) {
         return pair[0] + "=" +
           encodeURIComponent(pair[1]).replace(/%20/g,'+');
       })
+      .value()
       .join("<br />&");
 
     $form
