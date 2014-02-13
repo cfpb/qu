@@ -1,0 +1,11 @@
+/docs
+/logs
+/target
+/lib
+/classes
+/checkouts
+/out
+/node_modules/
+/resources/components/
+src/cfpb/qu/project.clj
+

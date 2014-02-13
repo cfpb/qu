@@ -1,9 +1,3 @@
-/docs
-/logs
-/target
-/lib
-/classes
-/checkouts
 pom.xml
 report.xml
 *.jar
@@ -14,17 +8,12 @@ report.xml
 .lein-plugins
 .lein-env
 *.iml
-/out
-/node_modules/
-/resources/components/
 .lein-repl-history
 sandbox/
 *.iml
 *.log
 resources/datasets/hmda_lar/*.csv
 resources/datasets/hmda_lar/*.zip
-src/cfpb/qu/project.clj
-dev/cfpb/qu/project.clj
 .drake
 .sly
 .nrepl-port
