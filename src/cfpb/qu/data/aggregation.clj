@@ -2,11 +2,25 @@
   "This namespace contains functions for generating aggregations
 within Mongo."
   (:require
-   [cfpb.qu.data.compression :refer [compress-where field-zip-fn]]
+   [cfpb.qu.data.compression :refer [compress-where field-zip-fn field-unzip-fn]]
    [cfpb.qu.data.definition :refer [indexes]]
    [cfpb.qu.util :refer :all]
    [taoensso.timbre :as log]   
-   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]))
+   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
+   [monger
+    [core :as mongo :refer [with-db get-db]]
+    [collection :as coll]]))
+
+(defn column-indexes
+  "Given a dataset and a slice, return the fields that are indexed
+directly. Multiple column indexes do not count."
+  [dataset slice]
+  (let [indexes (map first
+                     (remove #(> (count %) 1)
+                             (map (comp keys :key)
+                                  (with-db (get-db dataset)
+                                    (coll/indexes-on slice)))))]
+    indexes))
 
 (def ^:private agg-fns
   {:min (js* (fn [ary field]
@@ -87,6 +101,9 @@ within Mongo."
         field-zip-fn (if slicedef
                        (field-zip-fn slicedef)
                        identity)
+        field-unzip-fn (if slicedef
+                         (field-unzip-fn slicedef)
+                         identity)
         query (if filter
                 (-> filter
                     (compress-where field-zip-fn)
@@ -97,11 +114,12 @@ within Mongo."
                         (remove #(nil? (second %)))
                         (into {}))
         ;; sleight-of-hand to make it look like we have the full metadata
-        indexed-fields (set (remove coll? (indexes {:slices {:from slicedef}} :from)))
+        indexed-fields (set (map field-unzip-fn (column-indexes dataset from)))
         ;; filter has been overwritten here, which is a shame, but roll with it.
-        sort-map (if-let [choices (clojure.core/filter #(contains? indexed-fields (name %)) group)]
-                   (array-map (first (map (comp name field-zip-fn) choices)) 1)
-                   {})
+        index-choices (clojure.core/filter #(contains? indexed-fields (keyword %)) group)
+        sort-map (if (empty? index-choices)
+                   {}
+                   (array-map (first (map (comp name field-zip-fn) index-choices)) 1))
         map-fn (generate-map-fn
                 (zipmap group group)
                 agg-fields
