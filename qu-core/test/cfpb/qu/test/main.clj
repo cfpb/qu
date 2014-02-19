@@ -1,11 +1,11 @@
 (ns cfpb.qu.test.main
   (:require [clojure.test :refer :all]
             [ring.mock.request :refer :all]
-            [cfpb.qu.main :refer [app]]))
+            [cfpb.qu.test-util :refer [GET]]))
 
 (deftest index-url
   (testing "it redirects to /data"
-    (let [resp (app (request :get "/"))]
+    (let [resp (GET "/")]
       (is (= (:status resp)
              302))
       (is (= (get-in resp [:headers "Location"]))
@@ -14,13 +14,13 @@
 (deftest data-url
   (testing "it returns successfully"
     (with-redefs [cfpb.qu.data/get-datasets (constantly [])]
-      (let [resp (app (request :get "/data"))]
+      (let [resp (GET "/data")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
                "text/html;charset=UTF-8")))
 
-      (let [resp (app (request :get "/data.xml"))]
+      (let [resp (GET "/data.xml")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
@@ -29,13 +29,13 @@
 (deftest dataset-url
   (testing "it returns successfully when the dataset exists"
     (with-redefs [cfpb.qu.data/get-metadata (constantly {})]
-      (let [resp (app (request :get "/data/good-dataset"))]
+      (let [resp (GET "/data/good-dataset")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
                "text/html;charset=UTF-8")))
       
-      (let [resp (app (request :get "/data/good-dataset.xml"))]
+      (let [resp (GET "/data/good-dataset.xml")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
@@ -45,13 +45,13 @@
   (testing "it returns successfully when the dataset and slice exist"
     (with-redefs [cfpb.qu.data/get-metadata (constantly {:slices {:whoa {}}})
                   cfpb.qu.query/execute (constantly {:total 0 :size 0 :data []})]      
-      (let [resp (app (request :get "/data/good-dataset/slice/whoa"))]
+      (let [resp (GET "/data/good-dataset/slice/whoa")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
                "text/html;charset=UTF-8")))
       
-      (let [resp (app (request :get "/data/good-dataset/slice/whoa.xml"))]
+      (let [resp (GET "/data/good-dataset/slice/whoa.xml")]
         (is (= (:status resp)
                200))
         (is (= (get-in resp [:headers "Content-Type"])
@@ -59,12 +59,12 @@
 
   (testing "it returns a 404 when the dataset does not exist"
     (with-redefs [cfpb.qu.data/get-metadata (constantly nil)]
-      (let [resp (app (request :get "/data/bad-dataset/what"))]
+      (let [resp (GET "/data/bad-dataset/what")]
         (is (= (:status resp) 404)))))
 
   (testing "it returns a 404 when the slice does not exist"
     (with-redefs [cfpb.qu.data/get-metadata (constantly {:slices {}})]
-      (let [resp (app (request :get "/data/bad-dataset/what"))]
+      (let [resp (GET "/data/bad-dataset/what")]
         (is (= (:status resp) 404))))))
 
 ;; (run-tests)

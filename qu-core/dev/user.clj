@@ -4,21 +4,33 @@
             [clojure.pprint :refer [pprint]]
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
-            [environ.core :refer [env]]
+            [com.stuartsierra.component :as component]
             [cfpb.qu.main :as main]
-            [cfpb.qu.data :as data :refer [ensure-mongo-connection]]
+            [cfpb.qu.app :refer [new-qu-system]]
             [cfpb.qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
 
-(def server (atom nil))
+(def system (atom nil))
 
-(defn stop-server
+(defn init
   []
-  (if @server
-    (@server)))
+  (reset! system (new-qu-system (main/default-options))))
 
-(defn start-server
+(defn start
   []
-  (stop-server)
-  (reset! server (main/-main)))
+  (swap! system component/start))
+
+(defn stop
+  []
+  (swap! system component/stop))
+
+(defn go
+  []
+  (init)
+  (start))
+
+(defn reset
+  []
+  (stop)
+  (refresh :after 'user/go))

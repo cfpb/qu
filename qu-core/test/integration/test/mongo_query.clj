@@ -13,20 +13,12 @@
             [cfpb.qu.query :as query :refer [params->Query]]
             [cfpb.qu.cache :as qc]
             [clojure.core.cache :as cache]
-            [monger.core :as mongo]
             [monger.collection :as coll]))
 
 (def db "integration_test")
 (def coll "incomes")
 
-(defn mongo-setup
-  [test]
-  (data/connect-mongo)
-  (loader/load-dataset db)
-  (test)
-  (data/disconnect-mongo))
-
-(use-fixtures :once mongo-setup)
+(use-fixtures :once (mongo-setup-fn db))
 
 (deftest ^:integration test-metadata
   (testing "get-dataset-names contains expected dataset names"

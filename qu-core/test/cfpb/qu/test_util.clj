@@ -1,21 +1,37 @@
 (ns cfpb.qu.test-util
   (:require [clojure.test :refer :all]
             [ring.mock.request :as mockreq]
-            [cfpb.qu.main :refer [app]]            
-            [org.httpkit.server :refer [run-server]]
             [org.httpkit.client :as client]
-            [cfpb.qu.main :refer [app]]))
+            [cfpb.qu.main :as main]
+            [cfpb.qu.app :as app]
+            [cfpb.qu.app.webserver :as webserver]
+            [cfpb.qu.app.mongo :refer [new-mongo]]
+            [cfpb.qu.loader :as loader]
+            [com.stuartsierra.component :as component]))
 
 (def port 4545)
-(def server (atom nil))
-(defn stop-server [] (when @server (@server)))
+(def system (atom nil))
+(def app (webserver/get-handler false))
+(def test-options (-> (main/default-options)
+                      (assoc-in [:http :port] port)))
 
-(defn server-setup
+(defn system-setup
   [test]
-  (stop-server)
-  (reset! server (run-server app {:port port}))
+  (if @system
+    (swap! system component/stop)
+    (reset! system (app/new-qu-system test-options)))
+  (swap! system component/start)
   (test)
-  (stop-server))
+  (swap! system component/stop))
+
+(defn mongo-setup-fn
+  [db]
+  (fn [test]
+    (let [mongo (new-mongo (main/default-mongo-options))]
+      (component/start mongo)
+      (loader/load-dataset db)
+      (test)
+      (component/stop mongo))))
 
 (defn GET
   [url]

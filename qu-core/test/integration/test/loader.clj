@@ -11,14 +11,7 @@
 (def db "integration_test")
 (def coll "incomes")
 
-(defn mongo-setup
-  [test]
-  (data/connect-mongo)
-  (loader/load-dataset db)
-  (test)
-  (data/disconnect-mongo))
-
-(use-fixtures :once mongo-setup)
+(use-fixtures :once (mongo-setup-fn db))
 
 (deftest ^:integration test-dates
   (testing "stored as dates in MongoDB"

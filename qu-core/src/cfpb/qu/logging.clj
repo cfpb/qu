@@ -2,8 +2,7 @@
   (:require
    [clojure.string :as str]
    [cfpb.qu
-    [metrics :as metrics]
-    [env :refer [env]]]
+    [metrics :as metrics]]
    [clj-statsd :as sd]
    [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
 
@@ -18,15 +17,13 @@
   (str/join " " [timestamp (-> level name str/upper-case) (str "[" *log-id* "]")]))
 
 (defn config
-  []
-  (let [log-file (:log-file env)
-        log-level (:log-level env)]
-    (log/set-level! log-level)
-    (when log-file
-      (println "Sending log output to" (:log-file env) )
-      (log/set-config! [:appenders :spit :enabled?] true)
-      (log/set-config! [:shared-appender-config :spit-filename] log-file)
-      (log/set-config! [:appenders :standard-out :enabled?] false)))
+  [level file]
+  (log/set-level! level)
+  (when file
+    (println "Sending log output to" file )
+    (log/set-config! [:appenders :spit :enabled?] true)
+    (log/set-config! [:shared-appender-config :spit-filename] file)
+    (log/set-config! [:appenders :standard-out :enabled?] false))
   (log/set-config! [:timestamp-pattern] "yyyy-MM-dd'T'HH:mm:ssZZ")
   (log/set-config! [:prefix-fn] prefix-fn))
 

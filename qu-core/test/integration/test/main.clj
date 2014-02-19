@@ -1,18 +1,8 @@
 (ns ^:integration integration.test.main
   (:require [clojure.test :refer :all]
-            [cfpb.qu.test-util :refer :all]            
-            [cfpb.qu.loader :as loader]
-            [cfpb.qu.data :as data]
-            [monger.core :as mongo]))
+            [cfpb.qu.test-util :refer :all]))
 
-(defn mongo-setup
-  [test]
-  (data/connect-mongo)
-  (loader/load-dataset "integration_test")
-  (test)
-  (data/disconnect-mongo))
-
-(use-fixtures :once mongo-setup)
+(use-fixtures :once (mongo-setup-fn "integration_test"))
 
 (deftest ^:integration test-index-url
   (testing "it redirects to /data"

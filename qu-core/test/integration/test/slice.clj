@@ -4,14 +4,7 @@
             [cfpb.qu.data :as data]
             [cfpb.qu.test-util :refer :all]))
 
-(defn mongo-setup
-  [test]
-  (data/connect-mongo)
-  (loader/load-dataset "integration_test")
-  (test)
-  (data/disconnect-mongo))
-
-(use-fixtures :once mongo-setup)
+(use-fixtures :once (mongo-setup-fn "integration_test"))
 
 (deftest ^:integration test-query-slice-with-no-params
   (testing "it returns successfully as text/html"

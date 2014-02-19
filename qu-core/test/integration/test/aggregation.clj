@@ -5,14 +5,7 @@
             [cfpb.qu.data :as data]
             [cfpb.qu.loader :as loader]))
 
-(defn mongo-setup
-  [test]
-  (data/connect-mongo)
-  (loader/load-dataset "integration_test")
-  (test)
-  (data/disconnect-mongo))
-
-(use-fixtures :once mongo-setup)
+(use-fixtures :once (mongo-setup-fn "integration_test"))
 
 (deftest test-sorting
   (testing "it sorts by first indexed grouped field"

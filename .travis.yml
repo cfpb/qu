@@ -1,5 +1,6 @@
 language: clojure
 lein: lein2
+before_script: cd qu-core
 script: lein2 inttest
 jdk:
   - oraclejdk7

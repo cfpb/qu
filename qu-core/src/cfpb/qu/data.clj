@@ -8,7 +8,6 @@ after retrieval."
             [clojure.core.cache :as cache]            
             [cfpb.qu.util :refer :all]
             [cfpb.qu.logging :refer [log-with-time]]
-            [cfpb.qu.env :refer [env]]
             [cfpb.qu.cache :as qc :refer [create-query-cache add-to-cache]]
             [cfpb.qu.data.result :refer [->DataResult map->DataResult]]
             [cfpb.qu.data.compression :as compression]
@@ -26,43 +25,6 @@ after retrieval."
 
 ;; Prevent encoding regexes in JSON in the logs from throwing an error.
 (add-encoder java.util.regex.Pattern encode-str)
-
-(defn- authenticate-mongo
-  [auth]
-  (doseq [[db [username password]] auth]
-    (mongo/authenticate (mongo/get-db (name db))
-                        username
-                        (.toCharArray password))))
-
-(defn connect-mongo
-  []
-  (let [uri (env :mongo-uri)
-        hosts (env :mongo-hosts)
-        host (env :mongo-host)
-        port (->int (env :mongo-port))
-        options (apply-kw mongo/mongo-options (env :mongo-options {}))
-        auth (env :mongo-auth)
-        connection 
-        (cond
-         uri (try (mongo/connect-via-uri! uri)
-                  (catch Exception e
-                    (log/error "The Mongo URI specified is invalid.")))
-         hosts (let [addresses (map #(apply mongo/server-address %) hosts)]
-                 (mongo/connect! addresses options))
-         :else (mongo/connect! (mongo/server-address host port) options))]
-    (if (map? auth)
-      (authenticate-mongo auth))
-    connection))
-
-(defn disconnect-mongo
-  []
-  (when (bound? #'mongo/*mongodb-connection*)
-    (mongo/disconnect!)))
-
-(defn ensure-mongo-connection
-  []
-  (when-not (bound? #'mongo/*mongodb-connection*)
-    (connect-mongo)))
 
 (defn get-datasets
   "Get metadata for all datasets. Information about the datasets is
