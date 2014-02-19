@@ -4,7 +4,7 @@
   (:require
    [cfpb.qu
     [etag :refer [wrap-etag]]
-    [routes :refer [app-routes]]
+    [routes :refer [create-app-routes]]
     [logging :as logging :refer [wrap-with-logging]]]
    [cfpb.qu.middleware.keyword-params :refer [wrap-keyword-params]]
    [cfpb.qu.middleware.stacktrace :as prod-stacktrace]
@@ -30,8 +30,8 @@
   "Create the entry point into the web API. We look for URI suffixes
   and strip them to set the Accept header before handing off the
   request to Compojure."
-  [dev]
-  (let [handler (-> app-routes
+  [webserver]
+  (let [handler (-> (create-app-routes webserver)
                     wrap-ignore-trailing-slash
                     wrap-keyword-params
                     wrap-nested-params
@@ -40,14 +40,14 @@
                     wrap-etag
                     wrap-convert-extension-to-accept-header
                     wrap-cors)]
-    (if dev
+    (if (:dev webserver)
       (-> handler
           reload/wrap-reload
           dev-stacktrace/wrap-stacktrace-web)
       (-> handler
           prod-stacktrace/wrap-stacktrace-web))))
 
-(defrecord WebServer [ip port thread queue-size dev]
+(defrecord WebServer [ip port thread queue-size dev view-data]
   component/Lifecycle
 
   (start [component]
@@ -55,7 +55,7 @@
                    :port port
                    :thread thread
                    :queue-size queue-size}
-          handler (get-handler dev)]
+          handler (get-handler component)]
       (log/info "Starting web server on" (str ip ":" port))
       (assoc component :server (run-server handler options))))
 
@@ -65,5 +65,5 @@
       (stop-server :timeout 100))
     (dissoc component :server)))
 
-(defn new-webserver [options dev]
-  (map->WebServer (merge {:dev dev} options)))
+(defn new-webserver [options dev view-data]
+  (map->WebServer (merge {:dev dev :view-data view-data} options)))

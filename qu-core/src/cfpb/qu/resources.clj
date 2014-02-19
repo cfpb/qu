@@ -29,13 +29,12 @@ functions to return the resource that will be presented later."
   ([msg]
      (status
       (response
-       (views/layout-html
-        (views/not-found-html msg)))
+       (views/not-found-html msg))
       404)))
 
 (defresource
   ^{:doc "Resource for the collection of datasets."}
-  index
+  index [webserver]
   :available-media-types ["text/html" "application/json" "application/xml"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [_] {:datasets (data/get-datasets)})
@@ -48,7 +47,7 @@ functions to return the resource that will be presented later."
                                       (hal/new-resource (urls/dataset-path :dataset (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
-                 (views/index (:media-type representation) resource))))
+                 (views/index (:media-type representation) resource (:view-data webserver)))))
 
 (defn- concept-data
   "Build the concept data for a dataset from its metadata."
@@ -64,7 +63,7 @@ functions to return the resource that will be presented later."
 
 (defresource
   ^{:doc "Resource for an individual dataset."}
-  dataset
+  dataset [webserver]
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
@@ -110,18 +109,18 @@ functions to return the resource that will be presented later."
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource slices)
                      resource (reduce #(hal/add-resource %1 "concept" %2) resource concepts)
                      callback (get-in request [:params :$callback])
-                     view-map {:callback callback}]
-                 (views/dataset (:media-type representation) resource view-map))))
+                     view-data (assoc (:view-data webserver) :callback callback)]
+                 (views/dataset (:media-type representation) resource view-data))))
 
 (defn- base-url
-  "Derive a base URL from the APP_URL environment variable and either the path-info or uri value from the request scope"
-  [request]
-  (str (@project :app-url) (or (:path-info request)
+  "Derive a base URL from the application base URL and either the path-info or uri value from the request scope"
+  [app-base-url request]
+  (str app-base-url (or (:path-info request)
                                (:uri request))))
 
 (defresource
   ^{:doc "Resource for an individual concept."}
-  concept
+  concept [webserver]
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
@@ -153,12 +152,12 @@ functions to return the resource that will be presented later."
                                 (if (empty? table)
                                   resource
                                   (hal/add-property resource :table {:data table})))
-                     view-map {:callback callback}]
-                 (views/concept (:media-type representation) resource view-map))))
+                     view-data (assoc (:view-data webserver) :callback callback)]
+                 (views/concept (:media-type representation) resource view-data))))
 
 (defresource
   ^{:doc "Resource for the metadata of an individual slice."}
-  slice-metadata
+  slice-metadata [webserver]
   :available-media-types ["text/html" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
@@ -186,10 +185,10 @@ functions to return the resource that will be presented later."
                                   (hal/add-property :dataset dataset)
                                   (hal/add-property :slice slice)
                                   (hal/add-properties (dissoc slicedef :table :type)))
-                     view-map {:callback callback}]
+                     view-data (assoc (:view-data webserver) :callback callback)]
                  (views/slice-metadata (:media-type representation)
                                        resource
-                                       view-map))))
+                                       view-data))))
 
 (defn- templated-url
   "Build the templated URL for slice queries."
@@ -202,8 +201,8 @@ functions to return the resource that will be presented later."
 
 (defn- slice-resource
   "Build a HAL resource for a slice."
-  [dataset slice request query results]
-  (let [base-href (base-url request)
+  [webserver dataset slice request query results]
+  (let [base-href (base-url (get-in webserver [:view-data :base_url]) request)
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
                          base-href))
@@ -231,7 +230,7 @@ functions to return the resource that will be presented later."
 
 (defresource
   ^{:doc "Resource for a query on an individual slice."}
-  slice-query
+  slice-query [webserver]
   :available-media-types ["text/html" "text/csv" "application/json" "application/xml" "text/javascript"]
   :method-allowed? (request-method-in :get)
   :exists? (fn [{:keys [request]}]
@@ -256,18 +255,19 @@ functions to return the resource that will be presented later."
                                (params->Query metadata slice)
                                (query/prepare))
                      results (query/execute query)
-                     resource (slice-resource dataset slice request query results)
-                     view-map {:base-href (:uri request)
-                               :query query
-                               :metadata metadata
-                               :slicedef slicedef
-                               :headers headers
-                               :callback (:callback query)
-                               :request request}
+                     resource (slice-resource webserver dataset slice request query results)
+                     view-data (merge (:view-data webserver)
+                                      {:base-href (:uri request)
+                                       :query query
+                                       :metadata metadata
+                                       :slicedef slicedef
+                                       :headers headers
+                                       :callback (:callback query)
+                                       :request request})
                      response (views/slice-query
                                (:media-type representation)
                                resource
-                               view-map)]
+                               view-data)]
                  (ring-response
                   (if (query/valid? query)
                     response

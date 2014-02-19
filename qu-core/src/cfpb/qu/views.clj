@@ -14,8 +14,6 @@
    [clojure.data.xml :as xml]
    monger.json
    [halresource.resource :as hal]
-   [cfpb.qu.project :refer [project]]
-   [cfpb.qu.env :refer [env]]
    [cfpb.qu.util :refer :all]
    [cfpb.qu.data :as data]
    [cfpb.qu.query :as query]
@@ -37,12 +35,6 @@
 (def ^:dynamic *min-records-to-stream* 1000)
 (def ^:dynamic *stream-size* 1024)
 
-(def layout-info {:qu_version (@project :version)
-                  :build_number (@project :build-number)
-                  :build_url (@project :build-url)
-                  :api_name (env :api-name)
-                  :dev_mode (env :dev)})
-
 (defn json-error
   ([status] (json-error status {}))
   ([status body]
@@ -50,20 +42,13 @@
       (json-response body)
       status)))
 
-(defn layout-html
-  ([content] (layout-html {} content))
-  ([resource content]
-     (antlers/render-file "templates/layout"
-                  (merge layout-info {:content content
-                                      :resource resource}))))
-
 (defn not-found-html [message]
   (antlers/render-file "templates/404" {:message message}))
 
 (defn error-html
   ([] (error-html 500))
   ([status]
-     (-> (response/response (layout-html (antlers/render-file "templates/500" {})))
+     (-> (response/response (antlers/render-file "templates/500" {}))
          (response/status status)
          (response/content-type "text/html"))))
 
@@ -118,38 +103,38 @@
        (response/status 406)
        (response/content-type "text/plain"))))
 
-(defmulti index (fn [format _] format))
+(defmulti index (fn [format _ _] format))
 
-(defmethod index "text/html" [_ resource]
-  (layout-html resource
-               (antlers/render-file "templates/index" {:api_name (env :api-name)
-                                               :datasets (map second (:embedded resource))})))
+(defmethod index "text/html" [_ resource view-data]
+  (antlers/render-file "templates/index"
+                       (merge view-data {:resource resource
+                                         :datasets (map second (:embedded resource))})))
 
-(defmethod index "application/json" [_ resource]
+(defmethod index "application/json" [_ resource _]
   (hal/resource->representation resource :json))
 
-(defmethod index "application/xml" [_ resource]
+(defmethod index "application/xml" [_ resource _]
   (hal/resource->representation resource :xml))
 
-(defmethod index :default [format _]
+(defmethod index :default [format _ _]
   (format-not-found format))
 
 (defmulti dataset (fn [format _ _] format))
 
-(defmethod dataset "text/html" [_ resource _]
+(defmethod dataset "text/html" [_ resource view-data]
   (let [dataset (get-in resource [:properties :id])]
-    (layout-html resource
-                 (antlers/render-file "templates/dataset"
-                              {:resource resource
-                               :url (urls/dataset-path :dataset dataset)
-                               :dataset dataset
-                               :slices (->> (:embedded resource)
-                                            (filter #(= (first %) "slice"))
-                                            (map second))
-                               :concepts (->> (:embedded resource)
-                                              (filter #(= (first %) "concept"))
+    (antlers/render-file "templates/dataset"
+                         (merge view-data
+                                {:resource resource
+                                 :url (urls/dataset-path :dataset dataset)
+                                 :dataset dataset
+                                 :slices (->> (:embedded resource)
+                                              (filter #(= (first %) "slice"))
                                               (map second))
-                               :definition (with-out-str (pprint (:properties resource)))}))))
+                                 :concepts (->> (:embedded resource)
+                                                (filter #(= (first %) "concept"))
+                                                (map second))
+                                 :definition (with-out-str (pprint (:properties resource)))}))))
 
 (defmethod dataset "application/json" [_ resource _]
   (hal/resource->representation resource :json))
@@ -168,21 +153,21 @@
 
 (defmulti concept (fn [format _ _] format))
 
-(defmethod concept "text/html" [_ resource _]
+(defmethod concept "text/html" [_ resource view-data]
   (let [properties (:properties resource)
         table (:table properties)
         dataset (:dataset properties)
         concept (:id properties)
         columns (map name (keys (:properties properties {})))]
-    (layout-html resource
-                 (antlers/render-file "templates/concept"
-                              {:resource resource
-                               :url (urls/concept-path :dataset dataset :concept concept)
-                               :dataset dataset
-                               :concept concept
-                               :columns columns
-                               :table (data/get-data-table (:data table) columns)
-                               :has-table? (not (empty? table))}))))
+    (antlers/render-file "templates/concept"
+                         (merge view-data
+                                {:resource resource
+                                 :url (urls/concept-path :dataset dataset :concept concept)
+                                 :dataset dataset
+                                 :concept concept
+                                 :columns columns
+                                 :table (data/get-data-table (:data table) columns)
+                                 :has-table? (not (empty? table))}))))
 
 (defmethod concept "application/json" [_ resource _]
   (hal/resource->representation resource :json))
@@ -201,7 +186,7 @@
 
 (defmulti slice-metadata (fn [format _ _] format))
 
-(defmethod slice-metadata "text/html" [_ resource _]
+(defmethod slice-metadata "text/html" [_ resource view-data]
   (let [properties (:properties resource)
         dataset (:dataset properties)
         slice (:slice properties)
@@ -211,17 +196,16 @@
         references (map (fn [[column data]]
                           {:column (name column) :data data})
                         (:references properties))]
-    (layout-html resource
-                 (antlers/render-file "templates/slice-metadata"
-                              {:resource resource
-                               :url (urls/slice-metadata-path :dataset dataset :slice slice)
-                               :dataset dataset
-                               :slice slice
-                               :dimensions (:dimensions properties)
-                               :metrics (:metrics properties)
-                               :types types
-                               :references references
-                               :has-references? (not (empty? references))}))))
+    (antlers/render-file "templates/slice-metadata"
+                         {:resource resource
+                          :url (urls/slice-metadata-path :dataset dataset :slice slice)
+                          :dataset dataset
+                          :slice slice
+                          :dimensions (:dimensions properties)
+                          :metrics (:metrics properties)
+                          :types types
+                          :references references
+                          :has-references? (not (empty? references))})))
 
 (defmethod slice-metadata "application/json" [_ resource _]
   (hal/resource->representation resource :json))
@@ -298,7 +282,7 @@
 (defmulti slice-query (fn [format _ _] format))
 
 (defmethod slice-query "text/html"
-  [_ resource {:keys [request query metadata slicedef headers]}]
+  [_ resource {:keys [request query metadata slicedef headers] :as view-data}]
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
@@ -342,31 +326,32 @@
         has-more-data? (> data-size 100)
         pagination (create-pagination resource)
         computing (get-in resource [:properties :computing])
-        computing? (->bool computing)]
+        computing? (->bool computing)
+        view-data (merge view-data
+                         {:resource resource
+                          :even? even?
+                          :odd? odd?
+                          :action (str (base-url request) base-href)
+                          :base-href base-href
+                          :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
+                          :dataset dataset
+                          :slice slice
+                          :metadata slice-metadata
+                          :dimensions dimension-form-data
+                          :clauses clauses
+                          :columns columns
+                          :start start
+                          :end end
+                          :total total
+                          :pagination pagination
+                          :has-data? has-data?
+                          :has-more-data? has-more-data?
+                          :computing? computing?
+                          :computing computing
+                          :data data})]
     (response/content-type
      (response/response
-      (layout-html resource
-                   (slice-html
-                    {:even? even?
-                     :odd? odd?
-                     :action (str (base-url request) base-href)
-                     :base-href base-href
-                     :metadata-href (urls/slice-metadata-path :dataset dataset :slice slice)
-                     :dataset dataset
-                     :slice slice
-                     :metadata slice-metadata
-                     :dimensions dimension-form-data
-                     :clauses clauses
-                     :columns columns
-                     :start start
-                     :end end
-                     :total total
-                     :pagination pagination
-                     :has-data? has-data?
-                     :has-more-data? has-more-data?
-                     :computing? computing?
-                     :computing computing
-                     :data data})))
+      (antlers/render-file "templates/slice" view-data))
      "text/html;charset=UTF-8")))
 
 (defn- should-stream?

@@ -6,7 +6,8 @@
     [app :refer [new-qu-system]]
     [util :refer [->int]]
     [env :refer [env]]
-    [logging :as logging]]
+    [logging :as logging]
+    [project :refer [project]]]
    [cfpb.qu.metrics :as metrics]
    [clojure.string :as str]
    [taoensso.timbre :as log]
@@ -63,9 +64,19 @@
      :options options
      :auth auth}))
 
+(defn default-view-data
+  []
+  {:qu_version (:version @project)
+   :build_number (:build-number @project)
+   :build_url (:build-url @project)
+   :base_url (:app-url @project)
+   :api_name (:api-name env)
+   :dev_mode (:dev env)})
+
 (defn default-options
   []
   {:dev (:dev env)
+   :view-data (default-view-data)
    :http (default-http-options)
    :log (default-log-options)
    :mongo (default-mongo-options)})
