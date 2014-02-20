@@ -47,7 +47,7 @@
       (-> handler
           prod-stacktrace/wrap-stacktrace-web))))
 
-(defrecord WebServer [ip port thread queue-size dev view-data]
+(defrecord WebServer [ip port thread queue-size dev view]
   component/Lifecycle
 
   (start [component]
@@ -65,5 +65,5 @@
       (stop-server :timeout 100))
     (dissoc component :server)))
 
-(defn new-webserver [options dev view-data]
-  (map->WebServer (merge {:dev dev :view-data view-data} options)))
+(defn new-webserver [options dev]
+  (map->WebServer (merge {:dev dev} options)))

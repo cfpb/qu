@@ -44,9 +44,9 @@
   (stop [system]
     (component/stop-system system [:api :cache-worker :db :log])))
 
-(defn new-qu-system [{:keys [http dev log mongo view-data] :as options}]
+(defn new-qu-system [{:keys [http dev log mongo] :as options}]
   (map->QuSystem {:options options
                   :db (new-mongo mongo)
                   :log (new-log log)
-                  :api (new-webserver http dev view-data)
+                  :api (new-webserver http dev)
                   :cache-worker (->CacheWorker)}))

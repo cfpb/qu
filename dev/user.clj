@@ -11,11 +11,18 @@
 
 (set-refresh-dirs "src/" "dev/")
 
+(defn deep-merge
+  [map1 map2]
+  (if (not (and (map? map1) (map? map2)))
+    (or map2 map1)
+    (merge-with deep-merge map1 map2)))
+
 (def system (atom nil))
+(def options (atom {}))
 
 (defn init
   []
-  (reset! system (new-qu-system (main/default-options))))
+  (reset! system (new-qu-system (deep-merge (main/default-options) @options))))
 
 (defn start
   []

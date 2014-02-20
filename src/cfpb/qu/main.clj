@@ -34,13 +34,6 @@
   []
   (.addShutdownHook (Runtime/getRuntime) (Thread. (print-live-threads))))
 
-(defn default-http-options
-  []
-  {:ip (:http-ip env)
-   :port (->int (:http-port env))
-   :thread (->int (:http-threads env))
-   :queue-size (->int (:http-queue-size env))})
-
 (defn default-log-options
   []
   (let [log-file (:log-file env)
@@ -71,6 +64,14 @@
    :base_url (:app-url @project)
    :api_name (:api-name env)
    :dev_mode (:dev env)})
+
+(defn default-http-options
+  []
+  {:ip (:http-ip env)
+   :port (->int (:http-port env))
+   :thread (->int (:http-threads env))
+   :queue-size (->int (:http-queue-size env))
+   :view (default-view-data)})
 
 (defn default-options
   []

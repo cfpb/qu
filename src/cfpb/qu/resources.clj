@@ -47,7 +47,7 @@ functions to return the resource that will be presented later."
                                       (hal/new-resource (urls/dataset-path :dataset (:name dataset)))
                                       (:info dataset))) datasets)
                      resource (reduce #(hal/add-resource %1 "dataset" %2) resource embedded)]
-                 (views/index (:media-type representation) resource (:view-data webserver)))))
+                 (views/index (:media-type representation) resource (:view webserver)))))
 
 (defn- concept-data
   "Build the concept data for a dataset from its metadata."
@@ -109,7 +109,7 @@ functions to return the resource that will be presented later."
                      resource (reduce #(hal/add-resource %1 "slice" %2) resource slices)
                      resource (reduce #(hal/add-resource %1 "concept" %2) resource concepts)
                      callback (get-in request [:params :$callback])
-                     view-data (assoc (:view-data webserver) :callback callback)]
+                     view-data (assoc (:view webserver) :callback callback)]
                  (views/dataset (:media-type representation) resource view-data))))
 
 (defn- base-url
@@ -152,7 +152,7 @@ functions to return the resource that will be presented later."
                                 (if (empty? table)
                                   resource
                                   (hal/add-property resource :table {:data table})))
-                     view-data (assoc (:view-data webserver) :callback callback)]
+                     view-data (assoc (:view webserver) :callback callback)]
                  (views/concept (:media-type representation) resource view-data))))
 
 (defresource
@@ -185,7 +185,7 @@ functions to return the resource that will be presented later."
                                   (hal/add-property :dataset dataset)
                                   (hal/add-property :slice slice)
                                   (hal/add-properties (dissoc slicedef :table :type)))
-                     view-data (assoc (:view-data webserver) :callback callback)]
+                     view-data (assoc (:view webserver) :callback callback)]
                  (views/slice-metadata (:media-type representation)
                                        resource
                                        view-data))))
@@ -202,7 +202,7 @@ functions to return the resource that will be presented later."
 (defn- slice-resource
   "Build a HAL resource for a slice."
   [webserver dataset slice request query results]
-  (let [base-href (base-url (get-in webserver [:view-data :base_url]) request)
+  (let [base-href (base-url (get-in webserver [:view :base_url]) request)
         href (url-like (if-let [query-string (:query-string request)]
                          (str base-href "?" query-string)
                          base-href))
@@ -256,7 +256,7 @@ functions to return the resource that will be presented later."
                                (query/prepare))
                      results (query/execute query)
                      resource (slice-resource webserver dataset slice request query results)
-                     view-data (merge (:view-data webserver)
+                     view-data (merge (:view webserver)
                                       {:base-href (:uri request)
                                        :query query
                                        :metadata metadata
