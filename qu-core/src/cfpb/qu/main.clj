@@ -14,7 +14,6 @@
    [com.stuartsierra.component :as component])
   (:import [java.lang.management.ManagementFactory]))
 
-
 (defn setup-statsd
   "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
   to be in the project.clj file."
