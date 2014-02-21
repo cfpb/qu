@@ -24,7 +24,7 @@ serve their public data sets."
             [codox "0.6.4"]]
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [caribou/antlers "0.6.1"]                 
-                 [cheshire "5.2.0"]
+                 [cheshire "5.3.1"]
                  [clj-statsd "0.3.10"]                 
                  [clj-time "0.6.0"]
                  [clojurewerkz/route-one "1.0.0-rc2"]                 
