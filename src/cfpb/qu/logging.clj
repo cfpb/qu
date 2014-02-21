@@ -12,20 +12,27 @@
   []
   (subs (str (java.util.UUID/randomUUID)) 0 6))
 
-(defn prefix-fn
-  [{:keys [level timestamp hostname ns]}]
-  (str/join " " [timestamp (-> level name str/upper-case) (str "[" *log-id* "]")]))
+(defn format-output-fn
+  [{:keys [level throwable message timestamp]}
+   ;; Any extra appender-specific opts:
+   & [{:keys [nofonts?] :as appender-fmt-output-opts}]]
+  (format "%s %s [%s] - %s%s"
+          timestamp
+          (-> level name str/upper-case)
+          *log-id*
+          (or message "")
+          (or (log/stacktrace throwable "\n" (when nofonts? {})) "")))
 
 (defn config
   [level file]
   (log/set-level! level)
+  (log/set-config! [:timestamp-pattern] "yyyy-MM-dd'T'HH:mm:ssZZ")
+  (log/set-config! [:fmt-output-fn] format-output-fn)  
   (when file
-    (println "Sending log output to" file )
+    (println "Sending log output to" file)
     (log/set-config! [:appenders :spit :enabled?] true)
     (log/set-config! [:shared-appender-config :spit-filename] file)
-    (log/set-config! [:appenders :standard-out :enabled?] false))
-  (log/set-config! [:timestamp-pattern] "yyyy-MM-dd'T'HH:mm:ssZZ")
-  (log/set-config! [:prefix-fn] prefix-fn))
+    (log/set-config! [:appenders :standard-out :enabled?] false)))
 
 (defn- log-request-msg
   [verb {:keys [request-method uri remote-addr query-string params] :as req}]

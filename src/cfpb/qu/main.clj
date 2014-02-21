@@ -85,8 +85,8 @@
   [& args]
   (when (env :statsd-host)
     (setup-statsd))
-  (when (:dev env)      
-    (log/info "Dev mode enabled" (:dev env)))
   (add-shutdown-hook)
-  (component/start (new-qu-system (default-options))))
+  (component/start (new-qu-system (default-options)))
+  (when (:dev env)      
+    (log/info "Dev mode enabled")))
 

@@ -32,7 +32,7 @@ serve their public data sets."
                  [com.novemberain/monger "1.7.0"]
                  [com.stuartsierra/component "0.2.1"]                 
                  [com.stuartsierra/dependency "0.1.1"]
-                 [com.taoensso/timbre "2.7.1" :exclusions [expectations]]
+                 [com.taoensso/timbre "3.0.1" :exclusions [expectations]]
                  [compojure "1.1.6" :exclusions [ring/ring-core]]
                  [digest "1.4.3"]
                  [environ "0.4.0"]
