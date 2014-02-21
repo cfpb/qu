@@ -27,7 +27,7 @@ serve their public data sets."
                  [cheshire "5.3.1"]
                  [clj-statsd "0.3.10"]                 
                  [clj-time "0.6.0"]
-                 [clojurewerkz/route-one "1.0.0-rc2"]                 
+                 [clojurewerkz/route-one "1.1.0"]                 
                  [clojurewerkz/urly "2.0.0-alpha5" :exclusions [com.google.guava/guava]]
                  [com.novemberain/monger "1.7.0"]
                  [com.stuartsierra/component "0.2.1"]                 
