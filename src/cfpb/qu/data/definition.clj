@@ -7,15 +7,15 @@
             [cheshire.core :as json]
             [cheshire.factory :as factory]))
 
-(def InfoS {(s/required-key :name) String
-            (s/optional-key :description) String
-            (s/optional-key :url) String
+(def InfoS {(s/required-key :name) s/Str
+            (s/optional-key :description) s/Str
+            (s/optional-key :url) s/Str
             s/Keyword s/Any
             })
 
 (def TypeS (s/enum "string" "integer" "date" "dollars" "number" "boolean" "lookup"))
 
-(def IndexS (s/either String [String]))
+(def IndexS (s/either s/Str [s/Str]))
 
 (defn ref-col-count-eq?
   "Make sure that if you have multiple columns in a reference that you
@@ -26,50 +26,50 @@
     (not (coll? (:id ref)))))
 
 (def ReferenceS (s/both (s/pred ref-col-count-eq?)
-                        {(s/required-key :column) (s/either String [String])
-                         (s/required-key :concept) String
-                         (s/optional-key :id) (s/either String [String])
-                         (s/required-key :value) String
+                        {(s/required-key :column) (s/either s/Str [s/Str])
+                         (s/required-key :concept) s/Str
+                         (s/optional-key :id) (s/either s/Str [s/Str])
+                         (s/required-key :value) s/Str
                          }))
 
-(def TableSliceS {(s/optional-key :info) {s/Keyword String}
+(def TableSliceS {(s/optional-key :info) {s/Keyword s/Str}
                   (s/required-key :type) (s/eq "table")
-                  (s/required-key :table) String
-                  (s/required-key :dimensions) [String]
-                  (s/required-key :metrics) [String]
+                  (s/required-key :table) s/Str
+                  (s/required-key :dimensions) [s/Str]
+                  (s/required-key :metrics) [s/Str]
                   (s/optional-key :indexes) [IndexS]
                   (s/optional-key :references) {s/Keyword ReferenceS}
                   })
 
-(def DerivedSliceS {(s/optional-key :info) {s/Keyword String}
+(def DerivedSliceS {(s/optional-key :info) {s/Keyword s/Str}
                     (s/required-key :type) (s/eq "derived")
-                    (s/required-key :slice) String
-                    (s/required-key :dimensions) [String]
-                    (s/required-key :metrics) [String] ;; TODO remove metrics from here
+                    (s/required-key :slice) s/Str
+                    (s/required-key :dimensions) [s/Str]
+                    (s/required-key :metrics) [s/Str] ;; TODO remove metrics from here
                     (s/optional-key :indexes) [IndexS]
-                    (s/required-key :aggregations) {s/Keyword [String]}
-                    (s/optional-key :where) String
+                    (s/required-key :aggregations) {s/Keyword [s/Str]}
+                    (s/optional-key :where) s/Str
                     })
 
 (def SliceS (s/either TableSliceS DerivedSliceS))
 
-(def SimpleConceptS {(s/optional-key :name) String
-                     (s/optional-key :description) String
+(def SimpleConceptS {(s/optional-key :name) s/Str
+                     (s/optional-key :description) s/Str
                      (s/optional-key :type) TypeS})
 (def TableConceptS (merge SimpleConceptS
-                          {(s/required-key :table) String
+                          {(s/required-key :table) s/Str
                            (s/required-key :properties) {s/Keyword
                                                          {(s/required-key :type) TypeS
-                                                          s/Keyword String}}}))
+                                                          s/Keyword s/Str}}}))
 (def ConceptS (s/either SimpleConceptS TableConceptS))
 
-(def ColumnS {(s/optional-key :name) String
-              (s/optional-key :skip) boolean
+(def ColumnS {(s/optional-key :name) s/Str
+              (s/optional-key :skip) s/Bool
               (s/optional-key :type) TypeS
               (s/optional-key :lookup) {s/Any s/Any}
-              (s/optional-key :format) String})
+              (s/optional-key :format) s/Str})
 
-(def TableS {:sources [String]
+(def TableS {:sources [s/Str]
              :columns {s/Keyword ColumnS}})
 
 (def DataDefinitionS {(s/required-key :info) InfoS
