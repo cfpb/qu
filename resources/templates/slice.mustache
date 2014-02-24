@@ -14,7 +14,7 @@
       <dt>Description</dt>
       <dd>{{description}}</dd>
     {{/description}}
-    
+
     {{#dimensions}}
     <dt>Dimensions</dt>
     <dd>{{dimensions}}</dd>
@@ -34,6 +34,7 @@
 <h2>Query This Slice</h2>
 
 <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
+  <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
   <div class="row">
     <div class="span10 well well-small" id="query-url"></div>
 
@@ -70,7 +71,7 @@
     <fieldset class="span10 clause-fields">
       <legend>Clauses</legend>
 
-      {{#clauses}}
+     {{#clauses}}
         {{#even? loop.index}}<div class="row">{{/even? loop.index}}
         <div class="span5 control-group{{#errors}} error{{/errors}}">
           <label class="control-label" for="field-{{key}}">{{label}}</label>
@@ -79,7 +80,9 @@
           type="text"
           class="span5"
           placeholder="{{placeholder}}"
-          value="{{value}}" />
+          value="{{value}}"
+          autocomplete="off"
+          />
           {{#errors}}
             <span class="help-inline">{{.}}</span>
           {{/errors}}
@@ -116,7 +119,7 @@ var timer = setTimeout('window.location.reload()', 10000);
       Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
     </div>
   {{/has-more-data?}}
-  
+
 
   {{> templates/pagination}}
 

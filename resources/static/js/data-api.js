@@ -12,14 +12,14 @@
         return memo;
       }, {})
       .value();
-    
+
     var href = $form.data('href');
-    
+
     var format = formVals["$format"] || "html";
     delete formVals["$format"];
-    
+
     var action = href + "." + format;
-    
+
     var formString = _(formVals)
       .chain()
       .pairs()
@@ -46,5 +46,21 @@
     buildQueryUrl();
     $form.on("keyup", "input[type=text]", buildQueryUrl);
     $form.on("click", "input[type=radio]", buildQueryUrl);
+
+    $form.find('#field-select, #field-group, #field-where, #field-orderBy').typeahead({
+        source: jQuery('#typeahead-candidates').val().split(','),
+        matcher: function (item) {
+            var term;
+            term = this.query.split(',').pop().trim().toLowerCase();
+             if(!term) return false;
+            return ~item.toLowerCase().indexOf(term)
+        },
+        updater: function(item) {
+            item = this.$element.val().replace(/[^,]*$/,'') + ' ' + item;
+            return item;
+        },
+        minLength: 1,
+        items: 5
+    });
   });
 })(jQuery);
