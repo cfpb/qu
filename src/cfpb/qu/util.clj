@@ -102,3 +102,18 @@ is nil unless specified."
   [x]
   (println x)
   x)
+
+(defn combine
+  "Recursively merges maps. If vals are not maps, the last non-nil value wins."
+  [& vals]
+  (if (every? map? vals)
+    (apply merge-with combine vals)
+    (last (remove nil? vals))))
+
+(defn remove-nil-vals
+  "Remove all nil values from a map."
+  [a-map]
+  (postwalk (fn [x]
+              (if (map? x)
+                (into {} (remove (comp nil? second) x))
+                x)) a-map))

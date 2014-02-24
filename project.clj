@@ -2,7 +2,6 @@
 (def build-url (System/getenv "BUILD_URL"))
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
-(def app-url (or (System/getenv "APP_URL") ""))
 
 (defproject qu "1.0.4"
   :description "qu is an **in-progress** data platform created by the CFPB to
@@ -10,7 +9,6 @@ serve their public data sets."
   :build-number ~build-number
   :build-url ~build-url
   :git-commit ~git-commit
-  :app-url ~app-url
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]

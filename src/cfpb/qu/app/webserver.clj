@@ -47,13 +47,13 @@
       (-> handler
           prod-stacktrace/wrap-stacktrace-web))))
 
-(defrecord WebServer [ip port thread queue-size dev view]
+(defrecord WebServer [ip port threads queue-size dev view]
   component/Lifecycle
 
   (start [component]
     (let [options {:ip ip
                    :port port
-                   :thread thread
+                   :thread threads
                    :queue-size queue-size}
           handler (get-handler component)]
       (log/info "Starting web server on" (str ip ":" port))

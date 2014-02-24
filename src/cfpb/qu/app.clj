@@ -3,6 +3,7 @@
    [cfpb.qu.logging :as logging]
    [cfpb.qu.app.webserver :refer [new-webserver]]
    [cfpb.qu.app.mongo :refer [new-mongo]]
+   [cfpb.qu.app.options :refer [inflate-options]]
    [cfpb.qu.cache :as qc]
    [taoensso.timbre :as log]
    [com.stuartsierra.component :as component]))
@@ -39,14 +40,17 @@
   component/Lifecycle
 
   (start [system]
-    (component/start-system system [:log :db :api :cache-worker]))
+    (component/start-system system [:log :db :api :cache-worker])
+    (log/info "Started with settings" (str options))
+    system)
   
   (stop [system]
     (component/stop-system system [:api :cache-worker :db :log])))
 
-(defn new-qu-system [{:keys [http dev log mongo] :as options}]
-  (map->QuSystem {:options options
-                  :db (new-mongo mongo)
-                  :log (new-log log)
-                  :api (new-webserver http dev)
-                  :cache-worker (->CacheWorker)}))
+(defn new-qu-system [options]
+  (let [{:keys [http dev log mongo] :as options} (inflate-options options)]
+    (map->QuSystem {:options options
+                    :db (new-mongo mongo)
+                    :log (new-log log)
+                    :api (new-webserver http dev)
+                    :cache-worker (->CacheWorker)})))

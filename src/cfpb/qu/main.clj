@@ -7,8 +7,8 @@
     [util :refer [->int]]
     [env :refer [env]]
     [logging :as logging]
-    [project :refer [project]]]
-   [cfpb.qu.metrics :as metrics]
+    [project :refer [project]]
+    [metrics :as metrics]]
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [com.stuartsierra.component :as component])
@@ -61,7 +61,7 @@
   {:qu_version (:version @project)
    :build_number (:build-number @project)
    :build_url (:build-url @project)
-   :base_url (:app-url @project)
+   :base_url (:app-url env)
    :api_name (:api-name env)
    :dev_mode (:dev env)})
 
@@ -69,14 +69,13 @@
   []
   {:ip (:http-ip env)
    :port (->int (:http-port env))
-   :thread (->int (:http-threads env))
+   :threads (->int (:http-threads env))
    :queue-size (->int (:http-queue-size env))
    :view (default-view-data)})
 
 (defn default-options
   []
   {:dev (:dev env)
-   :view-data (default-view-data)
    :http (default-http-options)
    :log (default-log-options)
    :mongo (default-mongo-options)})
