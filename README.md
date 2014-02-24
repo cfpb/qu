@@ -15,18 +15,22 @@ The goals of this platform are to:
 [dataset-inspired]: https://github.com/cfpb/qu/wiki/Dataset-publishing-format
 [soda]: http://dev.socrata.com/consumers/getting-started/
 
-## Getting started
+## Developing with Vagrant
+
+If you are using Vagrant, life is clean and easy for you! Go to [our Vagrant documentation](doc/vagrant.md) to get started.
+
+## Getting started without Vagrant
 
 ### Prerequisites
 
 In order to work on _qu_, you need the following languages and tools
 installed:
 
-* [Java][]
 * [Node.js][]
-* [Leiningen][]
 * [Grunt][]
 * [Bower][]
+* [Java][]
+* [Leiningen][]
 * [MongoDB][]
 
 [Java]: http://www.java.com/en/
@@ -37,6 +41,8 @@ installed:
 [MongoDB]: http://www.mongodb.org/
 
 ### Setup
+
+#### Front-end assets
 
 Once you have the prerequisites installed and the code downloaded and
 expanded into a directory (which we will call "qu"), run the following
@@ -59,6 +65,20 @@ grunt watch
 
 You can run `grunt` to compile the files once.
 
+#### Vagrant
+
+Start a VM by running `vagrant up`. Provisioning will take a few minutes.
+
+After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM. Then run:
+
+```
+cd /vagrant
+```
+
+to change the working directory to the Qu codebase.
+
+#### Clojure
+
 To start a Clojure REPL to work with the software, run:
 
 ```sh
@@ -71,11 +91,10 @@ In order to run the API as a web server, run:
 lein run
 ```
 
-Go to http://localhost:3000 and you should see the app running.
+Go to http://localhost:3000 (or http://localhost:3333 if using Vagrant) and you should see the app running.
 
 Before starting the API, you will want to start MongoDB and load some
-data into it. Currently, _qu_ only supports connecting to a local
-MongoDB connection.
+data into it.
 
 ### Configuration
 
