@@ -8,7 +8,7 @@
    :mongo-port 27017
    :mongo-options {:connect-timeout 2000}
    :statsd-port 8125
-   :http-ip "127.0.0.1"
+   :http-ip "0.0.0.0"
    :http-port 3000
    :http-threads 4
    :http-queue-size 20480
