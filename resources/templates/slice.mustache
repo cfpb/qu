@@ -35,13 +35,6 @@
 
 <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
   <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
-  <div class="row">
-    <div class="span10 well well-small" id="query-url"></div>
-
-    <div class="span2">
-      <input class="btn btn-primary" type="submit" value="Query Slice">
-    </div>
-  </div>
 
   <div class="row">
     <fieldset class="span2">
@@ -90,8 +83,19 @@
         {{#odd? loop.index}}</div><!-- end row -->{{/odd? loop.index}}
         {{#even? loop.index}}{{#loop.last}}</div><!-- end row -->{{/loop.last}}{{/even? loop.index}}
       {{/clauses}}
+      <div class="row">
+        <div class="span10 control-group">
+          <label class="control-label">Query URL</label>
+          <div class="10 well well-small" id="query-url"></div>
+      </div>
     </fieldset>
+
   </div>
+
+  <div class="row text-center">
+    <input class="btn btn-primary" type="submit" value="Run Query">
+  </div>
+
 </form>
 
 {{#computing?}}
