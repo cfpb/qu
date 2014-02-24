@@ -1,4 +1,5 @@
 #!/bin/sh
+sudo apt-get -y update
 sudo apt-get -y install python-software-properties
 if [ ! -e /etc/apt/sources.list.d/mongodb.list ]; then
   sudo apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
