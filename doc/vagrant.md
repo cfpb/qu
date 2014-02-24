@@ -58,11 +58,11 @@ lein repl
 This will start the Clojure REPL, a shell, that you can run Clojure commands in. Run the following:
 
 ```clojure
+(go)
 (require 'cfpb.qu.loader)
 (in-ns 'cfpb.qu.loader)
-(mongo/connect!)
 (load-dataset "county_taxes")
-(mongo/disconnect!)
+(stop)
 ```
 
 After that, you can type `Ctrl+D` to leave the Clojure REPL. You are ready to work.
@@ -80,6 +80,15 @@ To start a Clojure REPL to work with the software, run:
 ```sh
 lein repl
 ```
+
+Inside the REPL, you can run the following commands to start and stop the app:
+
+```clojure
+(go) ;; starts the app
+(stop) ;; stops the app
+(reset) ;; resets a running app, reloading all the code
+```
+
 
 Go to http://localhost:3333 on your machine and you should see the app running. This is running on port 3000 on the virtual machine if you need to check it from there.
 
