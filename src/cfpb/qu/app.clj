@@ -40,9 +40,9 @@
   component/Lifecycle
 
   (start [system]
-    (component/start-system system [:log :db :api :cache-worker])
-    (log/info "Started with settings" (str options))
-    system)
+    (let [system (component/start-system system [:log :db :api :cache-worker])]      
+      (log/info "Started with settings" (str options))
+      system))
   
   (stop [system]
     (component/stop-system system [:api :cache-worker :db :log])))
