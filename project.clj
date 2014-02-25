@@ -3,7 +3,7 @@
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
 
-(defproject qu "1.1.0-SNAPSHOT"
+(defproject qu/qu-core "1.1.0-SNAPSHOT"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :build-number ~build-number
@@ -12,7 +12,7 @@ serve their public data sets."
   :url "https://github.com/cfpb/qu"
   :min-lein-version "2.0.0"
   :source-paths ["src"]
-  :main cfpb.qu.main
+  :main ^:skip-aot qu.main  
   :repl-options {:init-ns user}
   :plugins [[lein-environ "0.4.0"]
             [lein-embongo "0.2.1"]
@@ -55,12 +55,12 @@ serve their public data sets."
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
-  :slothcfg {:namespace cfpb.qu.project
+  :slothcfg {:namespace qu.project
              :config-source-path "src"}
   :test-selectors {:default (fn [t] (not (:integration t)))
                    :all (constantly true)}
   :test2junit-output-dir "test-results"  
-  :profiles {:uberjar {:aot [cfpb.qu.main]
+  :profiles {:uberjar {:aot :all
                        :env {:dev false}}
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]

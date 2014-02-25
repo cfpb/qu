@@ -7,11 +7,11 @@
   that prepare queries for the DB and the modules that use those queries and
   fetch data."
   (:require [clojure.test :refer :all]
-            [cfpb.qu.test-util :refer :all]
-            [cfpb.qu.data :as data]
-            [cfpb.qu.loader :as loader]
-            [cfpb.qu.query :as query :refer [params->Query]]
-            [cfpb.qu.cache :as qc]
+            [qu.test-util :refer :all]
+            [qu.data :as data]
+            [qu.loader :as loader]
+            [qu.query :as query :refer [params->Query]]
+            [qu.cache :as qc]
             [clojure.core.cache :as cache]
             [monger.collection :as coll]))
 

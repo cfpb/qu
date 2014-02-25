@@ -59,8 +59,8 @@ This will start the Clojure REPL, a shell, that you can run Clojure commands in.
 
 ```clojure
 (go)
-(require 'cfpb.qu.loader)
-(in-ns 'cfpb.qu.loader)
+(require 'qu.loader)
+(in-ns 'qu.loader)
 (load-dataset "county_taxes")
 (stop)
 ```

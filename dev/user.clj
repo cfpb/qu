@@ -5,11 +5,11 @@
             [clojure.repl :refer :all]
             [clojure.tools.namespace.repl :refer [refresh refresh-all set-refresh-dirs]]
             [com.stuartsierra.component :as component]
-            [cfpb.qu.main :as main]
-            [cfpb.qu.app :refer [new-qu-system]]
-            [cfpb.qu.app.options :refer [inflate-options]]
-            [cfpb.qu.util :refer :all]
-            [cfpb.qu.loader :as loader :refer [load-dataset]]))
+            [qu.main :as main]
+            [qu.app :refer [new-qu-system]]
+            [qu.app.options :refer [inflate-options]]
+            [qu.util :refer :all]
+            [qu.loader :as loader :refer [load-dataset]]))
 
 (set-refresh-dirs "src/" "dev/")
 

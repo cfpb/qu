@@ -1,18 +1,18 @@
 (ns ^:integration integration.test.cache
   (:require [clojure.test :refer :all]
             [clojure.core.cache :as cache]
-            [cfpb.qu.test-util :refer :all]
-            [cfpb.qu.data :as data]
-            [cfpb.qu.query :as q]
-            [cfpb.qu.cache :as c]
-            [cfpb.qu.loader :as loader]
+            [qu.test-util :refer :all]
+            [qu.data :as data]
+            [qu.query :as q]
+            [qu.cache :as c]
+            [qu.loader :as loader]
             [monger.core :as mongo]
             [monger.collection :as coll]
             [monger.conversion :as conv]
             [monger.db :as db]
-            [cfpb.qu.main :as main]            
-            [cfpb.qu.app :as app]
-            [cfpb.qu.app.mongo :refer [new-mongo]]
+            [qu.main :as main]            
+            [qu.app :as app]
+            [qu.app.mongo :refer [new-mongo]]
             [com.stuartsierra.component :as component]))
 
 (def db "integration_test")

@@ -1,9 +1,9 @@
 (ns ^:integration integration.test.aggregation
   (:require [clojure.test :refer :all]
-            [cfpb.qu.data.aggregation :refer :all]            
-            [cfpb.qu.test-util :refer :all]
-            [cfpb.qu.data :as data]
-            [cfpb.qu.loader :as loader]))
+            [qu.data.aggregation :refer :all]            
+            [qu.test-util :refer :all]
+            [qu.data :as data]
+            [qu.loader :as loader]))
 
 (use-fixtures :once (mongo-setup-fn "integration_test"))
 

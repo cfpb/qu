@@ -4,9 +4,9 @@
 
   The tests below are to ensure data is loaded correctly."
   (:require [clojure.test :refer :all]
-            [cfpb.qu.test-util :refer :all]
-            [cfpb.qu.data :as data]
-            [cfpb.qu.loader :as loader]))
+            [qu.test-util :refer :all]
+            [qu.data :as data]
+            [qu.loader :as loader]))
 
 (def db "integration_test")
 (def coll "incomes")

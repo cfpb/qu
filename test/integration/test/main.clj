@@ -1,6 +1,6 @@
 (ns ^:integration integration.test.main
   (:require [clojure.test :refer :all]
-            [cfpb.qu.test-util :refer :all]))
+            [qu.test-util :refer :all]))
 
 (use-fixtures :once (mongo-setup-fn "integration_test"))
 
