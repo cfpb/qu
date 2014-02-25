@@ -1,18 +1,19 @@
-<h1>Slice:
-  <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/{{slice}}
-</h1>
+<header class="bottom-pad">
+  <h1>
+    <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/{{slice}}
+  </h1>
 
-{{#metadata}}
+  {{#metadata}}
   <h2>Properties</h2>
   <dl class="properties">
     {{#name}}
-      <dt>Name</dt>
-      <dd>{{name}}</dd>
+    <dt>Name</dt>
+    <dd>{{name}}</dd>
     {{/name}}
 
     {{#description}}
-      <dt>Description</dt>
-      <dd>{{description}}</dd>
+    <dt>Description</dt>
+    <dd>{{description}}</dd>
     {{/description}}
 
     {{#dimensions}}
@@ -29,87 +30,91 @@
   <p>
     <a href="{{base-href}}/metadata">See all metadata for this slice</a>
   </p>
-{{/metadata}}
+  {{/metadata}}
+</header>
 
-<h2>Query This Slice</h2>
+<section class="bottom-pad">
+  <h2>Query This Slice</h2>
 
-<form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
-  <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
+  <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
+    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
 
     <fieldset class="row clause-fields">
 
-        {{#clauses}}
-        <div class="span6 control-group{{#errors}} error{{/errors}}">
-            <label class="control-label" for="field-{{key}}">{{label}}</label>
-            <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" />
-            {{#errors}}
-            <span class="help-inline">{{.}}</span>
-            {{/errors}}
-        </div>
-        {{/clauses}}
+      {{#clauses}}
+      <div class="span6 control-group{{#errors}} error{{/errors}}">
+        <label class="control-label" for="field-{{key}}">{{label}}</label>
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" />
+        {{#errors}}
+        <span class="help-inline">{{.}}</span>
+        {{/errors}}
+      </div>
+      {{/clauses}}
 
-        <div class="span6">
-            <label>Output Format</label>
+      <div class="span6">
+        <label>Output Format</label>
 
-            <label class="radio inline" for="format-html">
-                <input checked="checked" class="radio" id="format-html" name="$format" type="radio" value="html"/>
-                HTML
-            </label>
-            <label class="radio inline" for="format-json">
-                <input class="radio" id="format-json" name="$format" type="radio" value="json"/>
-                JSON
-            </label>
-            <label class="radio inline" for="format-jsonp">
-                <input class="radio" id="format-jsonp" name="$format" type="radio" value="jsonp"/>
-                JSONP
-            </label>
-            <label class="radio inline" for="format-xml">
-                <input class="radio" id="format-xml" name="$format" type="radio" value="xml"/>
-                XML
-            </label>
-            <label class="radio inline" for="format-csv">
-                <input class="radio" id="format-csv" name="$format" type="radio" value="csv"/>
-                CSV
-            </label>
-        </div>
+        <label class="radio inline" for="format-html">
+          <input checked="checked" class="radio" id="format-html" name="$format" type="radio" value="html"/>
+          HTML
+        </label>
+        <label class="radio inline" for="format-json">
+          <input class="radio" id="format-json" name="$format" type="radio" value="json"/>
+          JSON
+        </label>
+        <label class="radio inline" for="format-jsonp">
+          <input class="radio" id="format-jsonp" name="$format" type="radio" value="jsonp"/>
+          JSONP
+        </label>
+        <label class="radio inline" for="format-xml">
+          <input class="radio" id="format-xml" name="$format" type="radio" value="xml"/>
+          XML
+        </label>
+        <label class="radio inline" for="format-csv">
+          <input class="radio" id="format-csv" name="$format" type="radio" value="csv"/>
+          CSV
+        </label>
+      </div>
 
-        <div class="span12">
-            <label class="control-label">Query URL</label>
-            <div class="well" id="query-url"></div>
-        </div>
+      <div class="span12">
+        <label class="control-label">Query URL</label>
+        <div class="well" id="query-url"></div>
+      </div>
     </fieldset>
 
 
-  <div class="row text-center">
-    <input class="btn btn-primary" type="submit" value="Run Query">
+    <div class="row text-center">
+      <input class="btn btn-primary" type="submit" value="Run Query">
+    </div>
+  </form>
+</section>
+
+<section class="bottom-pad">
+  {{#computing?}}
+  <div class="alert alert-block">
+    <h2>Data computing</h2>
+    <p>Your aggregation is currently computing. Feel free to refresh this page to see if it is available. We will refresh this page every 10 seconds until it is.</p>
+    {{#computing}}
+    <dl>
+      <dt>Status</dt><dd>{{status}}</dd>
+      <dt>Created</dt><dd>{{created}}</dd>
+      <dt>Started</dt><dd>{{started}}</dd>
+    </dl>
+    {{/computing}}
+    <script type="text/javascript">
+      var timer = setTimeout('window.location.reload()', 10000);
+    </script>
   </div>
-
-</form>
-
-{{#computing?}}
-<div class="alert alert-block">
-<h2>Data computing</h2>
-<p>Your aggregation is currently computing. Feel free to refresh this page to see if it is available. We will refresh this page every 10 seconds until it is.</p>
-{{#computing}}
-<dl>
-<dt>Status</dt><dd>{{status}}</dd>
-<dt>Created</dt><dd>{{created}}</dd>
-<dt>Started</dt><dd>{{started}}</dd>
-</dl>
-{{/computing}}
-<script type="text/javascript">
-var timer = setTimeout('window.location.reload()', 10000);
-</script>
-</div>
-{{/computing?}}
+  {{/computing?}}
+</section>
 
 {{#has-data?}}
-<div>
+<section class="bottom-pad">
   <h2>Query Results ({{start}}-{{end}} of {{total}})</h2>
   {{#has-more-data?}}
-    <div class="alert">
-      Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
-    </div>
+  <div class="alert">
+    Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
+  </div>
   {{/has-more-data?}}
 
 
@@ -119,22 +124,22 @@ var timer = setTimeout('window.location.reload()', 10000);
     <thead>
       <tr>
         {{#columns}}
-          <th>{{.}}</th>
+        <th>{{.}}</th>
         {{/columns}}
       </tr>
     </thead>
 
     <tbody>
       {{#data}}
-        <tr>
-          {{#.}}
-            <td>{{.}}</td>
-          {{/.}}
-        </tr>
+      <tr>
+        {{#.}}
+        <td>{{.}}</td>
+        {{/.}}
+      </tr>
       {{/data}}
     </tbody>
   </table>
 
   {{> templates/pagination}}
-</div>
+</section>
 {{/has-data?}}
