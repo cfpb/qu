@@ -62,5 +62,12 @@
         minLength: 1,
         items: 5
     });
+
+    // tooltips via boostrap-popover.js
+    $form.find('.clause-fields .icon-help-alt').popover({
+        trigger: 'hover',
+        placement: 'bottom'
+    }).on('click', function (e) { e.preventDefault(); e.stopPropagation() });
   });
+
 })(jQuery);

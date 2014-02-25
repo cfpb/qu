@@ -1,0 +1,60 @@
+body {
+    color: #101820;
+    font-family: "Avenir Next", Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+}
+
+.wrap {
+    width: 860px;
+    padding: 40px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 2.125em;
+    line-height: 2;
+    text-align: center;
+    margin: 0;
+}
+
+h2 {
+    font-size: 1.625em;
+    margin-top: 3em;
+    color: #101820;
+    text-transform: none;
+    letter-spacing: 0;
+    padding-bottom: 0.5em;
+    border-bottom: 3px solid #2CB34A;
+}
+
+h3 {
+    font-size: 1.375em;
+    font-family: "Avenir Next", Arial, sans-serif;
+    font-weight: 600;
+}
+
+header {
+    width: 100%;
+    position: fixed;
+    top: 0;
+    z-index: 2;
+    background: #E7E7E6;
+    box-shadow: 0 1px 4px 2px rgba(255, 255, 255, 1);
+}
+
+ul,
+li {
+    padding: 0;
+    margin: 0;
+}
+
+li {
+    list-style: none;
+    display: inline-block;
+    /*font-size: 22px;*/
+    line-height: 1.5;
+    margin-bottom: 16px;
+    width: 24%;
+    text-transform: lowercase;
+}

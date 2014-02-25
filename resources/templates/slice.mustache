@@ -43,7 +43,10 @@
 
       {{#clauses}}
       <div class="span6 control-group{{#errors}} error{{/errors}}">
-        <label class="control-label" for="field-{{key}}">{{label}}</label>
+        <label class="control-label" for="field-{{key}}">
+          {{label}}
+          <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
+        </label>
         <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" />
         {{#errors}}
         <span class="help-inline">{{.}}</span>
