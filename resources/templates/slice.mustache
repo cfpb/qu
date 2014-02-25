@@ -36,6 +36,12 @@
 <section class="bottom-pad">
   <h2>Query This Slice</h2>
 
+  <p class="alert">
+      Qu's query language is based on <a href="http://dev.socrata.com/consumers/getting-started#queryingwithsoql" target="_blank">SoSQL <span class="icon-external-link"></span></a>
+      and documented <a href="http://cfpb.github.io/qu/queries.html">at GitHub <span class="icon-external-link"></span></a>
+  </p>
+
+
   <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
     <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
 
