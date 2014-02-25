@@ -36,63 +36,49 @@
 <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
   <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
 
-  <div class="row">
-    <fieldset class="span2">
-      <legend>Format</legend>
-      <br/>
-      <label class="radio" for="format-html">
-        <input checked="checked" class="radio" id="format-html"
-        name="$format" type="radio" value="html">HTML
-      </label>
-      <label class="radio" for="format-json">
-        <input class="radio" id="format-json" name="$format"
-        type="radio" value="json">JSON
-      </label>
-      <label class="radio" for="format-jsonp">
-        <input class="radio" id="format-jsonp" name="$format"
-        type="radio" value="jsonp">JSONP
-      </label>
-      <label class="radio" for="format-xml">
-        <input class="radio" id="format-xml" name="$format" type="radio" value="xml">
-        XML
-      </label>
-      <label class="radio" for="format-csv">
-        <input class="radio" id="format-csv" name="$format" type="radio" value="csv">
-        CSV
-      </label>
-    </fieldset>
+    <fieldset class="row clause-fields">
 
-    <fieldset class="span10 clause-fields">
-      <legend>Clauses</legend>
-      <br/>
-
-     {{#clauses}}
-        {{#even? loop.index}}<div class="row">{{/even? loop.index}}
-        <div class="span5 control-group{{#errors}} error{{/errors}}">
-          <label class="control-label" for="field-{{key}}">{{label}}</label>
-          <input id="field-{{key}}"
-          name="${{key}}"
-          type="text"
-          class="span5"
-          placeholder="{{placeholder}}"
-          value="{{value}}"
-          autocomplete="off"
-          />
-          {{#errors}}
+        {{#clauses}}
+        <div class="span6 control-group{{#errors}} error{{/errors}}">
+            <label class="control-label" for="field-{{key}}">{{label}}</label>
+            <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" />
+            {{#errors}}
             <span class="help-inline">{{.}}</span>
-          {{/errors}}
+            {{/errors}}
         </div>
-        {{#odd? loop.index}}</div><!-- end row -->{{/odd? loop.index}}
-        {{#even? loop.index}}{{#loop.last}}</div><!-- end row -->{{/loop.last}}{{/even? loop.index}}
-      {{/clauses}}
-      <div class="row">
-        <div class="span10 control-group">
-          <label class="control-label">Query URL</label>
-          <div class="10 well well-small" id="query-url"></div>
-      </div>
+        {{/clauses}}
+
+        <div class="span6">
+            <label>Output Format</label>
+
+            <label class="radio inline" for="format-html">
+                <input checked="checked" class="radio" id="format-html" name="$format" type="radio" value="html"/>
+                HTML
+            </label>
+            <label class="radio inline" for="format-json">
+                <input class="radio" id="format-json" name="$format" type="radio" value="json"/>
+                JSON
+            </label>
+            <label class="radio inline" for="format-jsonp">
+                <input class="radio" id="format-jsonp" name="$format" type="radio" value="jsonp"/>
+                JSONP
+            </label>
+            <label class="radio inline" for="format-xml">
+                <input class="radio" id="format-xml" name="$format" type="radio" value="xml"/>
+                XML
+            </label>
+            <label class="radio inline" for="format-csv">
+                <input class="radio" id="format-csv" name="$format" type="radio" value="csv"/>
+                CSV
+            </label>
+        </div>
+
+        <div class="span12">
+            <label class="control-label">Query URL</label>
+            <div class="well" id="query-url"></div>
+        </div>
     </fieldset>
 
-  </div>
 
   <div class="row text-center">
     <input class="btn btn-primary" type="submit" value="Run Query">
