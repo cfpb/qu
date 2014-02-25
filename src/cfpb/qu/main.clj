@@ -4,7 +4,7 @@
   (:require
    [cfpb.qu
     [app :refer [new-qu-system]]
-    [util :refer [->int]]
+    [util :refer [->int ->bool]]
     [env :refer [env]]
     [logging :as logging]
     [project :refer [project]]
@@ -75,7 +75,7 @@
 
 (defn default-options
   []
-  {:dev (:dev env)
+  {:dev (->bool (:dev env))
    :http (default-http-options)
    :log (default-log-options)
    :mongo (default-mongo-options)})
