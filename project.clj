@@ -3,7 +3,7 @@
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
 
-(defproject qu "1.0.4"
+(defproject qu "1.1.0-SNAPSHOT"
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :build-number ~build-number
