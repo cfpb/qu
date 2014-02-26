@@ -43,7 +43,7 @@
 
 
   <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
-    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}}" />
+    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}},SUM(),MIN(),MAX(),COUNT()" />
 
     <fieldset class="row clause-fields">
 

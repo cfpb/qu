@@ -51,12 +51,45 @@
         source: jQuery('#typeahead-candidates').val().split(','),
         matcher: function (item) {
             var term;
-            term = this.query.split(',').pop().trim().toLowerCase();
-             if(!term) return false;
+
+            // To allow typeahead within an aggregation function, strip away the function and its parens
+            term = this.query.split(',').pop().toLowerCase();
+            term = term.replace(/[a-zA-Z]+\(/, '');
+            term = term.replace(')', '');
+            term = term.trim();
+
+            if (!term) {
+                return false;
+            }
+
             return ~item.toLowerCase().indexOf(term)
         },
         updater: function(item) {
-            item = this.$element.val().replace(/[^,]*$/,'') + ' ' + item;
+            var field, parens_index, query_tail;
+            field = this.$element;
+            item = item.trim();
+            query_tail = this.query.split(',').pop();
+            
+
+            // If the field value ends with an empty aggregation
+            // function, place the item inside it.  Otherwise, just
+            // append.
+            if (query_tail.match(/\([a-z]+\)$/)) {
+                item = field.val().replace(query_tail, query_tail.replace(/\(.*/, '(') + item + ')');
+            } else {
+                item = field.val().replace(/[^,]*$/,'') + ' ' + item;
+                item = item.trim();
+            }
+
+            // If there is an empty aggregation function, place the cursor inside it.
+            parens_index = item.lastIndexOf('()');
+
+            if (parens_index > 0) {
+                setTimeout(function () {
+                    field.textrange('setcursor', parens_index + 1);
+                });
+            }
+
             return item;
         },
         minLength: 1,
@@ -68,6 +101,7 @@
         trigger: 'hover',
         placement: 'bottom'
     }).on('click', function (e) { e.preventDefault(); e.stopPropagation() });
+
   });
 
 })(jQuery);

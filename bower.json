@@ -1,10 +1,14 @@
 {
   "name": "data-api",
   "version": "0.0.1",
-  "main": ["./resources/css/app.css", "./resources/js/app.js"],
+  "main": [
+    "./resources/css/app.css",
+    "./resources/js/app.js"
+  ],
   "dependencies": {
     "jquery": "1.10.2",
     "underscore": "1.5.0",
-    "bootstrap": "2.3.2"
+    "bootstrap": "2.3.2",
+    "jquery-textrange": "~1.1.0"
   }
 }
