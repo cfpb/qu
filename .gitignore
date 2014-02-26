@@ -29,5 +29,5 @@ test-results/
 /resources/components/
 /resources/datasets/hmda_lar/*.csv
 /resources/datasets/hmda_lar/*.zip
-/src/cfpb/qu/project.clj
+/src/qu/project.clj
 
