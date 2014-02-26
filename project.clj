@@ -7,6 +7,8 @@
   :description "qu is an **in-progress** data platform created by the CFPB to
 serve their public data sets."
   :license {:name "Public Domain"}
+  :scm {:name "git"
+        :url "https://github.com/cfpb/qu.git"}
   :build-number ~build-number
   :build-url ~build-url
   :git-commit ~git-commit
