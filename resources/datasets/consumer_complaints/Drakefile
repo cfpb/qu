@@ -1,2 +1,0 @@
-consumer_complaints.csv <-
-  curl "https://data.consumerfinance.gov/api/views/x94z-ydhh/rows.csv?accessType=DOWNLOAD" > $OUTPUT
