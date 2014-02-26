@@ -28,7 +28,7 @@
   </dl>
 
   <p>
-    <a href="{{base-href}}/metadata">See all metadata for this slice</a>
+    <a href="{{base-href}}/metadata">View full metadata</a>
   </p>
   {{/metadata}}
 </header>
@@ -38,7 +38,7 @@
 
   <p class="alert">
       Qu's query language is based on <a href="http://dev.socrata.com/consumers/getting-started#queryingwithsoql" target="_blank">SoSQL <span class="icon-external-link"></span></a>
-      and documented <a href="http://cfpb.github.io/qu/queries.html">at GitHub <span class="icon-external-link"></span></a>
+      and documented <a href="http://cfpb.github.io/qu/queries.html" target="_blank">at GitHub <span class="icon-external-link"></span></a>
   </p>
 
 
@@ -53,7 +53,7 @@
           {{label}}
           <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
         </label>
-        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }} placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
         {{#errors}}
         <span class="help-inline">{{.}}</span>
         {{/errors}}
