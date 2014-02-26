@@ -30,12 +30,8 @@
       .value()
       .join("<br />&");
 
-    $form
-      .attr("action", action)
-      .find("#query-url")
-      .html((formString === "") ?
-            action :
-            action + "<br />?" + formString)
+    $form.attr("action", action);
+    $("#query-url").html((formString === "") ? action : action + "<br />?" + formString)
 
     var callback_container = $form.find("#field-callback").closest('.control-group');
     if (format === 'jsonp') {
