@@ -60,7 +60,7 @@
       </div>
       {{/clauses}}
 
-      <div class="span6">
+      <div class="span6 control-group">
         <label>Output Format</label>
 
         <label class="radio inline" for="format-html">
@@ -83,6 +83,14 @@
           <input class="radio" id="format-csv" name="$format" type="radio" value="csv"/>
           CSV
         </label>
+      </div>
+
+      <div class="span6 control-group hide">
+          <label class="control-label" for="field-callback">
+              JSONP Callback
+              <a href="#" class="icon-help-alt" title="" data-content="If outputing in JSONP format, the name of the callback function." data-original-title="JSONP Callback"></a>
+          </label>
+          <input id="field-callback" name="$callback" type="text" class="span5" placeholder="callback" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
       </div>
 
       <div class="span12">

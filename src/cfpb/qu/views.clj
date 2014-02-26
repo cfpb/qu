@@ -245,7 +245,7 @@
    {:key "orderBy"  :label "Order By"         :placeholder "age desc, population_2010" :tooltip_title "Order By Clause"  :tooltip_body "A comma-delimited list of fields used to sort the result set. As with SQL, use DESC for descending order. If blank, the order will be consistent but unspecified."}
    {:key "limit"    :label "Limit"            :placeholder 100                         :tooltip_title "Limit Clause"     :tooltip_body "The maximum number of results to return. Defaults to 100; the hard limit is 1000."}
    {:key "offset"   :label "Offset"           :placeholder 0                           :tooltip_title "Offset Clause"    :tooltip_body "Zero-based offset to start the result set from. Defaults to 0."}
-   {:key "callback" :label "JSONP Callback"   :placeholder "callback"                  :tooltip_title "JSONP Callback"   :tooltip_body "If outputing in JSONP format, the name of the callback function."}])
+   ])
 
 (defn resource-to-href [resource]
   (let [clauses (->> (get-in resource [:properties :query])

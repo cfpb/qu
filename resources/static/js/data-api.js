@@ -36,9 +36,15 @@
       .html((formString === "") ?
             action :
             action + "<br />?" + formString)
-      .end()
-      .find("#field-callback")
-      .prop({disabled: (format === "jsonp" ? "" : "disabled")});
+
+    var callback_container = $form.find("#field-callback").closest('.control-group');
+    if (format === 'jsonp') {
+        callback_container.removeClass('hide');
+        $("#field-callback").prop('disabled', '');
+    } else {
+        callback_container.addClass('hide');
+        $("#field-callback").val('').prop('disabled', 'disabled');
+    }
   };
 
 
@@ -69,7 +75,7 @@
             field = this.$element;
             item = item.trim();
             query_tail = this.query.split(',').pop();
-            
+
 
             // If the field value ends with an empty aggregation
             // function, place the item inside it.  Otherwise, just
