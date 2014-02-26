@@ -53,7 +53,7 @@
           {{label}}
           <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
         </label>
-        <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" />
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
         {{#errors}}
         <span class="help-inline">{{.}}</span>
         {{/errors}}
