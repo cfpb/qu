@@ -1,11 +1,27 @@
+BODY {
+    background: #DAEBD1 url(../background.png) no-repeat top center;
+    background-size: scale;
+}
+
+.container {
+    padding: 0 1em;
+    background-color: white;
+    border-width: 0 1px;
+    box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.75);
+}
+
 
 #footer {
   border-top: 1px solid #666;
   padding-top: 20px;
-  margin-top: 20px;
   font-size: 90%;
   background-color: #efefef;
   width: 100%;
+
+  .container {
+      background-color: inherit;
+      box-shadow: none;
+  }
 }
 
 .dimension-fields {
@@ -36,4 +52,14 @@
 
 #save-query .icon-bookmark {
     margin-top: .25em;
+}
+
+.save-options .icon-help-alt {
+    margin-top: .25em;
+    margin-left: .5em;
+}
+
+#query-url {
+    width: 92%;
+    margin: 0 auto 1em auto;
 }
