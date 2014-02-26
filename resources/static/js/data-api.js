@@ -41,6 +41,7 @@
         callback_container.addClass('hide');
         $("#field-callback").val('').prop('disabled', 'disabled');
     }
+
   };
 
 
@@ -99,11 +100,78 @@
     });
 
     // tooltips via boostrap-popover.js
-    $form.find('.clause-fields .icon-help-alt').popover({
+    $('.icon-help-alt').popover({
         trigger: 'hover',
         placement: 'bottom'
     }).on('click', function (e) { e.preventDefault(); e.stopPropagation() });
 
+
+    // show saved queries as a list of links
+    var storage_key_base = window.location.pathname.replace(/\.htm.*$/, ''); // discard file extension if present
+
+    var showSavedQueries = function () {
+        var query_list = [];
+        localforage.getItem(storage_key_base).then(function (queries) {
+            queries = queries || {};
+            $.each(queries, function (url, name) {
+                query_list.push('<a href="' + url + '">' + name + '</a>');
+            });
+
+            if (query_list.length > 0) {
+                $('#saved-queries P').html(query_list.join(', '));
+            } else {
+                $('#saved-queries P').html('None so far.');
+            }
+        });
+    };
+    showSavedQueries();
+
+    var toggleQueryActions = function () {
+        var current_query = $('#query-url').text();
+        localforage.getItem(storage_key_base).then(function (queries) {
+            queries = queries || {};
+
+            if (queries.hasOwnProperty(current_query)) {
+                $('#forget-query').removeClass('hide');
+                $('#save-query').addClass('hide');
+            } else {
+                $('#forget-query').addClass('hide');
+                $('#save-query').removeClass('hide');
+            }
+        });
+    };
+    toggleQueryActions();
+
+    // Save queries via localforage
+
+    $('#save-query').on('click', function (e) {
+        e.preventDefault();
+        var current_query, name;
+        current_query = $('#query-url').text();
+        name = prompt('What should this query be named?');
+
+        // scope the storage path by the url
+        localforage.getItem(storage_key_base).then(function (queries) {
+            queries = queries || {};
+            queries[current_query] = name;
+            localforage.setItem(storage_key_base, queries).then(function () {
+                showSavedQueries();
+                toggleQueryActions();
+            });
+        });
+    });
+
+      $('#forget-query').on('click', function (e) {
+          e.preventDefault();
+          var current_query = $('#query-url').text();
+          localforage.getItem(storage_key_base).then(function (queries) {
+              delete queries[current_query];
+              localforage.setItem(storage_key_base, queries, function () {
+                showSavedQueries();
+                toggleQueryActions();
+            });
+        });
+      });
   });
 
 })(jQuery);

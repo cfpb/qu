@@ -16,6 +16,7 @@ module.exports = function(grunt) {
           'resources/components/bootstrap/docs/assets/js/bootstrap-tooltip.js',
           'resources/components/bootstrap/docs/assets/js/bootstrap-popover.js',
           'resources/components/jquery-textrange/jquery-textrange.js',
+          'resources/components/localforage/dist/localforage.js',
           'resources/static/js/<%= pkg.name %>.js'
         ],
         dest: 'resources/static/js/<%= pkg.name %>.min.js'

@@ -97,7 +97,7 @@
 
 
     <div class="row text-center">
-      <input class="btn btn-primary" type="submit" value="Run Query">
+        <input class="btn btn-primary btn-large" type="submit" value="Run Query">
     </div>
   </form>
 </section>
@@ -108,7 +108,18 @@
     <div class="row">
         <div class="well span12" id="query-url"></div>
     </div>
+    <div class="text-right">
+        <button class="btn-primary btn-mini hide" id="save-query"><span class="icon-bookmark"></span> Save this query</button>
+        <button class="btn-warning btn-mini hide" id="forget-query">Forget this query</button>
+        <a href="#" class="icon-help-alt" title="Saved Queries" data-content="Saved queries are like bookmarks. They let you assign a name to a query, and are specific to the current slice. They are also specific to your current browser."></a>
+    </div>
 </section>
+
+<section id="saved-queries" class="bottom-pad">
+    <h2>Saved Queries For This Slice</h2>
+    <p></p>
+</section>
+
 
 <section class="bottom-pad">
   {{#computing?}}
