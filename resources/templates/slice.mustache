@@ -48,12 +48,12 @@
     <fieldset class="row clause-fields">
 
       {{#clauses}}
-      <div class="span6 control-group{{#errors}} error{{/errors}}">
+      <div class="span{{ bootstrap_span }} control-group{{#errors}} error{{/errors}}">
         <label class="control-label" for="field-{{key}}">
           {{label}}
           <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
         </label>
-        <input id="field-{{key}}" name="${{key}}" type="text" class="span5" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }} placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
         {{#errors}}
         <span class="help-inline">{{.}}</span>
         {{/errors}}
@@ -85,12 +85,12 @@
         </label>
       </div>
 
-      <div class="span6 control-group hide">
+      <div class="span4 control-group hide">
           <label class="control-label" for="field-callback">
               JSONP Callback
               <a href="#" class="icon-help-alt" title="" data-content="If outputing in JSONP format, the name of the callback function." data-original-title="JSONP Callback"></a>
           </label>
-          <input id="field-callback" name="$callback" type="text" class="span5" placeholder="callback" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
+          <input id="field-callback" name="$callback" type="text" class="span4" placeholder="callback" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
       </div>
 
       <div class="span12">
