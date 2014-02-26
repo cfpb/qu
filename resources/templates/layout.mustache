@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta content="text/html; charset=utf-8" http-equiv="Content-type" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+  <meta charset="utf-8"/>
   <link rel="shortcut icon" href="/static/favicon.ico" type="image/x-icon">
   <link rel="icon" href="/static/favicon.ico" type="image/x-icon">
   <title>{{api_name}}</title>
@@ -15,6 +16,9 @@
   <link rel="{{rel}}" href="{{href}}" />
   {{/links}}
   {{/resource}}
+  <!--[if lt IE 9]>
+  <script src="dist/html5shiv.js"></script>
+  <![endif]-->
 </head>
 
 <body>
