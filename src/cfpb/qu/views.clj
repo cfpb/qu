@@ -239,12 +239,12 @@
   (format-not-found format))
 
 (def clauses
-     [{:key "select"   :label "Select"          :bootstrap_span 12     :placeholder "state,age,population_2010" :tooltip_title "Select Clause"    :tooltip_body "A comma-delimited list of fields to include in the result set. May include aggregation expressions. If blank, all fields will be returned. Unlike SQL, does not support aliases." }
-     {:key "where"    :label "Where"            :bootstrap_span 12     :placeholder "age > 18"                  :tooltip_title "Where Clause"     :tooltip_body "Filters the result set via a subset of SQL syntax. Supports standard comparison and boolean operators. See the API documentation for more details." }
-     {:key "group"    :label "Group By"         :bootstrap_span 6                                               :tooltip_title "Group By Clause"  :tooltip_body "As in SQL, projects rows with common values into a smaller set. Supports the aggregation functions SUM, MIN, MAX, and COUNT. Requires a select clause."}
-     {:key "orderBy"  :label "Order By"         :bootstrap_span 6      :placeholder "age desc, population_2010" :tooltip_title "Order By Clause"  :tooltip_body "A comma-delimited list of fields used to sort the result set. As with SQL, use DESC for descending order. If blank, the order will be consistent but unspecified."}
-     {:key "limit"    :label "Limit"            :bootstrap_span 1      :placeholder 100                         :tooltip_title "Limit Clause"     :tooltip_body "The maximum number of results to return. Defaults to 100; the hard limit is 1000."}
-     {:key "offset"   :label "Offset"           :bootstrap_span 1       :placeholder 0                           :tooltip_title "Offset Clause"    :tooltip_body "Zero-based offset to start the result set from. Defaults to 0."}
+     [{:key "select"   :label "Select"          :bootstrap_span 12     :tooltip_title "Select Clause"    :tooltip_body "A comma-delimited list of fields to include in the result set. May include aggregation expressions. If blank, all fields will be returned. Unlike SQL, does not support aliases." }
+     {:key "where"    :label "Where"            :bootstrap_span 12     :tooltip_title "Where Clause"     :tooltip_body "Filters the result set via a subset of SQL syntax. Supports standard comparison and boolean operators. See the API documentation for more details." }
+     {:key "group"    :label "Group By"         :bootstrap_span 6      :tooltip_title "Group By Clause"  :tooltip_body "As in SQL, projects rows with common values into a smaller set. Supports the aggregation functions SUM, MIN, MAX, and COUNT. Requires a select clause."}
+     {:key "orderBy"  :label "Order By"         :bootstrap_span 6      :tooltip_title "Order By Clause"  :tooltip_body "A comma-delimited list of fields used to sort the result set. As with SQL, use DESC for descending order. If blank, the order will be consistent but unspecified."}
+     {:key "limit"    :label "Limit"            :bootstrap_span 1      :tooltip_title "Limit Clause"     :tooltip_body "The maximum number of results to return. Defaults to 100; the hard limit is 1000."}
+     {:key "offset"   :label "Offset"           :bootstrap_span 1      :tooltip_title "Offset Clause"    :tooltip_body "Zero-based offset to start the result set from. Defaults to 0."}
      ])
 
 (defn resource-to-href [resource]

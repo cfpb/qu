@@ -53,7 +53,7 @@
           {{label}}
           <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
         </label>
-        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" placeholder="{{placeholder}}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
         {{#errors}}
         <span class="help-inline">{{.}}</span>
         {{/errors}}
@@ -90,7 +90,7 @@
               JSONP Callback
               <a href="#" class="icon-help-alt" title="" data-content="If outputing in JSONP format, the name of the callback function." data-original-title="JSONP Callback"></a>
           </label>
-          <input id="field-callback" name="$callback" type="text" class="span4" placeholder="callback" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
+          <input id="field-callback" name="$callback" type="text" class="span4" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
       </div>
 
     </fieldset>
