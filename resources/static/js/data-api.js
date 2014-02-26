@@ -101,7 +101,7 @@
 
     // tooltips via boostrap-popover.js
     $('.icon-help-alt').popover({
-        trigger: 'hover',
+        trigger: 'click',
         placement: 'bottom'
     }).on('click', function (e) { e.preventDefault(); e.stopPropagation() });
 
