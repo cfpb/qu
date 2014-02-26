@@ -1,0 +1,19 @@
+{:dev false
+ :log {:file "qu.log"
+       :level "info"}
+ :mongo {:conn {:uri uri
+                :hosts hosts
+                :host host
+                :port port}
+         :options {}
+         :auth {}}
+ :http {:ip ip
+        :port port
+        :thread number-of-threads
+        :queue-size queue-size
+        :view {:api_name (:api-name env)
+               :qu_version (:version @project)
+               :build_number (:build-number @project)
+               :build_url (:build-url @project)
+               :base_url (:app-url @project)
+               :dev_mode (:dev env)}}}

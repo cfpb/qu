@@ -1,15 +1,19 @@
 (ns ^:integration integration.test.cache
   (:require [clojure.test :refer :all]
             [clojure.core.cache :as cache]
-            [cfpb.qu.test-util :refer :all]
-            [cfpb.qu.data :as data]
-            [cfpb.qu.query :as q]
-            [cfpb.qu.cache :as c]
-            [cfpb.qu.loader :as loader]
+            [qu.test-util :refer :all]
+            [qu.data :as data]
+            [qu.query :as q]
+            [qu.cache :as c]
+            [qu.loader :as loader]
             [monger.core :as mongo]
             [monger.collection :as coll]
             [monger.conversion :as conv]
-            [monger.db :as db]))
+            [monger.db :as db]
+            [qu.main :as main]            
+            [qu.app :as app]
+            [qu.app.mongo :refer [new-mongo]]
+            [com.stuartsierra.component :as component]))
 
 (def db "integration_test")
 (def coll "incomes")
@@ -30,14 +34,16 @@
 
 (defn mongo-setup
   [test]
-  (data/connect-mongo)
-  (loader/load-dataset db)
-  (binding [cache (c/create-query-cache)]
-    (db/drop-db (:database cache))
-    (binding [query (q/prepare (q/make-query qmap))]
-      (binding [worker (c/create-worker cache)
-                agg (q/mongo-aggregation query)]
-        (test)))))
+  (let [mongo (new-mongo (main/default-mongo-options))]
+    (component/start mongo)
+    (loader/load-dataset db)
+    (binding [cache (c/create-query-cache)]
+      (db/drop-db (:database cache))
+      (binding [query (q/prepare (q/make-query qmap))]
+        (binding [worker (c/create-worker cache)
+                  agg (q/mongo-aggregation query)]
+          (test))))
+    (component/stop mongo)))
 
 (use-fixtures :once mongo-setup)
 

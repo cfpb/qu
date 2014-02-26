@@ -204,8 +204,8 @@ Make sure you have MongoDB started. To load some sample data, run
 `lein repl` and enter the following:
 
 ```clojure
-(require 'cfpb.qu.loader)
-(in-ns 'cfpb.qu.loader)
+(require 'qu.loader)
+(in-ns 'qu.loader)
 (mongo/connect!)
 (load-dataset "county_taxes")
 (load-dataset "census") ; Takes quite a while to run; can skip.

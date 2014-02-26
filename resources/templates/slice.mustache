@@ -1,3 +1,6 @@
+{{< templates/layout}}
+
+{{%body}}
 <h1>Slice:
   <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/{{slice}}
 </h1>
@@ -143,3 +146,4 @@ var timer = setTimeout('window.location.reload()', 10000);
   {{> templates/pagination}}
 </div>
 {{/has-data?}}
+{{/body}}
