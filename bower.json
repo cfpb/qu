@@ -9,7 +9,6 @@
     "jquery": "1.10.2",
     "underscore": "1.5.0",
     "bootstrap": "2.3.2",
-    "jquery-textrange": "~1.1.0",
-    "localforage": "*"
+    "jquery-textrange": "~1.1.0"
   }
 }
