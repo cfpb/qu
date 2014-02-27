@@ -12,6 +12,11 @@ module.exports = function(grunt) {
           'resources/components/jquery/jquery.js',
           'resources/components/underscore/underscore.js',
           'resources/components/bootstrap/docs/assets/js/bootstrap.js',
+          'resources/components/bootstrap/docs/assets/js/bootstrap-typeahead.js',
+          'resources/components/bootstrap/docs/assets/js/bootstrap-tooltip.js',
+          'resources/components/bootstrap/docs/assets/js/bootstrap-popover.js',
+          'resources/components/jquery-textrange/jquery-textrange.js',
+          'resources/components/localforage/dist/localforage.js',
           'resources/static/js/<%= pkg.name %>.js'
         ],
         dest: 'resources/static/js/<%= pkg.name %>.min.js'
@@ -28,7 +33,7 @@ module.exports = function(grunt) {
         }
       }
     },
-    watch: {      
+    watch: {
       files: ['Gruntfile.js', 'resources/components/**/*', 'resources/static/**/*'],
       tasks: ['default']
     }
@@ -39,5 +44,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-contrib-watch');
 
   // Default task.
-  grunt.registerTask('default', ['recess', 'uglify']);  
+  grunt.registerTask('default', ['recess', 'uglify']);
 };
