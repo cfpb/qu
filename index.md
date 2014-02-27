@@ -4,11 +4,13 @@ published: true
 layout: default
 ---
 
-Qu is an **in-progress** data platform created to serve our public data sets.
+Qu is a framework for building data APIs. It is still under heavy development and is changing rapidly.
+
+Qu was created to serve the Consumer Financial Protection Bureau's public data sets.
 
 ## A Data Platform
 
-Qu serves up data stored in MongoDB via its API. This API allows for rich queries of the data.
+Qu serves up data stored in MongoDB. Qu provides an API that allows for rich queries of the data.
     
 ## Standards-Based
 
