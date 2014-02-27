@@ -85,7 +85,7 @@
           cache (c/create-query-cache "query_cache" (fn [_] (swap! cleanups inc) []))
           worker (c/create-worker cache)]                 
       (run-all-jobs worker)
-      (does= @cleanups 1))))
+      (is (>= @cleanups 1)))))
 
 (deftest ^:integration test-add-to-queue
   (testing "it adds a document to jobs"
