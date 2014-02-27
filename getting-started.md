@@ -46,7 +46,7 @@ In order to run the API as a web server, run:
 lein run
 ```
 
-Go to http://localhost:3000 and you should see the app running.
+Go to <http://localhost:3000> and you should see the app running.
 
 Before starting the API, you will want to start MongoDB and load some
 data into it. Currently, _qu_ only supports connecting to a local
@@ -67,4 +67,4 @@ Make sure you have MongoDB started. To load some sample data, run
 ```
 
 You can find out more about loading your own data in the
-[loading data](loading_data.html) section.
+[publishing data](data_publishing.html) section.
