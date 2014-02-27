@@ -1,23 +1,24 @@
 {{< templates/layout}}
 
 {{%body}}
-<h1>Slice:
-  <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/{{slice}}
-</h1>
+<header class="bottom-pad">
+  <h1>
+    Slice: <a class="index" href="/data">/data</a><a class="dataset" href="/data/{{dataset}}">/{{dataset}}</a>/slice/{{slice}}
+  </h1>
 
-{{#metadata}}
+  {{#metadata}}
   <h2>Properties</h2>
   <dl class="properties">
     {{#name}}
-      <dt>Name</dt>
-      <dd>{{name}}</dd>
+    <dt>Name</dt>
+    <dd>{{name}}</dd>
     {{/name}}
 
     {{#description}}
-      <dt>Description</dt>
-      <dd>{{description}}</dd>
+    <dt>Description</dt>
+    <dd>{{description}}</dd>
     {{/description}}
-    
+
     {{#dimensions}}
     <dt>Dimensions</dt>
     <dd>{{dimensions}}</dd>
@@ -30,96 +31,127 @@
   </dl>
 
   <p>
-    <a href="{{base-href}}/metadata">See all metadata for this slice</a>
+    <a href="{{base-href}}/metadata">View full metadata</a>
   </p>
-{{/metadata}}
+  {{/metadata}}
+</header>
 
-<h2>Query This Slice</h2>
+<section class="bottom-pad">
+  <h2>Query This Slice</h2>
 
-<form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
-  <div class="row">
-    <div class="span10 well well-small" id="query-url"></div>
+  <p class="alert">
+      Qu's query language is based on <a href="http://dev.socrata.com/consumers/getting-started#queryingwithsoql" target="_blank">SoSQL <span class="icon-external-link"></span></a>
+      and documented <a href="http://cfpb.github.io/qu/queries.html" target="_blank">at GitHub <span class="icon-external-link"></span></a>
+  </p>
 
-    <div class="span2">
-      <input class="btn btn-primary" type="submit" value="Query Slice">
-    </div>
-  </div>
 
-  <div class="row">
-    <fieldset class="span2">
-      <legend>Format</legend>
-      <label class="radio" for="format-html">
-        <input checked="checked" class="radio" id="format-html"
-        name="$format" type="radio" value="html">HTML
-      </label>
-      <label class="radio" for="format-json">
-        <input class="radio" id="format-json" name="$format"
-        type="radio" value="json">JSON
-      </label>
-      <label class="radio" for="format-jsonp">
-        <input class="radio" id="format-jsonp" name="$format"
-        type="radio" value="jsonp">JSONP
-      </label>
-      <label class="radio" for="format-xml">
-        <input class="radio" id="format-xml" name="$format" type="radio" value="xml">
-        XML
-      </label>
-      <label class="radio" for="format-csv">
-        <input class="radio" id="format-csv" name="$format" type="radio" value="csv">
-        CSV
-      </label>
-    </fieldset>
+  <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
+    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}},SUM(),MIN(),MAX(),COUNT()" />
 
-    <fieldset class="span10 clause-fields">
-      <legend>Clauses</legend>
+    <fieldset class="row clause-fields">
 
       {{#clauses}}
-        {{#even? loop.index}}<div class="row">{{/even? loop.index}}
-        <div class="span5 control-group{{#errors}} error{{/errors}}">
-          <label class="control-label" for="field-{{key}}">{{label}}</label>
-          <input id="field-{{key}}"
-          name="${{key}}"
-          type="text"
-          class="span5"
-          placeholder="{{placeholder}}"
-          value="{{value}}" />
-          {{#errors}}
-            <span class="help-inline">{{.}}</span>
-          {{/errors}}
-        </div>
-        {{#odd? loop.index}}</div><!-- end row -->{{/odd? loop.index}}
-        {{#even? loop.index}}{{#loop.last}}</div><!-- end row -->{{/loop.last}}{{/even? loop.index}}
+      <div class="span{{ bootstrap_span }} control-group{{#errors}} error{{/errors}}">
+        <label class="control-label" for="field-{{key}}">
+          {{label}}
+          <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
+        </label>
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        {{#errors}}
+        <span class="help-inline">{{.}}</span>
+        {{/errors}}
+      </div>
       {{/clauses}}
-    </fieldset>
-  </div>
-</form>
 
-{{#computing?}}
-<div class="alert alert-block">
-<h2>Data computing</h2>
-<p>Your aggregation is currently computing. Feel free to refresh this page to see if it is available. We will refresh this page every 10 seconds until it is.</p>
-{{#computing}}
-<dl>
-<dt>Status</dt><dd>{{status}}</dd>
-<dt>Created</dt><dd>{{created}}</dd>
-<dt>Started</dt><dd>{{started}}</dd>
-</dl>
-{{/computing}}
-<script type="text/javascript">
-var timer = setTimeout('window.location.reload()', 10000);
-</script>
-</div>
-{{/computing?}}
+      <div class="span6 control-group">
+        <label>Output Format</label>
+
+        <label class="radio inline" for="format-html">
+          <input checked="checked" class="radio" id="format-html" name="$format" type="radio" value="html"/>
+          HTML
+        </label>
+        <label class="radio inline" for="format-json">
+          <input class="radio" id="format-json" name="$format" type="radio" value="json"/>
+          JSON
+        </label>
+        <label class="radio inline" for="format-jsonp">
+          <input class="radio" id="format-jsonp" name="$format" type="radio" value="jsonp"/>
+          JSONP
+        </label>
+        <label class="radio inline" for="format-xml">
+          <input class="radio" id="format-xml" name="$format" type="radio" value="xml"/>
+          XML
+        </label>
+        <label class="radio inline" for="format-csv">
+          <input class="radio" id="format-csv" name="$format" type="radio" value="csv"/>
+          CSV
+        </label>
+      </div>
+
+      <div class="span4 control-group hide">
+          <label class="control-label" for="field-callback">
+              JSONP Callback
+              <a href="#" class="icon-help-alt" title="" data-content="If outputing in JSONP format, the name of the callback function." data-original-title="JSONP Callback"></a>
+          </label>
+          <input id="field-callback" name="$callback" type="text" class="span4" value="" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" disabled="">
+      </div>
+
+    </fieldset>
+
+
+    <div class="row text-center">
+        <input class="btn btn-primary btn-large" type="submit" value="Run Query">
+    </div>
+  </form>
+</section>
+
+
+<section class="bottom-pad">
+    <h2>Query URL</h2>
+    <div class="row">
+        <div class="well" id="query-url"></div>
+    </div>
+    <div class="save-options">
+        <button class="btn-primary btn-mini hide" id="save-query"><span class="icon-bookmark"></span> Save this query</button>
+        <button class="btn-warning btn-mini hide" id="forget-query">Forget this query</button>
+        <a href="#" class="icon-help-alt" title="Saved Queries" data-content="Saved queries are like bookmarks. They let you assign a name to a query, and are specific to the current slice. They are also specific to your current browser."></a>
+    </div>
+</section>
+
+<section id="saved-queries" class="bottom-pad">
+    <h2>Saved Queries For This Slice</h2>
+    <p></p>
+</section>
+
+
+<section class="bottom-pad">
+  {{#computing?}}
+  <div class="alert alert-block">
+    <h2>Data computing</h2>
+    <p>Your aggregation is currently computing. Feel free to refresh this page to see if it is available. We will refresh this page every 10 seconds until it is.</p>
+    {{#computing}}
+    <dl>
+      <dt>Status</dt><dd>{{status}}</dd>
+      <dt>Created</dt><dd>{{created}}</dd>
+      <dt>Started</dt><dd>{{started}}</dd>
+    </dl>
+    {{/computing}}
+    <script type="text/javascript">
+      var timer = setTimeout('window.location.reload()', 10000);
+    </script>
+  </div>
+  {{/computing?}}
+</section>
 
 {{#has-data?}}
-<div>
+<section class="bottom-pad">
   <h2>Query Results ({{start}}-{{end}} of {{total}})</h2>
   {{#has-more-data?}}
-    <div class="alert">
-      Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
-    </div>
+  <div class="alert">
+    Only the first 100 results are shown. The entire result set is available in CSV, JSON, and XML formats.
+  </div>
   {{/has-more-data?}}
-  
+
 
   {{> templates/pagination}}
 
@@ -127,23 +159,23 @@ var timer = setTimeout('window.location.reload()', 10000);
     <thead>
       <tr>
         {{#columns}}
-          <th>{{.}}</th>
+        <th>{{.}}</th>
         {{/columns}}
       </tr>
     </thead>
 
     <tbody>
       {{#data}}
-        <tr>
-          {{#.}}
-            <td>{{.}}</td>
-          {{/.}}
-        </tr>
+      <tr>
+        {{#.}}
+        <td>{{.}}</td>
+        {{/.}}
+      </tr>
       {{/data}}
     </tbody>
   </table>
 
   {{> templates/pagination}}
-</div>
+</section>
 {{/has-data?}}
 {{/body}}
