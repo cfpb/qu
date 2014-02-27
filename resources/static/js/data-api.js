@@ -31,10 +31,10 @@
           encodeURIComponent(pair[1]).replace(/%20/g,'+');
       })
       .value()
-      .join("<br />&");
+      .join("&");
 
     $form.attr("action", action);
-    $("#query-url").html((formString === "") ? action : action + "<br />?" + formString)
+    $("#query-url").html((formString === "") ? action : action + "?" + formString)
 
     if ($('#field-callback').length > 0) {
       var callback_container = $form.find("#field-callback").closest('.control-group');
