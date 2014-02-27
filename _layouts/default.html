@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="chrome=1">
-  <title>CFPB Open Tech - {{ site.name }} - {{ page.title }}</title>
+  <title>{{ site.name }} - {{ page.title }} - CFPB Open Tech</title>
   <link rel="stylesheet" href="static/css/normalize.css">
   <link rel="stylesheet" href="static/css/style.css">
   <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,16 +12,20 @@
   <![endif]-->
 </head>
 <body>
-  <header>
+  <header class="header cf" role="banner">
     <div class="wrap">
-      <a href="http://consumerfinance.gov"><img class="logo" src="static/img/logo.png" alt="Consumer Financial Protection Bureau"></a>
-      <h1>{{ site.name }}</h1>
+      <a href="http://cfpb.github.io/" target="_blank"><h1><span>CFPB</span> Open Tech</h1></a>
+        
+      <a href="http://www.consumerfinance.gov/" target="_blank">
+        <img class="logo" src="static/img/logo.png" alt="Consumer Financial Protection Bureau">
+      </a>
     </div>
   </header>
 
   <div class="wrap content">
 
     <aside>
+      <h1 class="page-title"><a href="index.html">Qu Docs</a></h1>
       <p class="intro">Stand up your own data API using our open-source platform.</p>
       <nav>
         <ul>
@@ -39,22 +43,41 @@
 
     <section class="main-content" role="main">
       {{ content }}
-
-      <footer>
-      <p><a href="http://consumerfinance.gov/">consumerfinance.gov</a></p>
-      <p><a href="http://github.com/cfpb">github.com/cfpb</a></p>
-      <p><a href="http://www.consumerfinance.gov/jobs/">Work with us</a></p>
-      <p><a href="mailto:tech@consumerfinance.gov">Contact us</a></p>
-
-      <h4>open source</h4>
-      <p>As a work of the United States Government, source code released by the CFPB is in the public domain by default within the United States. <a href="https://github.com/cfpb/source-code-policy/blob/master/cfpb-source-code-policy.txt">View our full source code policy</a>.</p>
-
-      </footer>
     </section>
 
-    
+  </div> <!--/.wrap.content-->
 
-  </div> <!--./wrap-->
+  <footer class="footer cf" role="contentinfo">
+    <div class="wrap">
+      <section class="footer-oss">
+        <h4>Open source</h4>
+        <p>
+          As a work of the United States Government, source code released by the CFPB
+          is in the public domain by default within the United States.
+          <a href="https://github.com/cfpb/source-code-policy/blob/master/cfpb-source-code-policy.txt">
+              View our full source code policy.
+          </a>
+        </p>
+      </section>
+
+      <section class="footer-links">
+        <ul>
+          <li>
+            <a href="http://www.consumerfinance.gov/">consumerfinance.gov</a>
+          </li>
+          <li>
+            <a href="https://github.com/cfpb">github.com/cfpb</a>
+          </li>
+          <li>
+            <a href="http://www.consumerfinance.gov/jobs/">Work with us</a>
+          </li>
+          <li>
+            <a href="mailto:tech@consumerfinance.gov">Contact us</a>
+          </li>
+        </ul>
+      </section>
+    </div>
+  </footer>
 
   <script src="static/js/docs.min.js"></script>
 </body>

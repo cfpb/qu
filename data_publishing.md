@@ -16,11 +16,11 @@ The format datasets are published and loaded in is highly influenced by [Google'
 Here is an example, broken up into sections: ([see the full definition](https://github.cfpb.gov/cndreisbach/data-api/blob/master/resources/datasets/census/definition.json))
 
 ```json
-  "info": {
-    "name": "Tax Year 2007 County Income Data",
-    "description": "Contains selected individual income tax return data items classified by state and county.",
-    "url": "https://explore.data.gov/Population/Tax-Year-2007-County-Income-Data/wvps-imhx"
-  }
+"info": {
+  "name": "Tax Year 2007 County Income Data",
+  "description": "Contains selected individual income tax return data items classified by state and county.",
+  "url": "https://explore.data.gov/Population/Tax-Year-2007-County-Income-Data/wvps-imhx"
+}
 ```
 
 Here we specify general information about the dataset: the name and description we want to display for it, and the URL you can get more information from. 
@@ -28,38 +28,38 @@ Here we specify general information about the dataset: the name and description 
 The `info` section is **required**. Within this section, `name` is **required**, while `description` and `url` are optional, but _recommended_.
 
 ```json
-  "concepts": {
-    "state": {
-      "name": "State Abbreviation",
-      "type": "string",
-      "table": "states",
-      "properties": {
-        "name": {
-          "name": "Name",
-          "description": "The name of the state",
-          "type": "string"
-        }
+"concepts": {
+  "state": {
+    "name": "State Abbreviation",
+    "type": "string",
+    "table": "states",
+    "properties": {
+      "name": {
+        "name": "Name",
+        "description": "The name of the state",
+        "type": "string"
       }
-    },
-    "county": {
-      "name": "County"
-    },
-    "tax_returns": {
-      "name": "Total Number of Tax Returns"
-    },
-    "adjusted_gross_income": {
-      "name": "Adjusted Gross Income (In Thousands)"
-    },
-    "wages_and_salaries_income": {
-      "name": "Wages and Salaries (In Thousands)"
-    },
-    "dividend_income": {
-      "name": "Dividend Income (In Thousands)"
-    },
-    "interest_income": {
-      "name": "Interest Income (In Thousands)"
     }
+  },
+  "county": {
+    "name": "County"
+  },
+  "tax_returns": {
+    "name": "Total Number of Tax Returns"
+  },
+  "adjusted_gross_income": {
+    "name": "Adjusted Gross Income (In Thousands)"
+  },
+  "wages_and_salaries_income": {
+    "name": "Wages and Salaries (In Thousands)"
+  },
+  "dividend_income": {
+    "name": "Dividend Income (In Thousands)"
+  },
+  "interest_income": {
+    "name": "Interest Income (In Thousands)"
   }
+}
 ```
 
 Currently, concepts are not full-featured. Within each concept, you can specify information about that concept. `name` will be displayed in place of the field short name within the user interface. `type`, `table`, and `properties` will be used in the future.
@@ -67,43 +67,43 @@ Currently, concepts are not full-featured. Within each concept, you can specify 
 The `concepts` section is _recommended_, as is `name` within each concept.
 
 ```json
-  "slices": {
-    "incomes": {
-      "type": "table",
-      "table": "incomes",
-      "dimensions": [
-        "state", "county"
-      ],
-      "metrics": [
-        "tax_returns",
-        "adjusted_gross_income",
-        "wages_and_salaries_income",
-        "dividend_income",
-        "interest_income"
-      ]
-    },
-    "incomes_by_state": {
-      "type": "derived",
-      "slice": "incomes",
-      "dimensions": [
-        "state"
-      ],
-      "metrics": [
-        "tax_returns",
-        "adjusted_gross_income",
-        "wages_and_salaries_income",
-        "dividend_income",
-        "interest_income"
-      ],
-      "aggregations": {
-        "tax_returns": ["sum", "tax_returns"],
-        "adjusted_gross_income": ["sum", "adjusted_gross_income"],
-        "wages_and_salaries_income": ["sum", "wages_and_salaries_income"],
-        "dividend_income": ["sum", "dividend_income"],
-        "interest_income": ["sum", "interest_income"]
-      }
+"slices": {
+  "incomes": {
+    "type": "table",
+    "table": "incomes",
+    "dimensions": [
+      "state", "county"
+    ],
+    "metrics": [
+      "tax_returns",
+      "adjusted_gross_income",
+      "wages_and_salaries_income",
+      "dividend_income",
+      "interest_income"
+    ]
+  },
+  "incomes_by_state": {
+    "type": "derived",
+    "slice": "incomes",
+    "dimensions": [
+      "state"
+    ],
+    "metrics": [
+      "tax_returns",
+      "adjusted_gross_income",
+      "wages_and_salaries_income",
+      "dividend_income",
+      "interest_income"
+    ],
+    "aggregations": {
+      "tax_returns": ["sum", "tax_returns"],
+      "adjusted_gross_income": ["sum", "adjusted_gross_income"],
+      "wages_and_salaries_income": ["sum", "wages_and_salaries_income"],
+      "dividend_income": ["sum", "dividend_income"],
+      "interest_income": ["sum", "interest_income"]
     }
   }
+}
 ```
 
 _Slices_ are sections of the dataset. (Google refers to them as "a combination of concepts for which data exist.")
@@ -117,39 +117,39 @@ A derived slice contains aggregated data from another slice, specified by `slice
 The `slices` section is **required**. Within each slice, `type`, `dimensions`, and `metrics` are **required**. Within slices with a `type` of `table`, `table` is **required**. Within slices with a `type` of `derived`, `slice` is **required**.
 
 ```json
-  "tables": {
-    "incomes": {
-      "sources": [
-        "Tax_Year_2007_County_Income_Data.csv"
-      ],
-      "columns": {
-        "County Code": {
-          "skip": true
-        },
-        "State Abbreviation": {
-          "name": "state_abbr",
-          "type": "string"
-        },
-        "County Name": {
-          "name": "county",
-          "type": "string"
-        },
-        "Total Number of Tax Returns": {
-          "name": "tax_returns",
-          "type": "integer"
-        },
-        "Total Number of Exemptions": {
-          "name": "exceptions",
-          "type": "integer"
-        },
-        "Adjusted Gross Income (In Thousands)": {
-          "name": "adjusted_gross_income",
-          "type": "dollars"
-        }
-        // ...
+"tables": {
+  "incomes": {
+    "sources": [
+      "Tax_Year_2007_County_Income_Data.csv"
+    ],
+    "columns": {
+      "County Code": {
+        "skip": true
+      },
+      "State Abbreviation": {
+        "name": "state_abbr",
+        "type": "string"
+      },
+      "County Name": {
+        "name": "county",
+        "type": "string"
+      },
+      "Total Number of Tax Returns": {
+        "name": "tax_returns",
+        "type": "integer"
+      },
+      "Total Number of Exemptions": {
+        "name": "exceptions",
+        "type": "integer"
+      },
+      "Adjusted Gross Income (In Thousands)": {
+        "name": "adjusted_gross_income",
+        "type": "dollars"
       }
+      // ...
     }
   }
+}
 ```
 
 Tables are storage for a dataset. Each table has one or more sources, which are CSV files. Each table also has one or more columns, which define the transformation of data from the CSV files to the database. Within the `columns` section, each key is the name of a column in the CSV file. The dictionary associated with each column contains a name, which is what the concept name for that column will be (and is the name used when storing the data) and a type, which tells the importer how to translate the information in the CSV, which is all strings, into a data value. The column can also contain `skip`, which if true, tells the importer to throw away that column.
