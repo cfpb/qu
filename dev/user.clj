@@ -14,7 +14,6 @@
 (set-refresh-dirs "src/" "dev/")
 
 (def system (atom nil))
-(def options (atom {}))
 
 (defn init
   ([] (init {}))
@@ -23,11 +22,13 @@
 
 (defn start
   []
-  (swap! system component/start))
+  (swap! system component/start)
+  (swap! system assoc :running true))
 
 (defn stop
   []
-  (swap! system component/stop))
+  (swap! system component/stop)
+  (swap! system assoc :running false))
 
 (defn go
   ([] (go {}))
@@ -39,3 +40,9 @@
   []
   (stop)
   (refresh :after 'user/go))
+
+(defn load-sample-data
+  []
+  (if (:running @system)
+    (load-dataset "county_taxes")
+    (println "System not running")))
