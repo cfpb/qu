@@ -63,7 +63,7 @@ serve their public data sets."
   :test-selectors {:default (fn [t] (not (:integration t)))
                    :all (constantly true)}
   :test2junit-output-dir "test-results"  
-  :profiles {:uberjar {:aot :all
+  :profiles {:uberjar {:aot [#"qu\.(?!loader)" monger.key-compression]
                        :env {:dev false}}
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
