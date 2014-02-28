@@ -41,7 +41,7 @@ This roadmap is provisional and pre-decisional. It may change at any time, but r
   * Add new datasets through dashboard
   * Identify useful indexes based on query logs
 
-## Possiblities
+## Possibilities
 
 * API keys
   * Rate limiting
