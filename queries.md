@@ -38,7 +38,7 @@ Our query language is based on Socrata's [SoQL][] language. Queries are simple G
 </tr>
 <tr>
 <td><code>$limit</code></td>
-<td>Maximum number of results to return. If not specified, this defaults to 100. This has a hard limit of 1000.</td>
+<td>Maximum number of results to return. If not specified, this defaults to 100.</td>
 </tr>
 <tr>
 <td><code>$offset</code></td>
