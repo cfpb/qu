@@ -14,13 +14,6 @@
    [com.stuartsierra.component :as component])
   (:import [java.lang.management.ManagementFactory]))
 
-(defn setup-statsd
-  "Setup statsd to log metrics. Requires :statsd-host and :statsd-port
-  to be in the project.clj file."
-  []
-  (log/info (str "Configuring metrics collection: " (env :statsd-host) ":" (env :statsd-port)))
-  (metrics/setup (env :statsd-host) (env :statsd-port)))
-
 (defn- print-live-threads
   []
   (let [mx-bean (java.lang.management.ManagementFactory/getThreadMXBean)
@@ -73,17 +66,24 @@
    :queue-size (->int (:http-queue-size env))
    :view (default-view-data)})
 
+(defn default-metrics-options
+  []
+  (if (:statsd-host env)
+    {:provider :statsd
+     :host (:statsd-host env)
+     :port (:statsd-port env)}
+    {}))
+
 (defn default-options
   []
   {:dev (->bool (:dev env))
    :http (default-http-options)
    :log (default-log-options)
-   :mongo (default-mongo-options)})
+   :mongo (default-mongo-options)
+   :metrics (default-metrics-options)})
 
 (defn -main
   [& args]
-  (when (env :statsd-host)
-    (setup-statsd))
   (add-shutdown-hook)
   (component/start (new-qu-system (default-options)))
   (when (:dev env)      
