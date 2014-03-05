@@ -5,6 +5,7 @@
    [qu.app.mongo :refer [new-mongo]]
    [qu.app.options :refer [inflate-options]]
    [qu.cache :as qc]
+   [qu.metrics :as metrics]
    [taoensso.timbre :as log]
    [com.stuartsierra.component :as component]))
 
@@ -36,21 +37,39 @@
       (qc/stop-worker worker-agent)
       component)))
 
+(defrecord Metrics [provider host port]
+  component/Lifecycle
+
+  (start [component]
+    (when provider
+      (metrics/setup host port))
+    component)
+
+  (stop [component]
+    component))
+
+(defn new-metrics [options]
+  (map->Metrics options))
+
+(def components [:log :db :api :cache-worker :metrics])
+
 (defrecord QuSystem [options api db log cache-worker]
   component/Lifecycle
 
   (start [system]
-    (let [system (component/start-system system [:log :db :api :cache-worker])]      
+    (let [system (component/start-system system components)]      
       (log/info "Started with settings" (str options))
       system))
   
   (stop [system]
-    (component/stop-system system [:api :cache-worker :db :log])))
+    (component/stop-system system components)))
 
 (defn new-qu-system [options]
-  (let [{:keys [http dev log mongo] :as options} (inflate-options options)]
+  (let [{:keys [http dev log mongo metrics] :as options} (inflate-options options)]
     (map->QuSystem {:options options
                     :db (new-mongo mongo)
                     :log (new-log log)
                     :api (new-webserver http dev)
-                    :cache-worker (->CacheWorker)})))
+                    :cache-worker (->CacheWorker)
+                    :metrics (new-metrics metrics)
+                    })))

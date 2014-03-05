@@ -1,12 +1,13 @@
 (ns qu.metrics
   "Captures application metrics. Currently uses clj-statsd to pipe metrics through StatsD"
-  (:require
-    [clj-statsd :as sd]))
+  (:require [clj-statsd :as sd]
+            [taoensso.timbre :as log]))
 
 (def prefix (delay (str "qu." (.getHostName (java.net.InetAddress/getLocalHost)) ".")))
 
 (defn setup
   [host port]
+  (log/info "Starting statsd metrics at" (str host ":" port))
   (sd/setup host port))
 
 (defn prefix-metric

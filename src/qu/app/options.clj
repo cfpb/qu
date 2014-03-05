@@ -29,12 +29,20 @@
                                       [(s/one s/Str "username")
                                        (s/one s/Str "password")]})}))
 
+(def MetricsOptionsS
+  (s/either
+   {:provider s/Keyword
+    :host s/Str
+    :port s/Int}
+   {}))
+
 (def OptionsS
   {(s/optional-key :dev) s/Bool
    :log {(s/optional-key :file) s/Str
          :level s/Keyword}
    :mongo MongoOptionsS
-   :http HttpOptionsS})
+   :http HttpOptionsS
+   :metrics MetricsOptionsS})
 
 (defn inflate-options
   [options]
