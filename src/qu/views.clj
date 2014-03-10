@@ -43,12 +43,12 @@
       status)))
 
 (defn not-found-html [message]
-  (antlers/render-file "templates/404" {:message message}))
+  (antlers/render-file "qu/templates/404" {:message message}))
 
 (defn error-html
   ([] (error-html 500))
   ([status]
-     (-> (response/response (antlers/render-file "templates/500" {}))
+     (-> (response/response (antlers/render-file "qu/templates/500" {}))
          (response/status status)
          (response/content-type "text/html"))))
 
@@ -76,7 +76,7 @@
 
 (defn slice-html
   [view-map]
-  (antlers/render-file "templates/slice" view-map))
+  (antlers/render-file "qu/templates/slice" view-map))
 
 (defn concept-name
   "Each dataset has a list of concepts. A concept is a definition of a
@@ -106,7 +106,7 @@
 (defmulti index (fn [format _ _] format))
 
 (defmethod index "text/html" [_ resource view-data]
-  (antlers/render-file "templates/index"
+  (antlers/render-file "qu/templates/index"
                        (merge view-data {:resource resource
                                          :datasets (map second (:embedded resource))})))
 
@@ -123,7 +123,7 @@
 
 (defmethod dataset "text/html" [_ resource view-data]
   (let [dataset (get-in resource [:properties :id])]
-    (antlers/render-file "templates/dataset"
+    (antlers/render-file "qu/templates/dataset"
                          (merge view-data
                                 {:resource resource
                                  :url (urls/dataset-path :dataset dataset)
@@ -159,7 +159,7 @@
         dataset (:dataset properties)
         concept (:id properties)
         columns (map name (keys (:properties properties {})))]
-    (antlers/render-file "templates/concept"
+    (antlers/render-file "qu/templates/concept"
                          (merge view-data
                                 {:resource resource
                                  :url (urls/concept-path :dataset dataset :concept concept)
@@ -196,7 +196,7 @@
         references (map (fn [[column data]]
                           {:column (name column) :data data})
                         (:references properties))]
-    (antlers/render-file "templates/slice-metadata"
+    (antlers/render-file "qu/templates/slice-metadata"
                          {:resource resource
                           :url (urls/slice-metadata-path :dataset dataset :slice slice)
                           :dataset dataset
@@ -351,7 +351,7 @@
                           :data data})]
     (response/content-type
      (response/response
-      (antlers/render-file "templates/slice" view-data))
+      (antlers/render-file "qu/templates/slice" view-data))
      "text/html;charset=UTF-8")))
 
 (defn- should-stream?

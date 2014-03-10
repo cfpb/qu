@@ -41,6 +41,7 @@ serve their public data sets."
                  [http-kit "2.1.17"]                 
                  [liberator "0.10.0"]
                  [lonocloud/synthread "1.0.5"]
+                 [me.raynes/fs "1.4.4"]
                  [org.clojure/core.cache "0.6.3"]                
                  [org.clojure/data.csv "0.1.2"]
                  [org.clojure/data.json "0.2.4"]

@@ -57,7 +57,8 @@
                  :mongo {:conn {:host "127.0.0.1"
                                 :port 27017}
                          :options {:connect-timeout 2000}}
-                 :log {:level :info}}
+                 :log {:level :info}
+                 :metrics {}}
         set-dev-mode (fn [opts]
                        (assoc-in opts
                                  [:http :view :dev_mode]
