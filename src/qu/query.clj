@@ -1,6 +1,7 @@
 (ns qu.query
   "Functions to build and execute queries."
-  (:require [monger.query :as q]
+  (:require [clojure.string :as str]
+            [monger.query :as q]
             [lonocloud.synthread :as ->]
             [taoensso.timbre :as log]
             [qu.metrics :as metrics]
@@ -154,6 +155,14 @@ parameters into something we can use. Specifically, pull out the clauses."
                  :dataset dataset
                  :slice slice
                  :slicedef slicedef})))
+
+(defn columns
+  "Return list of columns to be used in results. Assumes a prepared query."
+  [{:keys [select slicedef] :as query}]
+  (if (or (str/blank? select)
+          (seq (:errors query)))
+    (data/slice-columns slicedef)
+    (map (comp name :select) (select/parse select))))
 
 (defn make-query
   "Convenience function to quickly make a query for testing at the

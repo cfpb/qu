@@ -55,25 +55,6 @@
 (defn- write-csv [data]
   (with-out-str (csv/write-csv *out* data)))
 
-(defn select-fields
-  "In API requests, the user can select the columns they want
-  returned. If they choose to do this, the columns will be in a
-  comma-separated string. This function returns a seq of column names
-  from that string."
-  [select]
-  (if select
-    (try
-      (map :select (select/parse select))
-      (catch Exception e
-        nil))))
-
-(defn- columns-for-view [query slicedef]
-  (let [select (:select query)]
-    (if (or (str/blank? select)
-            (seq (:errors query)))
-      (data/slice-columns slicedef)
-      (map name (select-fields select)))))
-
 (defn slice-html
   [view-map]
   (antlers/render-file "templates/slice" view-map))
@@ -311,7 +292,7 @@
                      (map #(assoc-in % [:errors] (get-in resource
                                                          [:properties :errors (keyword (:key %))]))))
         data (take 100 (get-in resource [:properties :results]))
-        columns (columns-for-view query slicedef)
+        columns (query/columns query)
         data (data/get-data-table data columns)
         columns (map desc columns)
         data-size (->int (get-in resource [:properties :size]) 0)
@@ -434,7 +415,7 @@
   (let [table (:table slicedef)
         computing (:computing properties)
         data (:results properties)
-        columns (columns-for-view query slicedef)
+        columns (query/columns query)
         rows (data/get-data-table data columns)
         links (reduce conj
                       [{:href href :rel "self"}]
