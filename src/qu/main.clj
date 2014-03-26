@@ -7,8 +7,7 @@
     [util :refer [->int ->bool]]
     [env :refer [env]]
     [logging :as logging]
-    [project :refer [project]]
-    [metrics :as metrics]]
+    [project :refer [project]]]
    [clojure.string :as str]
    [taoensso.timbre :as log]
    [com.stuartsierra.component :as component])
