@@ -204,12 +204,9 @@ Make sure you have MongoDB started. To load some sample data, run
 `lein repl` and enter the following:
 
 ```clojure
-(require 'qu.loader)
-(in-ns 'qu.loader)
-(mongo/connect!)
-(load-dataset "county_taxes")
+(go)
 (load-dataset "census") ; Takes quite a while to run; can skip.
-(mongo/disconnect!)
+(stop)
 ```
 
 ### Testing
