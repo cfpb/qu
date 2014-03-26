@@ -14,7 +14,7 @@ cd qu
 you should be able to run the following command to build your virtual machine:
 
 ```sh
-vagrant up
+vagrant up --provision
 ```
 
 **NOTE:** This will take a very long time the first time. Plan a coffee break.
@@ -59,8 +59,6 @@ This will start the Clojure REPL, a shell, that you can run Clojure commands in.
 
 ```clojure
 (go)
-(require 'qu.loader)
-(in-ns 'qu.loader)
 (load-dataset "county_taxes")
 (stop)
 ```
