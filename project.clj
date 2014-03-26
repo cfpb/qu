@@ -16,7 +16,8 @@ serve their public data sets."
   :min-lein-version "2.0.0"
   :source-paths ["src"]
   :main ^:skip-aot qu.main  
-  :repl-options {:init-ns user}
+  :repl-options {:init-ns user
+                 :timeout 600000}
   :plugins [[lein-environ "0.4.0"]
             [lein-embongo "0.2.1"]
             [lein-cloverage "1.0.2"]            
@@ -55,7 +56,8 @@ serve their public data sets."
                  ]
   :aliases {"inttest" ["with-profile" "integration" "embongo" "test"]
             "jenkins" ["with-profile" "integration" "embongo" "test2junit"]
-            "coverage" ["with-profile" "integration" "embongo" "cloverage"]}
+            "coverage" ["with-profile" "integration" "embongo" "cloverage"]
+            "vagrant-repl" ["repl" ":start" ":host"  "0.0.0.0" ":port" "5678"]}
   :jar-exclusions [#"(^|/)\." #"datasets/.*" ]
   :uberjar-exclusions [#"(^|/)\." #"datasets/.*"
                        #"META-INF/.*\.SF" #"META-INF/.*\.[RD]SA"]  
