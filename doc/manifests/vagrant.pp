@@ -68,3 +68,7 @@ exec { 'install grunt':
   creates => "/usr/bin/grunt",
   require => Package["npm"],
 }
+
+service { "iptables":
+  ensure => "stopped"
+}
