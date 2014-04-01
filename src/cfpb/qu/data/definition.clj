@@ -39,6 +39,7 @@
                   (s/required-key :metrics) [String]
                   (s/optional-key :indexes) [IndexS]
                   (s/optional-key :references) {s/Keyword ReferenceS}
+                  (s/optional-key :max-group-fields) Integer
                   })
 
 (def DerivedSliceS {(s/optional-key :info) {s/Keyword String}
@@ -49,6 +50,7 @@
                     (s/optional-key :indexes) [IndexS]
                     (s/required-key :aggregations) {s/Keyword [String]}
                     (s/optional-key :where) String
+                    (s/optional-key :max-group-fields) Integer
                     })
 
 (def SliceS (s/either TableSliceS DerivedSliceS))
