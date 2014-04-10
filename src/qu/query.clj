@@ -159,7 +159,7 @@ parameters into something we can use. Specifically, pull out the clauses."
 (defn columns
   "Return list of columns to be used in results. Assumes a prepared query."
   [{:keys [select slicedef] :as query}]
-  (if (or (str/blank? select)
+  (if (or (str/blank? select)          
           (seq (:errors query)))
     (data/slice-columns slicedef)
     (map (comp name :select) (select/parse select))))
