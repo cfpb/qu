@@ -12,19 +12,14 @@ yumrepo { 'epel':
   enabled => 1,
 }
 
-package { "mongo-10gen":
+package { "mongodb-org":
   ensure => present,
   require => Yumrepo["mongodb"],
 }
 
-package { "mongo-10gen-server":
-  ensure => present,
-  require => Yumrepo["mongodb"],  
-}
-
 service { "mongod":
   ensure => running,
-  require => Package["mongo-10gen-server"],
+  require => Package["mongodb-org"],
 }
 
 package { "nodejs":
