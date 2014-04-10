@@ -36,7 +36,6 @@ within Mongo."
   [group aggregations]
   (let [project-map {:_id 0}
         project-map (reduce (fn [project-map field]
-                              (println field)
                               (assoc project-map field (str "$_id." (name field))))
                             project-map group)
         project-map (reduce (fn [project-map field]

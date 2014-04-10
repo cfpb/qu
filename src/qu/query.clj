@@ -12,6 +12,7 @@
             [qu.query.validation :as validation]
             [qu.cache :refer [query-to-key]]))
 
+;; TODO explain why we use camelCase in this record
 (defrecord
     ^{:doc "This record contains all the information about a query.
     Much of this comes from requests to the system. The rest is

@@ -97,7 +97,6 @@ the same backing database have access to the same data."
   (let [dataset (:dataset aggmap)
         agg-query (agg/generate-agg-query aggmap)
         source-database (mongo/get-db (:dataset aggmap))
-        destination-database (:database cache)
         to-collection (:to aggmap)]
     (log/info "Running aggregation query:" source-database agg-query)
     (with-db source-database
@@ -106,11 +105,13 @@ the same backing database have access to the same data."
 (defn touch-cache
   "Sets the created value for a query to now."
   [cache query]
-  (let [key (query-to-key query)]
+  (let [key (query-to-key query)
+        dataset (:dataset query)]
     (with-db (:database cache)
       (coll/update "metadata"
                    {:_id key}
-                   {"$set" {:created (now)}}
+                   {"$set" {:created (now)
+                            :dataset dataset}}
                    :upsert true))))
 
 (defn clean-cache
@@ -128,18 +129,21 @@ the same backing database have access to the same data."
          ;;   would not be added.
          ;; - The metadata is totally incidental and not used for consistency, so
          ;;   it can be removed after the work.
-         (coll/remove-by-id *work-collection* key)         
-         (coll/drop key)
-         (coll/remove-by-id "metadata" key)))))
+         (let [metadata (coll/find-one-as-map "metadata" {:_id key})
+               dataset (:dataset metadata)
+               db (when dataset (mongo/get-db dataset))]
+           (when db
+             (coll/remove-by-id *work-collection* key)         
+             (coll/drop db key)
+             (coll/remove-by-id "metadata" key)))))))
 
 (defn wipe-cache
   "Wipe out the entire cache, including the list of jobs."
   [cache]
   (let [db (:database cache)
-        colls (->> (db/get-collection-names db)
-                   (remove #(re-find #"^system\." %)))]
-    (doseq [c colls]
-      (coll/drop db c))))
+        colls (coll/find-maps db "metadata" {} ["_id" "dataset"])]
+    (doseq [{db :dataset c :_id} colls]      
+      (coll/drop (mongo/get-db db) c))))
 
 (defrecord QueryCache [database clean-fn]
   cache/CacheProtocol

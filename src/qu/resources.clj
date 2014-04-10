@@ -254,6 +254,7 @@ functions to return the resource that will be presented later."
                      query (-> (:params request)
                                (params->Query metadata slice)
                                (query/prepare))
+                     ;; TODO document previous memory problem
                      results (query/execute query)
                      resource (slice-resource webserver dataset slice request query results)
                      view-data (merge (:view webserver)
