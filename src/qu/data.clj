@@ -120,7 +120,8 @@ stored in a Mongo database called 'metadata'."
   [database collection {:keys [query] :as aggmap}]
   (metrics/with-timing "queries.aggregation"
     (let [cache (create-query-cache)
-          cache-record (when-not (cache/has? cache query)
+          cache-record (if (cache/has? cache query)
+                         (do (cache/hit cache query) nil)
                          (qc/add-to-queue cache aggmap))]
       (cache/lookup cache query
                     (map->DataResult {:computing (dissoc cache-record :aggmap)})))))

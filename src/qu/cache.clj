@@ -63,18 +63,10 @@ the same backing database have access to the same data."
   [collection query]
   (let [limit (->int (:limit query) 0)
         offset (->int (:offset query) 0)
-        values (set (keys (get-in query [:mongo :project :aggregations])))
-        sort (into {} (map (fn [[field order]]
-                             (if (contains? values field)
-                               [(str "value." (name field)) order]
-                               [(str "_id." (name field)) order]))
-                           (get-in query [:mongo :sort] {})))
-        fields (get-in query [:mongo :project :fields])
+        sort (:sort query {})
         integerize #(if (and (float? %) (is-int? %)) (int %) %)
         integerize-row (fn [row]
-                         (into {} (map (fn [[k v]] (vector k (integerize v))) row)))
-        flatten-row (fn [row]
-                      (select-keys (merge (:_id row) (:value row)) fields))]
+                         (into {} (map (fn [[k v]] (vector k (integerize v))) row)))]
     (with-open [cursor (doto (coll/find collection {})
                          (.limit limit)
                          (.skip offset)
@@ -84,7 +76,6 @@ the same backing database have access to the same data."
        (.size cursor)
        (map (fn [x] (-> x
                         (conv/from-db-object true)
-                        (flatten-row)
                         (integerize-row))) cursor)))))
 
 (defn- get-collection
@@ -104,14 +95,13 @@ the same backing database have access to the same data."
   MongoDB's map-reduce."
   [cache aggmap]
   (let [dataset (:dataset aggmap)
-        map-reduce (agg/generate-map-reduce aggmap)
-        map-reduce (update-in map-reduce [:out]
-                              (fn [out]
-                                {:replace out,
-                                 :db (str (:database cache))}))
-        database (mongo/get-db (:dataset aggmap))]
-    (with-db database
-      (mongo/command map-reduce))))
+        agg-query (agg/generate-agg-query aggmap)
+        source-database (mongo/get-db (:dataset aggmap))
+        destination-database (:database cache)
+        to-collection (:to aggmap)]
+    (log/info "Running aggregation query:" source-database agg-query)
+    (with-db source-database
+      (coll/aggregate (:from aggmap) agg-query))))
 
 (defn touch-cache
   "Sets the created value for a query to now."
@@ -154,13 +144,15 @@ the same backing database have access to the same data."
 (defrecord QueryCache [database clean-fn]
   cache/CacheProtocol
   (lookup [cache query]
-    (let [key (query-to-key query)]
+    (let [key (query-to-key query)
+          database (get-db (:dataset query))]
       (get-collection database query)))
   (lookup [cache query not-found]
-    (let [key (query-to-key query)]
+    (let [key (query-to-key query)
+          database (get-db (:dataset query))]
       (get-collection database query not-found)))
   (has? [cache query]
-    (with-db database
+    (with-db (get-db (:dataset query))
       (let [key (query-to-key query)]
         (coll/exists? key))))
   (hit [cache query]
@@ -173,18 +165,21 @@ the same backing database have access to the same data."
                      :upsert true)))
     cache)
   (miss [cache query result]
-    (let [key (query-to-key query)]
+    (let [key (query-to-key query)
+          database (get-db (:dataset query))]
       (with-db database
         (coll/drop key)
         (coll/insert-batch key result))))
   (evict [cache query]
-    (with-db database
-      (let [key (query-to-key query)]
+    (let [key (query-to-key query)
+          database (get-db (:dataset query))]
+      (with-db database
         (coll/drop key))))
   (seed [cache queries]
-    (with-db database
-      (doseq [[query result] queries]
-        (let [key (query-to-key query)]
+    (doseq [[query result] queries]
+      (let [key (query-to-key query)
+            database (get-db (:dataset query))]
+        (with-db database
           (coll/drop key)
           (coll/insert-batch key result))))))
 

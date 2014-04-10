@@ -7,137 +7,63 @@ within Mongo."
    [qu.util :refer :all]
    [taoensso.timbre :as log]   
    [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
+   [lonocloud.synthread :as ->]   
    [monger
     [core :as mongo :refer [with-db get-db]]
     [collection :as coll]]))
 
-(defn column-indexes
-  "Given a dataset and a slice, return the fields that are indexed
-directly. Multiple column indexes do not count."
-  [dataset slice]
-  (let [indexes (map first
-                     (remove #(> (count %) 1)
-                             (map (comp keys :key)
-                                  (with-db (get-db dataset)
-                                    (coll/indexes-on slice)))))]
-    indexes))
+(defn- select-to-agg
+  "Convert a aggregation map into the Mongo equivalent for the
+  $group filter of the aggregation framework. Used in the group
+  function. Non-public."
+  [field-zip-fn]
+  (fn [[alias [agg field]]]
+    (if (= agg "count")
+      {alias {"$sum" 1}}
+      {alias {(str "$" agg) (str "$" (name (field-zip-fn field)))}})))
 
-(def ^:private agg-fns
-  {:min (js* (fn [ary field]
-               (var vals (.map ary (fn [obj] (return (aget obj field)))))
-               (return (.apply (aget Math "min") nil vals))))
-   :max (js* (fn [ary field]
-               (var vals (.map ary (fn [obj] (return (aget obj field)))))
-               (return (.apply (aget Math "max") nil vals))))
-   :avg (js* (fn [ary field]
-               (var vals (.map ary (fn [obj] (return (aget obj field)))))
-               (return (.avg Array vals))))
-   :median (js* (fn [ary field]
-                  (var median (fn [array]
-                                (var array (.sort array))
-                                (var len (aget array "length"))
-                                (if (= len 0)
-                                  (return nil))
-                                (if (= (% len 2) 0)
-                                  (return (/ (+ (aget array (- 1 (/ len 2)))
-                                                (aget array (/ len 2)))
-                                             2))
-                                  (return (aget array (/ (- len 1) 2))))))
-                  (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                  (return (median vals))))
-   :sum (js* (fn [ary field]
-               (var vals (.map ary (fn [obj] (return (aget obj field)))))
-               (return (.sum Array vals))))
-   :count (js* (fn [ary field]
-                 (var vals (.map ary (fn [obj] (return (aget obj field)))))
-                 (return (.sum Array vals))))})
+(defn aggregation-group-args
+  "Build the arguments for the group section of the aggregation framework."
+  [group aggregations field-zip-fn]
+  (let [id (into {} (map (fn [field]
+                           (vector field (str "$" (name (field-zip-fn field)))))
+                         group))
+        aggregations (map (select-to-agg field-zip-fn) aggregations)
+        group (apply merge {:_id id} aggregations)]
+    group))
 
-(defn- generate-map-fn
-  ([group-fields agg-fields]
-     (generate-map-fn group-fields agg-fields identity))
-  ([group-fields agg-fields zip-fn]
-     (let [create-map-obj (fn [fields]
-                            (reduce (fn [acc [out-field in-field]]
-                                      (merge acc {out-field
-                                                  (if (number? in-field)
-                                                    in-field
-                                                    (let [from-field (name (zip-fn in-field))]
-                                                      (js* (aget this (clj from-field)))))}))
-                                    {} fields))
-           map-id (create-map-obj group-fields)
-           map-val (create-map-obj agg-fields)]
-       (js* (fn [] (emit (clj map-id) (clj map-val)))))))
+(defn aggregation-project-args
+  [group aggregations]
+  (let [project-map {:_id 0}
+        project-map (reduce (fn [project-map field]
+                              (println field)
+                              (assoc project-map field (str "$_id." (name field))))
+                            project-map group)
+        project-map (reduce (fn [project-map field]
+                              (assoc project-map field 1))
+                            project-map (keys aggregations))]
+    project-map))
 
-(defn- generate-reduce-fn
-  [aggregations]
-  (let [reduce-obj (reduce (fn [acc [out-field [agg in-field]]]
-                             (merge acc
-                                    {(name out-field)
-                                     (js* ((aget aggs (clj agg)) values (clj (name out-field))))}))
-                           {} aggregations)]
-    (js* (fn [key values]
-           (var aggs (clj agg-fns))
-           (return (clj reduce-obj))))))
-
-(defn generate-map-reduce*
-  "Generate a map with the information needed to run map-reduce inside
-  Mongo. This does not convert the map and reduce functions to strings
-  with JS in them, so it works for generating something you can paste
-  right into Mongo, like so:
-
-  (cljs (generate-map-reduce* {:dataset \"integration_test\"
-                               :from \"incomes\"
-                               :to \"test1\"
-                               :group [:state_abbr]
-                               :aggregations {:max_tax_returns [\"max\" \"tax_returns\"]}
-                               :slicedef from-slice-definition}))
-
-  If you want map and reduce already stringified, to send through
-  Monger, run `generate-map-reduce`."  
-  [{:keys [dataset from to group aggregations filter slicedef] :as aggmap}]
-  {:pre [(every? #(not (nil? %)) [dataset from to group])
-         (sequential? group)]}
-  (let [aggregations (or aggregations {})
-        field-zip-fn (if slicedef
+(defn generate-agg-query
+  [{:keys [to group aggregations filter sort slicedef] :as aggmap}]
+  (let [field-zip-fn (if slicedef
                        (field-zip-fn slicedef)
                        identity)
         field-unzip-fn (if slicedef
                          (field-unzip-fn slicedef)
                          identity)
-        query (if filter
+        match (if filter
                 (-> filter
                     (compress-where field-zip-fn)
-                    (convert-keys name))
-                {})
-        agg-fields (->> aggregations
-                        (map (juxt first (comp second second)))
-                        (remove #(nil? (second %)))
-                        (into {}))
-        ;; sleight-of-hand to make it look like we have the full metadata
-        indexed-fields (set (map field-unzip-fn (column-indexes dataset from)))
-        ;; filter has been overwritten here, which is a shame, but roll with it.
-        index-choices (clojure.core/filter #(contains? indexed-fields (keyword %)) group)
-        sort-map (if (empty? index-choices)
-                   {}
-                   (array-map (first (map (comp name field-zip-fn) index-choices)) 1))
-        map-fn (generate-map-fn
-                (zipmap group group)
-                agg-fields
-                field-zip-fn)        
-        reduce-fn (generate-reduce-fn aggregations)]
-    (array-map :mapreduce (name from)
-               :map map-fn
-               :reduce reduce-fn
-               :out (name to)
-               :query query
-               :sort sort-map
-               :verbose true)))
-
-(defn generate-map-reduce
-  "Generates a map with the information needed to run map-reduce
-  from Monger."
-  [args]
-  (let [map-reduce (generate-map-reduce* args)]
-    (-> map-reduce
-        (update-in [:map] #(cljs %))
-        (update-in [:reduce] #(cljs %)))))
+                    (convert-keys name)))
+        group-args (aggregation-group-args group aggregations field-zip-fn)
+        project-args (aggregation-project-args group aggregations)
+        ]
+    (-> []
+        (->/when match
+          (conj {"$match" match}))
+        (conj {"$group" group-args})
+        (conj {"$project" project-args})
+        (->/when sort
+          (conj {"$sort" sort}))
+        (conj {"$out" to}))))
