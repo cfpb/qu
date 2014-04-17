@@ -25,6 +25,7 @@
 (def ^:dynamic worker nil)
 (def ^:dynamic query nil)
 (def ^:dynamic agg nil)
+(def ^:dynamic dbo nil)
 (def worker-agent (atom nil))
 
 (defn run-all-jobs [worker]
@@ -37,7 +38,8 @@
   (let [mongo (new-mongo (main/default-mongo-options))]
     (component/start mongo)
     (loader/load-dataset db)
-    (binding [cache (c/create-query-cache)]
+    (binding [cache (c/create-query-cache)
+              dbo (mongo/get-db db)]
       (db/drop-db (:database cache))
       (binding [query (q/prepare (q/make-query qmap))]
         (binding [worker (c/create-worker cache)
@@ -58,27 +60,27 @@
   (testing "it can be wiped"
     (data/get-aggregation db coll agg)
     (run-all-jobs worker)
-    (is (coll/exists? (:database cache) (:to agg)))
+    (is (coll/exists? dbo (:to agg)))
 
     (c/wipe-cache cache)
-    (is (not (coll/exists? (:database cache) (:to agg))))))
+    (is (not (coll/exists? dbo (:to agg))))))
 
 (deftest ^:integration test-cleaning-cache
   (testing "it can be cleaned"
     (data/get-aggregation db coll agg)
     (run-all-jobs worker)
-    (is (coll/exists? (:database cache) (:to agg)))
+    (is (coll/exists? dbo (:to agg)))
 
     (c/clean-cache cache (constantly [(:to agg)]))
-    (is (not (coll/exists? (:database cache) (:to agg)))))
+    (is (not (coll/exists? dbo (:to agg)))))
 
   (testing "by default, it cleans nothing"
     (data/get-aggregation db coll agg)
     (run-all-jobs worker)
-    (is (coll/exists? (:database cache) (:to agg)))
+    (is (coll/exists? dbo (:to agg)))
 
     (c/clean-cache cache)
-    (is (coll/exists? (:database cache) (:to agg))))
+    (is (coll/exists? dbo (:to agg))))
 
   (testing "it runs cleaning operations as part of the worker cycle"
     (let [cleanups (atom 0)
@@ -96,7 +98,7 @@
 (deftest ^:integration test-add-to-cache
   (testing "it puts the aggregation results into the cache"
     (c/add-to-cache cache agg)
-    (is (coll/exists? (:database cache) (:to agg)))))
+    (is (coll/exists? dbo (:to agg)))))
 
 (deftest ^:integration test-lookup
   (testing "it returns an empty result if not in the cache"

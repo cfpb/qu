@@ -2,6 +2,8 @@
   (:require [clojure.set :refer [map-invert]]
             digest))
 
+;; TODO Explain algorithm
+
 (def select (comp first filter))
 
 (defn- trie-add

@@ -36,10 +36,10 @@
 (defn- validate-select-fields
   [query select]
   (let [fields (map (comp name #(if (:aggregation %)
-                                  (second (:aggregation %))
-                                  (:select %)))
+                                 (second (:aggregation %))
+                                 (:select %)))
                     select)]
-    (reduce #(validate-field %1 :select %2) query fields)))
+    (reduce (fn [query field] (validate-field query :select field)) query fields)))
 
 (defn- validate-select-no-aggregations-without-group
   [query select]
@@ -157,15 +157,12 @@
   "Check the query for any errors."
   [query]
   (if-let [metadata (:metadata query)]
-    (let [slice (:slice query)
-          slicedef (get-in metadata [:slices (:slice query)])
-          dimensions (:dimensions slicedef)]
-      (-> query
-          (assoc :errors {})
-          validate-select
-          validate-group
-          validate-where
-          validate-order-by
-          validate-limit
-          validate-offset))
+    (-> query
+        (assoc :errors {})
+        validate-select
+        validate-group
+        validate-where
+        validate-order-by
+        validate-limit
+        validate-offset)
     query))

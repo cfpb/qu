@@ -17,7 +17,8 @@
     [stacktrace :as dev-stacktrace]]
    [ring.util.response :as response]
    [taoensso.timbre :as log]
-   [org.httpkit.server :refer [run-server]]   
+   [org.httpkit.server :refer [run-server]]
+   [liberator.dev :refer [wrap-trace]]
    [com.stuartsierra.component :as component]))
 
 (defn- wrap-cors
@@ -43,6 +44,7 @@
     (if (:dev webserver)
       (-> handler
           reload/wrap-reload
+          (wrap-trace :header :ui)
           dev-stacktrace/wrap-stacktrace-web)
       (-> handler
           prod-stacktrace/wrap-stacktrace-web))))

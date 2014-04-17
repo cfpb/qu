@@ -135,7 +135,9 @@
          (:size query_result) 4
          (:total query_result) 4
          (count (:data query_result)) 4
-         (sort-by :state_abbr (:data query_result))
+         (->> (:data query_result)
+              (sort-by :state_abbr)
+              (map #(dissoc % :_id)))
          [{:sum_tax_returns 33, :count_tax_returns 2, :min_tax_returns 16,
            :max_tax_returns 17, :state_abbr "DC"},
           {:sum_tax_returns 15, :count_tax_returns 5, :min_tax_returns 1,

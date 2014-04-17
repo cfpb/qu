@@ -7,7 +7,7 @@ transforming the data within."
      [util :refer :all]
      [data :as data]]
     [qu.data.compression :refer [field-zip-fn]]
-    [qu.data.aggregation :refer [generate-map-reduce]]
+    [qu.data.aggregation :refer [generate-agg-query]]
     [qu.data.definition :as definition]
     [qu.query.where :as where]
     [taoensso.timbre :as log]
@@ -269,14 +269,14 @@ transform that data into the form we want."
         zipfn (field-zip-fn sdef)]
     (load-table table slice concepts references definition :keyfn zipfn)))
 
-(defn derived-slice-map-reduce
+(defn derived-slice-agg-query
   [slice definition]
   (let [sdef (get-in definition [:slices (keyword slice)])
         dataset (:database definition)
 
         from-collection (:slice sdef)
         from-slicedef (get-in definition [:slices (keyword from-collection)])
-        to-collection slice
+        to-collection (name slice)
         to-zip-fn (field-zip-fn sdef)
 
         dimensions (:dimensions sdef)
@@ -285,51 +285,28 @@ transform that data into the form we want."
                  (-> where
                      (where/parse)
                      (where/mongo-eval))
-                 {})
-
-        map-reduce (generate-map-reduce {:dataset dataset
-                                         :from from-collection
-                                         :to to-collection
-                                         :group dimensions
-                                         :aggregations aggregations
-                                         :filter filter
-                                         :slicedef from-slicedef})
-
-        finalize-reduce-fn (fn [obj-name fields]
-                             (reduce (fn [acc field]
-                                       (merge acc
-                                              {(name (to-zip-fn field))
-                                               (js*
-                                                 (elimNaN (aget (clj obj-name)
-                                                                (clj (name field)))))}))
-                                     {} fields))
-        finalize-dims (finalize-reduce-fn :key dimensions)
-        finalize-aggs (finalize-reduce-fn :value (keys aggregations))
-        finalize-obj (merge finalize-dims finalize-aggs)
-        finalize-fn (js* (fn [key value]
-                           (var elimNaN (fn [val] (if (= val NaN)
-                                                    (return nil)
-                                                    (return val))))
-                           (return (clj finalize-obj))))]
-    (into (array-map)
-          (concat map-reduce
-                  {:finalize (cljs finalize-fn)}))))
+                 {})]
+    (generate-agg-query {:dataset dataset
+                         :from from-collection
+                         :to to-collection
+                         :group dimensions
+                         :aggregations aggregations
+                         :filter filter
+                         :slicedef from-slicedef})))
 
 (defmethod load-slice "derived"
            [slice concepts definition]
-  (let [mr (derived-slice-map-reduce slice definition)
+  (let [agg-query (derived-slice-agg-query slice definition)
         slicedef (get-in definition [:slices (keyword slice)])
+        from-collection (:slice slicedef)        
         fields (data/slice-columns slicedef)
         zip-fn (field-zip-fn slicedef)
-        zfields (map zip-fn fields)
         rename-map (reduce (fn [acc field]
-                             (merge acc {(str "value." (name field)) field}))
-                           {} zfields)
-        mr-results (mongo/command mr)]
-    (log/debug "Map-reduce for " slice mr)
-    (log/info "Results of map-reduce for" slice mr-results)
-    (coll/update slice {} {"$rename" rename-map} :multi true)
-    (coll/update slice {} {"$unset" {"value" 1}} :multi true)))
+                             (merge acc {(zip-fn field) field})) {} fields)
+        agg-results (coll/aggregate from-collection agg-query)]
+    (log/info "Aggregation for " slice agg-query)
+    (log/info "Results of aggregation for" slice agg-results)
+    (coll/update slice {} {"$rename" rename-map} :multi true)))
 
 (defmethod load-slice :default
            [slice concepts definition]

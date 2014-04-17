@@ -267,7 +267,6 @@
   (let [desc (partial concept-name metadata query)
         dataset (get-in resource [:properties :dataset])
         slice (get-in resource [:properties :slice])
-        query (get-in resource [:properties :query])
         base-href (urls/slice-query-path :dataset dataset :slice slice)
         dimensions (:dimensions slicedef)
         metrics (:metrics slicedef)

@@ -45,7 +45,7 @@
 
 
   <form action="{{action}}" data-href="{{action}}" id="query-form" method="get" name="query-form">
-    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}},SUM(),MIN(),MAX(),COUNT()" />
+    <input type="hidden" disabled="disabled" id="typeahead-candidates" name="typeahead-candidates" value="{{#metadata}}{{dimensions}},{{metrics}}{{/metadata}},SUM(),MIN(),MAX(),COUNT()">
 
     <fieldset class="row clause-fields">
 
@@ -55,7 +55,7 @@
           {{label}}
           <a href="#" class="icon-help-alt" title="{{ tooltip_title }}" data-content="{{ tooltip_body }}"></a>
         </label>
-        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" />
+        <input id="field-{{key}}" name="${{key}}" type="text" class="span{{ bootstrap_span }}" value="{{value}}" autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" placeholder="{{ placeholder }}">
         {{#errors}}
         <span class="help-inline">{{.}}</span>
         {{/errors}}
@@ -141,7 +141,7 @@
   {{/has-more-data?}}
 
 
-  {{> templates/pagination}}
+  {{> qu/templates/pagination}}
 
   <table class="table table-hover table-bordered" id="query-results">
     <thead>
@@ -163,7 +163,7 @@
     </tbody>
   </table>
 
-  {{> templates/pagination}}
+  {{> qu/templates/pagination}}
 </section>
 {{/has-data?}}
 {{/body}}
