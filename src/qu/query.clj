@@ -12,11 +12,12 @@
             [qu.query.validation :as validation]
             [qu.cache :refer [query-to-key]]))
 
-;; TODO explain why we use camelCase in this record
-(defrecord
-    ^{:doc "This record contains all the information about a query.
-    Much of this comes from requests to the system. The rest is
-    accreted throughout the query parsing and verification process."}
+(defrecord ^{:doc "This record contains all the information about a
+    query.  Much of this comes from requests to the system. The rest
+    is accreted throughout the query parsing and verification process.
+    This record uses camelCase for orderBy, even though that is
+    non-idiomatic for Clojure, to highlight the parallel to the
+    orderBy GET parameter, which is part of the established API."}
     Query
   [select group where orderBy limit offset callback
    mongo errors
@@ -108,7 +109,12 @@ parameters into something we can use. Specifically, pull out the clauses."
       (assoc :prepared? true)))
 
 (defn execute
-  "Execute the query against the provided collection."
+  "Execute the query against the provided collection. This function
+  does not follow the same API as the rest of the functions in this
+  namespace: that is, take a query + params, return a query. Instead
+  we return the query results. The results are kept out of the query
+  record so that they can be garbage-collected as we iterate through
+  them."
   [{:keys [dataset slice] :as query}]
 
   (metrics/with-timing "queries.execute"
