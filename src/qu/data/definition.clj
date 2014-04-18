@@ -39,6 +39,7 @@
                   (s/required-key :metrics) [s/Str]
                   (s/optional-key :indexes) [IndexS]
                   (s/optional-key :references) {s/Keyword ReferenceS}
+                  (s/optional-key :max-group-fields) Integer
                   })
 
 (def DerivedSliceS {(s/optional-key :info) {s/Keyword s/Str}

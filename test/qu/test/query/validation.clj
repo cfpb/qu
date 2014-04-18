@@ -5,8 +5,9 @@
             [qu.query.validation :as v]))
 
 (deftest test-validate
-  (let [slicedef {:dimensions ["state_abbr" "county"]
-                  :metrics ["tax_returns"]}
+  (let [slicedef {:dimensions ["state_abbr" "county" "county_code" "city" "city_abbr"]
+                  :metrics ["tax_returns"]
+                  :max-group-fields 3}
         metadata {:slices {:county_taxes slicedef}
                   :concepts {:county {:properties {:population {:type "number"}
                                                    :state {:type "string"}}}}}
@@ -38,6 +39,12 @@
          
     (testing "it errors if it cannot parse GROUP"
       (does-contain (errors (q :select "state_abbr" :group "what what")) :group))
+
+    (testing "it errors if if the number of fields in GROUP exceeds the maximum allowed"
+      (let [query (q :select "state_abbr, county, county_code, city, city_abbr, SUM(tax_returns)"
+                     :group "state_abbr, county, county_code, city, city_abbr")
+            group-errors (:group (errors query))]
+        (does-contain group-errors "Number of group fields exceeds maximum allowed (3).")))
 
     (testing "it errors if you use GROUP without SELECT"
       (let [query (q :group "state_abbr")]

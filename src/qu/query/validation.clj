@@ -84,6 +84,13 @@
   [query group]
   (reduce #(validate-field %1 :group %2) query group))
 
+(defn- validate-group-fields-max-count
+  [{:keys [slicedef] :as query} group]
+  (let [max-field-count (:max-group-fields slicedef 5)]
+    (if (> (count group) max-field-count)
+      (add-error query :group (str "Number of group fields exceeds maximum allowed (" max-field-count ")."))
+      query)))
+
 (defn- validate-group-only-group-dimensions
   [{:keys [slicedef] :as query} group]
   (let [dimensions (set (:dimensions slicedef))]
@@ -102,6 +109,7 @@
       (let [group (parse parser/group-expr group)]
         (-> query
             validate-group-requires-select
+            (validate-group-fields-max-count group)
             (validate-group-fields group)
             (validate-group-only-group-dimensions group)))
       (catch Exception e
