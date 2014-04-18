@@ -16,7 +16,7 @@
    :queue-size s/Int})
 
 (def MongoOptionsS
-  (let [database s/Str
+  (let [database (s/either s/Str s/Keyword)
         conn-uri-s {:uri s/Str}
         conn-hosts-s {:hosts [[(s/one s/Str "ip")
                                (s/one s/Int "port")]]}
