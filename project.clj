@@ -40,7 +40,7 @@ serve their public data sets."
                  [environ "0.5.0"]
                  [halresource "0.1.1-20130809.164342-1"]
                  [http-kit "2.1.18"]
-                 [liberator "0.10.0"]
+                 [liberator "0.11.0"]
                  [lonocloud/synthread "1.0.5"]
                  [me.raynes/fs "1.4.5"]
                  [org.clojure/core.cache "0.6.3"]                
