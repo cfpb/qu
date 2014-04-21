@@ -49,7 +49,7 @@ serve their public data sets."
                  [org.codehaus.jsr166-mirror/jsr166y "1.7.0"]                 
                  [parse-ez "0.3.6"]
                  [prismatic/schema "0.2.1"]
-                 [ring "1.2.1"]                 
+                 [ring "1.2.2"]                 
                  [ring.middleware.mime-extensions "0.2.0"]
                  [ring-middleware-format "0.3.2"]
                  [scriptjure "0.1.24"]
