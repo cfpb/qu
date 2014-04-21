@@ -24,7 +24,7 @@ serve their public data sets."
             [test2junit "1.0.1"]            
             [slothcfg "1.0.1"]
             [codox "0.6.4"]]
-  :dependencies [[org.clojure/clojure "1.5.1"]
+  :dependencies [[org.clojure/clojure "1.6.0"]
                  [caribou/antlers "0.6.1"]                 
                  [cheshire "5.3.1"]
                  [clj-statsd "0.3.10"]                 
