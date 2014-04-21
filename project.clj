@@ -28,7 +28,7 @@ serve their public data sets."
                  [caribou/antlers "0.6.1"]                 
                  [cheshire "5.3.1"]
                  [clj-statsd "0.3.10"]                 
-                 [clj-time "0.6.0"]
+                 [clj-time "0.7.0"]
                  [clojurewerkz/route-one "1.1.0"]                 
                  [clojurewerkz/urly "2.0.0-alpha5" :exclusions [com.google.guava/guava]]
                  [com.novemberain/monger "1.7.0"]
