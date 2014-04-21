@@ -78,7 +78,7 @@ serve their public data sets."
                            :writer codox-md.writer/write-docs}                   
                    :dependencies [[alembic "0.2.1"]
                                   [clj-http "0.9.1"]
-                                  [factual/drake "0.1.3-SNAPSHOT"]
+                                  [factual/drake "0.1.5-SNAPSHOT"]
                                   [org.clojure/tools.namespace "0.2.4"]
                                   [org.clojure/java.classpath "0.2.2"]
                                   [ring-mock "0.1.5"]
