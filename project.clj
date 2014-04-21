@@ -37,7 +37,7 @@ serve their public data sets."
                  [com.taoensso/timbre "3.1.6" :exclusions [expectations]]
                  [compojure "1.1.6" :exclusions [ring/ring-core]]
                  [digest "1.4.4"]
-                 [environ "0.4.0"]
+                 [environ "0.5.0"]
                  [halresource "0.1.1-20130809.164342-1"]
                  [http-kit "2.1.18"]
                  [liberator "0.10.0"]
