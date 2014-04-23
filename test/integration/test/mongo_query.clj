@@ -104,7 +104,37 @@
       (does=
        (:total query_result) upper-bound
        (:size query_result) upper-bound
-       (:tax_returns (last (:data query_result))) upper-bound))))
+       (:tax_returns (last (:data query_result))) upper-bound)))
+
+  (testing "ensure no regressions with complex boolean expressions"
+    (let [where "tax_returns <= 3 AND state_abbr = 'NC' AND county = 'County 3'"
+          metadata (data/get-metadata db)
+          q (query/prepare (params->Query {:$where where} metadata :incomes))
+          query_result (query/execute q)]
+      (does=
+       (:total query_result) 1
+       (:size query_result) 1
+       (:tax_returns (first (:data query_result))) 3
+       (:state_name (first (:data query_result))) "North Carolina"))
+
+    (let [where "tax_returns <= 3 OR state_abbr = 'PA' OR county = 'County 15'"
+          metadata (data/get-metadata db)
+          q (query/prepare (params->Query {:$where where} metadata :incomes))
+          query_result (query/execute q)
+          data (:data query_result)]      
+      (is (some #(<= (:tax_returns %) 3) data))
+      (is (some #(= (:state_abbr %) "PA") data))
+      (is (some #(= (:county %) "County 15") data)))
+
+    (let [where "adjusted_gross_income >= 200 AND (tax_returns <= 3 OR state_abbr = 'PA' OR county = 'County 15')"
+          metadata (data/get-metadata db)
+          q (query/prepare (params->Query {:$where where} metadata :incomes))
+          query_result (query/execute q)
+          data (:data query_result)]      
+      (is (every? #(>= (:adjusted_gross_income %) 200) data))
+      (is (some #(<= (:tax_returns %) 3) data))
+      (is (some #(= (:state_abbr %) "PA") data))
+      (is (some #(= (:county %) "County 15") data)))))
 
 
 (deftest ^:integration test-execute-and-aggregation
