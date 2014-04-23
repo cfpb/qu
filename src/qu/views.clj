@@ -302,7 +302,7 @@
                 (+ start)
                 dec)
         total (get-in resource [:properties :total])
-        has-data? (pos? (- end start))
+        has-data? (>= (- end start) 0)
         has-more-data? (> data-size 100)
         pagination (create-pagination resource)
         computing (get-in resource [:properties :computing])
