@@ -1,17 +1,11 @@
 (ns qu.main
-  (:gen-class
-   :main true)
-  (:require
-   [qu
-    [app :refer [new-qu-system]]
-    [util :refer [->int ->bool]]
-    [env :refer [env]]
-    [logging :as logging]
-    [project :refer [project]]]
-   [clojure.string :as str]
-   [taoensso.timbre :as log]
-   [com.stuartsierra.component :as component])
-  (:import [java.lang.management.ManagementFactory]))
+  (:require [com.stuartsierra.component :as component]
+            [qu.app :refer [new-qu-system]]
+            [qu.env :refer [env]]
+            [qu.project :refer [project]]
+            [qu.util :refer [->bool ->int]]
+            [taoensso.timbre :as log])
+  (:gen-class :main true))
 
 (defn- print-live-threads
   []

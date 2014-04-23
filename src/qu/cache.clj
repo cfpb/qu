@@ -8,31 +8,25 @@ standard interface. Unlike the caches that come with
 `clojure.core.cache`, however, our `QueryCache` is stateful, as it's
 backed by MongoDB. That means two instances of the cache created with
 the same backing database have access to the same data."
-  (:require [taoensso.timbre :as log]
-            [qu.util :refer :all]
-            [qu.data.result :refer [->DataResult]]
-            [qu.data.aggregation :as agg]
-            [qu.metrics :as metrics]
-            [clojure.string :as str]
-            [clojure.core.cache :as cache :refer [defcache]]
-            [clj-time.core :refer [now]]
+  (:require [clj-time.core :refer [now]]
+            [clojure.core.cache :as cache]
             [clojure.edn :as edn]
-            [lonocloud.synthread :as ->]            
-            [monger
-             [db :as db]
-             [core :as mongo :refer [with-db get-db]]
-             [query :as q]
-             [collection :as coll]
-             [conversion :as conv]
-             joda-time
-             json]
-            digest)
-  (:import
-   [com.mongodb
-    DBCollection
-    MongoException$DuplicateKey
-    MapReduceCommand
-    MapReduceCommand$OutputType]))
+            [clojure.string :as str]
+            [digest :refer [md5]]
+            [lonocloud.synthread :as ->]
+            [monger.collection :as coll]
+            [monger.conversion :as conv]
+            [monger.core :as mongo :refer [get-db with-db]]
+            [qu.data.aggregation :as agg]
+            [qu.data.result :refer [->DataResult]]
+            [qu.metrics :as metrics]
+            [qu.util :refer :all]
+            [taoensso.timbre :as log])
+  (:import (com.mongodb MongoException$DuplicateKey)))
+
+;; Needed to interact with joda-time and Cheshire.
+(require 'monger.joda-time)
+(require 'monger.json)
 
 (def ^:dynamic *wait-time* 5000)
 (def ^:dynamic *work-collection* "jobs")
@@ -56,7 +50,7 @@ the same backing database have access to the same data."
                      (conj "GROUP BY" (squeeze group)))
                    (->/as sqlish
                           (do (str/join " " sqlish))))]
-    (str "q" (digest/md5 sqlish))))
+    (str "q" (md5 sqlish))))
 
 (defn- extract-result
   "Turn a collection + a query into results that would come from that aggregation."

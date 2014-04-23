@@ -10,17 +10,16 @@
   * They return a qu.query/Query.
   * If any errors are found, they populate :errors on that Query and abort.
   * If not, they populate :mongo on that Query."
-  (:refer-clojure :exclude [sort])
-  (:require [clojure.string :as str]
-            [clojure.set :as set]
+  (:require [clojure.set :as set]
+            [clojure.string :as str]
             [clojure.walk :as walk]
             [protoflex.parse :refer [parse]]
-            [taoensso.timbre :as log]
-            [lonocloud.synthread :as ->]
-            [qu.query.where :as where]
-            [qu.query.select :as select]
             [qu.query.parser :as parser]
-            [qu.query.validation :refer [valid? validate-field add-error]]))
+            [qu.query.select :as select]
+            [qu.query.validation :refer [add-error valid?
+                                         validate-field]]
+            [qu.query.where :as where])
+  (:refer-clojure :exclude [sort]))
 
 (declare match project group sort post-validate)
 

@@ -1,13 +1,10 @@
 (ns qu.routes
-  (:require
-   [compojure
-    [core :refer [defroutes GET routes]]
-    [route :as route]]
-   [clojure.java.io :as io]
-   [ring.util.response :refer [redirect]]
-   [qu.resources :as resources]
-   [qu.urls :refer :all]
-   [qu.swagger :as swagger]))
+  (:require [compojure.core :refer [GET routes]]
+            [compojure.route :as route]
+            [qu.resources :as resources]
+            [qu.swagger :as swagger]
+            [qu.urls :refer :all]
+            [ring.util.response :refer [redirect]]))
 
 (defn create-app-routes
   "Create the app routes. Provides GET-only access to the list of

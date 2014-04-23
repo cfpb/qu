@@ -1,25 +1,20 @@
 (ns qu.app.webserver
-  (:gen-class
-   :main true)
-  (:require
-   [qu
-    [etag :refer [wrap-etag]]
-    [routes :refer [create-app-routes]]
-    [logging :as logging :refer [wrap-with-logging]]]
-   [qu.middleware.keyword-params :refer [wrap-keyword-params]]
-   [qu.middleware.stacktrace :as prod-stacktrace]
-   [qu.middleware.uri-rewrite :refer [wrap-ignore-trailing-slash]]
-   [ring.middleware
-    [mime-extensions :refer [wrap-convert-extension-to-accept-header]]
-    [nested-params :refer [wrap-nested-params]]
-    [params :refer [wrap-params]]
-    [reload :as reload]    
-    [stacktrace :as dev-stacktrace]]
-   [ring.util.response :as response]
-   [taoensso.timbre :as log]
-   [org.httpkit.server :refer [run-server]]
-   [liberator.dev :refer [wrap-trace]]
-   [com.stuartsierra.component :as component]))
+  (:require [com.stuartsierra.component :as component]
+            [liberator.dev :refer [wrap-trace]]
+            [org.httpkit.server :refer [run-server]]
+            [qu.etag :refer [wrap-etag]]
+            [qu.logging :refer [wrap-with-logging]]
+            [qu.middleware.keyword-params :refer [wrap-keyword-params]]
+            [qu.middleware.stacktrace :as prod-stacktrace]
+            [qu.middleware.uri-rewrite :refer [wrap-ignore-trailing-slash]]
+            [qu.routes :refer [create-app-routes]]
+            [ring.middleware.mime-extensions :refer [wrap-convert-extension-to-accept-header]]
+            [ring.middleware.nested-params :refer [wrap-nested-params]]
+            [ring.middleware.params :refer [wrap-params]]
+            [ring.middleware.reload :as reload]
+            [ring.middleware.stacktrace :as dev-stacktrace]
+            [ring.util.response :as response]
+            [taoensso.timbre :as log]))
 
 (defn- wrap-cors
   [handler]

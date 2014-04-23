@@ -1,13 +1,12 @@
 (ns qu.app
-  (:require
-   [qu.logging :as logging]
-   [qu.app.webserver :refer [new-webserver]]
-   [qu.app.mongo :refer [new-mongo]]
-   [qu.app.options :refer [inflate-options]]
-   [qu.cache :as qc]
-   [qu.metrics :as metrics]
-   [taoensso.timbre :as log]
-   [com.stuartsierra.component :as component]))
+  (:require [com.stuartsierra.component :as component]
+            [qu.app.mongo :refer [new-mongo]]
+            [qu.app.options :refer [inflate-options]]
+            [qu.app.webserver :refer [new-webserver]]
+            [qu.cache :as qc]
+            [qu.logging :as logging]
+            [qu.metrics :as metrics]
+            [taoensso.timbre :as log]))
 
 (defrecord Log [level file]
   component/Lifecycle

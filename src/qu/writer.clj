@@ -1,8 +1,8 @@
 (ns qu.writer
   (:require [clojure.data.csv :as csv]
             [clojure.java.io :as io]
-            [qu.query :as query]
-            [qu.data :as data]))
+            [qu.data :as data]
+            [qu.query :as query]))
 
 (defn gzip-writer
   [filename]

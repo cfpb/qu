@@ -1,7 +1,6 @@
 (ns qu.app.options
   (:require [qu.util :refer :all]
-            [schema.core :as s]
-            [schema.macros :as sm]))
+            [schema.core :as s]))
 
 (def HttpOptionsS
   {:view {:api_name s/Str

@@ -1,6 +1,6 @@
 (ns monger.key-compression
   (:require [clojure.set :refer [map-invert]]
-            digest))
+            [digest :refer [md5]]))
 
 ;; TODO Explain algorithm
 
@@ -10,7 +10,7 @@
   [trie words]
   (reduce
    (fn [trie word]
-     (let [word (digest/md5 word)]
+     (let [word (md5 word)]
        (assoc-in trie (concat word [::val]) word)))
    trie
    words))
@@ -33,7 +33,7 @@
 
 (defn- get-unique-prefix
   [field trie]
-  (let [field (digest/md5 field)
+  (let [field (md5 field)
         prefixes (get-prefixes field)]
     (select (fn [prefix] (or (= 1 (count (trie-matches trie prefix)))
                              (= prefix field)))

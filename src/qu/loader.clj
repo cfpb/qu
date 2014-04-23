@@ -2,33 +2,27 @@
   "This namespace contains all our functions for loading data from
 datasets into MongoDB. This includes parsing CSV files and
 transforming the data within."
-  (:require
-    [qu
-     [util :refer :all]
-     [data :as data]]
-    [qu.data.compression :refer [field-zip-fn]]
-    [qu.data.aggregation :refer [generate-agg-query]]
-    [qu.data.definition :as definition]
-    [qu.query.where :as where]
-    [taoensso.timbre :as log]
-    [clojure.string :as str]
-    [clojure.java.io :as io]
-    [clojure.data.csv :as csv]
-    [clojure.core.reducers :as r]
-    [cheshire.core :as json]
-    [cheshire.factory :as factory]
-    [com.stuartsierra.dependency :as dep]
-    [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
-    [drake.core :as drake]
-    [clj-time.core :refer [default-time-zone now]]
-    [clj-time.format :as time]
-    [monger
-     [core :as mongo :refer [with-db get-db]]
-     [query :as q]
-     [collection :as coll]
-     [joda-time]
-     [key-compression :refer [compression-map]]])
-  (:import [org.bson.types ObjectId]))
+  (:require [clj-time.core :refer [default-time-zone now]]
+            [clj-time.format :as time]
+            [clojure.core.reducers :as r]
+            [clojure.data.csv :as csv]
+            [clojure.java.io :as io]
+            [clojure.string :as str]
+            [com.stuartsierra.dependency :as dep]
+            [drake.core :as drake]
+            [monger.collection :as coll]
+            [monger.core :as mongo :refer [get-db with-db]]
+            [monger.key-compression :refer [compression-map]]
+            [qu.data :as data]
+            [qu.data.aggregation :refer [generate-agg-query]]
+            [qu.data.compression :refer [field-zip-fn]]
+            [qu.data.definition :as definition]
+            [qu.query.where :as where]
+            [qu.util :refer :all]
+            [taoensso.timbre :as log]))
+
+;; Needed to interact with joda-time.
+(require 'monger.joda-time)
 
 
 (def ^:dynamic *chunk-size* 256)
