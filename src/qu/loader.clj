@@ -39,7 +39,10 @@ transforming the data within."
   "Run all tasks in a Drakefile."
   [drakefile]
   (log/info "Running Drakefile" drakefile)
-  (drake/run-workflow drakefile :targetv ["=..."]))
+  (let [options (apply concat
+                       (merge drake/DEFAULT-OPTIONS
+                              {:targetv ["=..."]}))]
+    (apply drake/run-workflow drakefile options)))
 
 (defn- slice-type-for-table-type
   "The types for transforming data from the strings in the CSV file
