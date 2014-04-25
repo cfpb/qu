@@ -18,7 +18,7 @@
 (deftest test-match
   (testing "it transforms :where into :match"
     (does-contain (:mongo (match {:where "a > 2"}))
-                  {:match {:a {"$gt" 2}}})))
+                  {:match {:a {:$gt 2}}})))
 
 (deftest test-project
   (testing "it transforms :select into :project"
