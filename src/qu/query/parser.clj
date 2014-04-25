@@ -1,18 +1,11 @@
 (ns qu.query.parser
   "Parse functions for queries."
-  (:require
-   [clojure.string :as str]
-   [clj-time.core :as time]
-   [taoensso.timbre :as log]
-   [protoflex.parse :as p
-    :refer [expr eval-expr-tree
-            any attempt multi* series
-            number dq-str sq-str
-            chr chr-in
-            parens sep-by sep-by*
-            word word-in
-            string string-in
-            regex starts-with?]]))
+  (:require [clj-time.core :as time]
+            [clojure.string :as str]
+            [protoflex.parse :refer [any attempt chr chr-in dq-str
+                                     multi* number parens regex sep-by*
+                                     series sq-str starts-with?
+                                     string-in]]))
 
 (def identifier-regex #"[A-Za-z][A-Za-z0-9\-_]*")
 

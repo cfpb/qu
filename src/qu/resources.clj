@@ -6,23 +6,18 @@ the resources.
 In Liberator, returning a map from a function adds that map to the
 context passed to subsequent functions. We use that heavily in exists?
 functions to return the resource that will be presented later."
-  (:require
-   [clojure.string :as str]
-   [taoensso.timbre :as log]
-   [liberator.core :refer [defresource request-method-in]]
-   [liberator.representation :refer [ring-response]]
-   [ring.util.response :refer [response status]]
-   [protoflex.parse :refer [parse]]
-   [halresource.resource :as hal]
-   [clojurewerkz.urly.core :as url :refer [url-like]]
-   [lonocloud.synthread :as ->]
-   [clj-time.coerce :as coerce]
-   [clj-time.core :as time]
-   [qu.project :refer [project]]
-   [qu.urls :as urls]
-   [qu.data :as data]
-   [qu.views :as views]
-   [qu.query :as query :refer [params->Query]]))
+  (:require [clojure.string :as str]
+            [clojurewerkz.urly.core :refer [url-like]]
+            [digest :refer [md5]]
+            [halresource.resource :as hal]
+            [liberator.core :refer [defresource request-method-in]]
+            [liberator.representation :refer [ring-response]]
+            [lonocloud.synthread :as ->]
+            [qu.data :as data]
+            [qu.query :as query :refer [params->Query]]
+            [qu.urls :as urls]
+            [qu.views :as views]
+            [ring.util.response :refer [response status]]))
 
 (defn not-found
   ([] (not-found "Route not found"))
@@ -39,7 +34,7 @@ functions to return the resource that will be presented later."
   :method-allowed? (request-method-in :get)
   :exists? (fn [_] {:datasets (data/get-datasets)})
   :etag (fn [{:keys [datasets representation]}]
-          (digest/md5 (str (:media-type representation) (vec datasets))))
+          (md5 (str (:media-type representation) (vec datasets))))
   :handle-ok (fn [{:keys [request representation datasets]}]
                (let [resource (hal/new-resource (:uri request))
                      embedded (map (fn [dataset]
@@ -74,7 +69,7 @@ functions to return the resource that will be presented later."
                   :metadata metadata}
                  [false {:dataset dataset}])))
   :etag (fn [{:keys [dataset metadata representation]}]
-          (digest/md5 (str (:media-type representation) dataset metadata)))
+          (md5 (str (:media-type representation) dataset metadata)))
   :handle-not-found (fn [{:keys [request representation]}]
                       (let [dataset (get-in request [:params :dataset])
                             message (str "No such dataset: " dataset)]
@@ -135,7 +130,7 @@ functions to return the resource that will be presented later."
                   :cdata cdata}
                  [false {:dataset dataset :concept concept}])))
   :etag (fn [{:keys [cdata representation]}]
-          (digest/md5 (str (:media-type representation) cdata)))
+          (md5 (str (:media-type representation) cdata)))
   :handle-not-found (fn [{:keys [dataset concept request representation]}]
                       (let [message (str "No such concept " concept " in dataset " dataset)]
                         (case (:media-type representation)
@@ -171,7 +166,7 @@ functions to return the resource that will be presented later."
                   :slicedef slicedef}
                  [false {:dataset dataset :slice slice}])))
   :etag (fn [{:keys [slicedef representation]}]
-          (digest/md5 (str (:media-type representation) slicedef)))  
+          (md5 (str (:media-type representation) slicedef)))  
   :handle-not-found (fn [{:keys [dataset slice request representation]}]
                       (let [message (str "No such slice: " dataset "/" slice)]
                         (case (:media-type representation)

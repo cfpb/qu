@@ -1,33 +1,28 @@
 (ns qu.views
   "Functions to display resource data in HTML, CSV, and JSON formats."
-  (:require
-   [taoensso.timbre :as log]
-   [clojure
-    [string :as str]
-    [pprint :refer [pprint]]]
-   [clojure.java.io :as io]
-   [compojure
-    [response :refer [render]]]
-   [antlers.core :as antlers]
-   [ring.util.response :as response]
-   [clojure.data.csv :as csv]
-   [clojure.data.xml :as xml]
-   monger.json
-   [halresource.resource :as hal]
-   [qu.util :refer :all]
-   [qu.data :as data]
-   [qu.query :as query]
-   [qu.query.select :as select]
-   [qu.urls :as urls]
-   [cheshire.generate :refer [add-encoder encode-str]]
-   [cheshire.core :as json]
-   [clojurewerkz.urly.core :as url]
-   [lonocloud.synthread :as ->]
-   [liberator.representation :refer [ring-response]]
-   [org.httpkit.server :refer :all])
-  (:import [clojurewerkz.urly UrlLike]
-           [java.io ByteArrayInputStream]
-           [java.nio ByteBuffer]))
+  (:require [antlers.core :as antlers]
+            [cheshire.core :as json]
+            [cheshire.generate :refer [add-encoder encode-str]]
+            [clojure.data.csv :as csv]
+            [clojure.data.xml :as xml]
+            [clojure.java.io :as io]
+            [clojure.pprint :refer [pprint]]
+            [clojure.string :as str]
+            [clojurewerkz.urly.core :as url]
+            [halresource.resource :as hal]
+            [liberator.representation :refer [ring-response]]
+            [org.httpkit.server :refer :all]
+            [qu.data :as data]
+            [qu.query :as query]
+            [qu.urls :as urls]
+            [qu.util :refer :all]
+            [ring.util.response :as response]
+            [taoensso.timbre :as log])
+  (:import (clojurewerkz.urly UrlLike)
+           (java.nio ByteBuffer)))
+
+;; Needed to interact with Cheshire.
+(require 'monger.json)
 
 ;; Allow for encoding of UrlLike's in JSON.
 (add-encoder UrlLike encode-str)

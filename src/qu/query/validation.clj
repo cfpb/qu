@@ -1,13 +1,11 @@
 (ns qu.query.validation
   (:require [clojure.set :as set]
-            [clojure.string :as str]
             [protoflex.parse :refer [parse]]
-            [taoensso.timbre :as log]
-            [qu.util :refer [->int first-or-identity ->print]]
-            [qu.data :as data :refer [slice-columns]]
-            [qu.query.where :as where]
+            [qu.data :refer [slice-columns]]
+            [qu.query.parser :as parser]
             [qu.query.select :as select]
-            [qu.query.parser :as parser]))
+            [qu.query.where :as where]
+            [qu.util :refer [->int]]))
 
 (defn valid? [query]
   (or (not (:errors query))

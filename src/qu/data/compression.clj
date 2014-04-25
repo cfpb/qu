@@ -1,13 +1,10 @@
 (ns qu.data.compression
   "Functions for compressing and uncompressing data going into and
 coming out of Mongo."
-  (:require
-   [qu.util :refer :all]
-   [qu.metrics :as metrics]
-   [taoensso.timbre :as log]
-   [clojure.string :as str]
-   [clojure.walk :refer [postwalk]]
-   [monger.key-compression :as mzip]))
+  (:require [clojure.walk :refer [postwalk]]
+            [monger.key-compression :as mzip]
+            [qu.metrics :as metrics]
+            [qu.util :refer :all]))
 
 (defn- slice-columns
   [slicedef]

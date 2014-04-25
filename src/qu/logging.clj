@@ -1,10 +1,7 @@
 (ns qu.logging
-  (:require
-   [clojure.string :as str]
-   [qu
-    [metrics :as metrics]]
-   [clj-statsd :as sd]
-   [taoensso.timbre :as log :refer [trace debug info warn error fatal spy]]))
+  (:require [clojure.string :as str]
+            [qu.metrics :as metrics]
+            [taoensso.timbre :as log :refer [error info]]))
 
 (def ^:dynamic *log-id* "------")
 

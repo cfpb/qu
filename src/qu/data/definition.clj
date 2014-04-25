@@ -1,11 +1,9 @@
 (ns qu.data.definition
   "Functions for reading and altering dataset definitions. Includes
   schema for validation."
-  (:require [qu.util :refer :all]
-            [schema.core :as s]
-            [clojure.java.io :as io]            
-            [cheshire.core :as json]
-            [cheshire.factory :as factory]))
+  (:require [cheshire.core :as json]
+            [cheshire.factory :as factory]
+            [schema.core :as s]))
 
 (def InfoS {(s/required-key :name) s/Str
             (s/optional-key :description) s/Str

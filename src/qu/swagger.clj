@@ -1,13 +1,10 @@
 (ns qu.swagger
-  (:require
-   [clojure.string :as str :refer [capitalize]]
-   [qu.util :refer :all]
-   [qu.data :as data]
-   [qu.urls :as urls]
-   [ring.util.response :refer [not-found]]
-   [lonocloud.synthread :as ->]
-   [clojurewerkz.route-one.core :as route]
-   [clojurewerkz.urly.core :as urly :refer [url-like]]))
+  (:require [clojure.string :refer [capitalize]]
+            [clojurewerkz.route-one.core :as route]
+            [qu.data :as data]
+            [qu.urls :as urls]
+            [qu.util :refer :all]
+            [ring.util.response :refer [not-found]]))
 
 (defn- versions
   [m]

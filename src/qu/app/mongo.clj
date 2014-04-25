@@ -1,8 +1,8 @@
 (ns qu.app.mongo
-  (:require [monger.core :as mongo]
+  (:require [com.stuartsierra.component :as component]
+            [monger.core :as mongo]
             [qu.util :refer :all]
-            [taoensso.timbre :as log]
-            [com.stuartsierra.component :as component]))
+            [taoensso.timbre :as log]))
 
 (defn authenticate-mongo
   [auth]

@@ -1,7 +1,5 @@
 (ns qu.env
-  (:require [clojure.string :as str]
-            [clojure.java.io :as io]
-            [environ.core :as environ]))
+  (:require [environ.core :as environ]))
 
 (def ^{:doc "A map of environment variables."}
   env

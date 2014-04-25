@@ -1,16 +1,10 @@
 (ns qu.data.aggregation
   "This namespace contains functions for generating aggregations
 within Mongo."
-  (:require
-   [qu.data.compression :refer [compress-where field-zip-fn field-unzip-fn]]
-   [qu.data.definition :refer [indexes]]
-   [qu.util :refer :all]
-   [taoensso.timbre :as log]   
-   [com.reasonr.scriptjure :refer [cljs cljs* js js*]]
-   [lonocloud.synthread :as ->]   
-   [monger
-    [core :as mongo :refer [with-db get-db]]
-    [collection :as coll]]))
+  (:require [lonocloud.synthread :as ->]
+            [qu.data.compression :refer [compress-where field-unzip-fn
+                                         field-zip-fn]]
+            [qu.util :refer :all]))
 
 (defn- select-to-agg
   "Convert a aggregation map into the Mongo equivalent for the

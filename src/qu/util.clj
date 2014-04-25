@@ -1,8 +1,8 @@
 (ns qu.util
   "Utility functions for use throughout Qu."
-  (:require [clojure.string :as str]
+  (:require [cheshire.core :as json]
+            [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
-            [cheshire.core :as json]            
             [ring.util.response :refer [content-type]]))
 
 (defn json-response

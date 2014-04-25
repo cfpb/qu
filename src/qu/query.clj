@@ -2,15 +2,14 @@
   "Functions to build and execute queries."
   (:require [clojure.string :as str]
             [monger.query :as q]
-            [lonocloud.synthread :as ->]
-            [taoensso.timbre :as log]
-            [qu.metrics :as metrics]
+            [qu.cache :refer [query-to-key]]
             [qu.data :as data]
-            [qu.util :refer [->int ->num]]            
+            [qu.metrics :as metrics]
             [qu.query.mongo :as mongo]
             [qu.query.select :as select]
             [qu.query.validation :as validation]
-            [qu.cache :refer [query-to-key]]))
+            [qu.util :refer [->int]]
+            [taoensso.timbre :as log]))
 
 (defrecord ^{:doc "This record contains all the information about a
     query.  Much of this comes from requests to the system. The rest

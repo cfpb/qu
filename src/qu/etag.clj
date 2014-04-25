@@ -1,11 +1,9 @@
 (ns qu.etag
-  (:require [clojure.string :as str]
-            digest
-            [taoensso.timbre :as log])
+  (:require [digest :refer [md5]])
   (:import (java.io File)))
 
 (defmulti calculate-etag class)
-(defmethod calculate-etag String [s] (digest/md5 s))
+(defmethod calculate-etag String [s] (md5 s))
 (defmethod calculate-etag File
   [f]
   (str (.lastModified f) "-" (.length f)))
