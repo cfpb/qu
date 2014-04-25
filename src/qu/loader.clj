@@ -357,6 +357,7 @@ transform that data into the form we want."
   These files are loaded in parallel."
   [dataset & {:keys [delete] :or {delete true}}]
   (log/info "Loading dataset" dataset)
+  ;; TODO show better error msg on failure to find dataset
   (let [dataset (name dataset)
         definition (read-definition dataset)
         dir (:dir definition)
