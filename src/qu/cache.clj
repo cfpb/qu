@@ -57,7 +57,7 @@ the same backing database have access to the same data."
   [collection query]
   (let [limit (->int (:limit query) 0)
         offset (->int (:offset query) 0)
-        sort (:sort query {})
+        sort (get-in query [:mongo :sort] {})
         integerize #(if (and (float? %) (is-int? %)) (int %) %)
         integerize-row (fn [row]
                          (into {} (map (fn [[k v]] (vector k (integerize v))) row)))]
@@ -115,14 +115,6 @@ the same backing database have access to the same data."
   ([cache fun]
      (mongo/with-db (:database cache)
        (doseq [key (fun cache)]
-         ;; This order matters. Reasoning:
-         ;; - The existence of the collection is the how the cache looks up data.
-         ;; - Therefore, it should never be removed before work, as work is how
-         ;;   the queuing system determines whether to add something to the jobs.
-         ;;   If the data could not be found, but a job currently existed, a new one
-         ;;   would not be added.
-         ;; - The metadata is totally incidental and not used for consistency, so
-         ;;   it can be removed after the work.
          (let [metadata (coll/find-one-as-map "metadata" {:_id key})
                dataset (:dataset metadata)
                db (when dataset (mongo/get-db dataset))]
@@ -137,7 +129,9 @@ the same backing database have access to the same data."
   (let [db (:database cache)
         colls (coll/find-maps db "metadata" {} ["_id" "dataset"])]
     (doseq [{db :dataset c :_id} colls]      
-      (coll/drop (mongo/get-db db) c))))
+      (coll/drop (mongo/get-db db) c))
+    (coll/drop db "jobs")
+    (coll/drop db "metadata")))
 
 (defrecord QueryCache [database clean-fn]
   cache/CacheProtocol
