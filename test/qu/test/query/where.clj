@@ -82,10 +82,17 @@
      (mongo-eval (parse "length > 3 OR height = 4.5"))
      {"$or" [{:length {"$gt" 3}} {:height 4.5}]}
 
-     (mongo-eval (parse "length > 3 AND (height < 4.5 OR name = \"Pete\")"))
+     (mongo-eval (parse "length > 3 OR height = 4.5 OR width < 2"))
+     {"$or" [{:length {"$gt" 3}} {:height 4.5} {:width {"$lt" 2}}]}
+
+     (mongo-eval (parse "length > 3 OR height = 4.5 OR width < 2 OR name = 'Pete'"))
+     {"$or" [{:length {"$gt" 3}} {:height 4.5} {:width {"$lt" 2}} {:name "Pete"}]}
+
+     (mongo-eval (parse "length > 3 AND (height < 4.5 OR name = \"Pete\" OR width < 2)"))
      {"$and" [{:length {"$gt" 3}}
               {"$or" [{:height {"$lt" 4.5}}
-                      {:name "Pete"}]}]}))
+                      {:name "Pete"}
+                      {:width {"$lt" 2}}]}]}))
 
   (testing "handles IN comparisons"
     (does=
@@ -106,12 +113,18 @@
   (testing "handles complex comparisons with NOT and AND"
     (does=
      (mongo-eval (parse "NOT (length > 3 AND height = 4.5)"))
-     {"$or" [{:length {"$not" {"$gt" 3}}} {:height {"$ne" 4.5}}]}))
+     {"$or" [{:length {"$not" {"$gt" 3}}} {:height {"$ne" 4.5}}]}
+
+     (mongo-eval (parse "NOT (length > 3 AND height = 4.5 AND width < 2)"))
+     {"$or" [{:length {"$not" {"$gt" 3}}} {:height {"$ne" 4.5}} {:width {"$not" {"$lt" 2}}}]}))
 
   (testing "uses $nor on complex comparisons with NOT and OR"
     (does=
      (mongo-eval (parse "NOT (length > 3 OR height = 4.5)"))
-     {"$nor" [{:length {"$gt" 3}} {:height 4.5}]}))
+     {"$nor" [{:length {"$gt" 3}} {:height 4.5}]}
+
+     (mongo-eval (parse "NOT (length > 3 OR height = 4.5 OR width < 2)"))
+     {"$nor" [{:length {"$gt" 3}} {:height 4.5} {:width {"$lt" 2}}]}))
 
   (testing "NOT binds tighter than AND"
     (does=
