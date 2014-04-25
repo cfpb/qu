@@ -4,6 +4,7 @@ into a Monger query."
   (:require [clojure.string :as str]
             [clojure.walk :refer [postwalk]]
             [protoflex.parse :as p]
+            [taoensso.timbre :as log]
             [qu.query.parser :refer [where-expr]])
   (:import (java.util.regex Pattern)))
 
@@ -78,9 +79,11 @@ for use in constructing Mongo queries."
   "In Mongo queries, equality or comparison is done with one-element
   maps. mapcat turns these into 2-element vectors, so this fixes them."
   [evaled-operands]
-  (postwalk #(if (and (vector? %) (= 2 (count %)))
-                   (apply hash-map %)
-                   %)
+  (postwalk #(if (and (vector? %)
+                      (= 2 (count %))
+                      (keyword? (first %)))
+               (apply hash-map %)
+               %)
             evaled-operands))
 
 (defn mongo-eval
