@@ -93,8 +93,9 @@ a valid Monger query."
    (has-key? ast :not)
    (mongo-eval-not (:not ast))
 
+   ;; TODO explain this nonsense
    (has-key? ast :op)
-   (let [{:keys [op left right]} ast
+   (let [{:keys [op left right]} ast         
          operand-eval (fn operand-eval [operand]
                         (if (= op (:op operand))
                           (mapcat operand-eval ((juxt :left :right) operand))
