@@ -15,14 +15,14 @@ for use in constructing Mongo queries."
   (p/parse where-expr clause))
 
 (def mongo-operators
-  {:AND "$and"
-   :OR "$or"
-   :IN "$in"
-   :< "$lt"
-   :<= "$lte"
-   :> "$gt"
-   :>= "$gte"
-   :!= "$ne"})
+  {:AND :$and
+   :OR :$or
+   :IN :$in
+   :< :$lt
+   :<= :$lte
+   :> :$gt
+   :>= :$gte
+   :!= :$ne})
 
 (defn mongo-not [comparison]
   (let [ident (first (keys comparison))
@@ -32,15 +32,15 @@ for use in constructing Mongo queries."
      (map? operation)
      (let [operator (first (keys operation))
            value (first (vals operation))]
-       (if (= operator "$ne")
+       (if (= operator :$ne)
          {ident value}
-         {ident {"$not" operation}}))
+         {ident {:$not operation}}))
 
      (= (type operation) Pattern)
-     {ident {"$not" operation}}
+     {ident {:$not operation}}
 
      :default
-     {ident {"$ne" operation}})))
+     {ident {:$ne operation}})))
 
 (declare mongo-eval-not)
 
@@ -127,8 +127,8 @@ a valid Monger query."
    (has-key? ast :op)
    (let [{:keys [op left right]} ast
          mongo-op (case op
-                    :OR "$nor"
-                    :AND "$or")
+                    :OR :$nor
+                    :AND :$or)
          next-eval (case op
                      :OR mongo-eval
                      :AND mongo-eval-not)

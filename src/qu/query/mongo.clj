@@ -89,7 +89,7 @@ and :group provisions of the original query."
                          (vec element)
                          element)))
        flatten
-       (filter keyword?)))
+       (filter #(and (keyword? %) (not (= \$ (first (name %))))))))
 
 (defn- validate-match-fields [query metadata slice]
   (let [fields (match-fields (get-in query [:mongo :match]))]
