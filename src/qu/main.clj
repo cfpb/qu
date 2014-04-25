@@ -75,10 +75,19 @@
    :mongo (default-mongo-options)
    :metrics (default-metrics-options)})
 
+(defn load-config
+  "Load configuration from an outside file."
+  [config-file]
+  (binding [*read-eval* false]
+    (read-string (slurp config-file))))
+
 (defn -main
   [& args]
-  (add-shutdown-hook)
-  (component/start (new-qu-system (default-options)))
-  (when (:dev env)      
-    (log/info "Dev mode enabled")))
+  (let [config (if (= (count args) 1)
+                 (load-config (first args))
+                 (default-options))]
+    (add-shutdown-hook)
+    (component/start (new-qu-system config))
+    (when (:dev env)      
+      (log/info "Dev mode enabled"))))
 
