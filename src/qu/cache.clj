@@ -70,7 +70,8 @@ the same backing database have access to the same data."
        (.size cursor)
        (map (fn [x] (-> x
                         (conv/from-db-object true)
-                        (integerize-row))) cursor)))))
+                        (integerize-row)
+                        (dissoc :_id))) cursor)))))
 
 (defn- get-collection
   ([database query]
