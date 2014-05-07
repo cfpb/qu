@@ -13,6 +13,7 @@
             [liberator.representation :refer [ring-response]]
             [org.httpkit.server :refer :all]
             [qu.data :as data]
+            [qu.metrics :as metrics]
             [qu.query :as query]
             [qu.urls :as urls]
             [qu.util :refer :all]
@@ -357,17 +358,20 @@
   [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
+    (metrics/increment "stream.channel.opened")
     (send! ch response false)
 
     (let [ch-future (future-stream ch write-fn data)]
       (on-close ch (fn [status]
                      (log/info "Channel closed" status)
+                     (metrics/increment "stream.channel.closed")
                      (if-not (= status :server-close)
                        (future-cancel ch-future))))
       (try
         (deref ch-future)
         (catch java.util.concurrent.CancellationException ex
-          (log/info "Channel closed early: future cancelled")))))
+          (log/info "Channel closed early: future cancelled")
+          (metrics/increment "stream.channel.cancelled")))))
   response)
 
 (defn- stream-slice-query-csv
