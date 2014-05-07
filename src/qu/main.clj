@@ -64,7 +64,7 @@
   (if (:statsd-host env)
     {:provider :statsd
      :host (:statsd-host env)
-     :port (:statsd-port env)}
+     :port (->int (:statsd-port env))}
     {}))
 
 (defn default-options
