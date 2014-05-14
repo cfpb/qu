@@ -56,8 +56,8 @@
   component/Lifecycle
 
   (start [system]
-    (let [system (component/start-system system components)]      
-      (log/info "Started with settings" (str options))
+    (let [system (component/start-system system components)]
+      (log/info "Started with settings" (str (update-in options [:mongo :auth] (fn [_] str "*****"))))
       system))
   
   (stop [system]
