@@ -95,7 +95,7 @@ the same backing database have access to the same data."
         to-collection (:to aggmap)]
     (log/info "Running aggregation query:" source-database agg-query)
     (with-db source-database
-      (coll/aggregate (:from aggmap) agg-query))))
+      (mongo/command (sorted-map :aggregate (:from aggmap) :pipeline agg-query :allowDiskUse true)))))
 
 (defn touch-cache
   "Sets the created value for a query to now."
