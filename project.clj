@@ -30,7 +30,7 @@ serve their public data sets."
                  [clj-statsd "0.3.10"]                 
                  [clj-time "0.7.0"]
                  [clojurewerkz/route-one "1.1.0"]                 
-                 [clojurewerkz/urly "2.0.0-SNAPSHOT" :exclusions [com.google.guava/guava]]
+                 [clojurewerkz/urly "2.0.0-alpha5" :exclusions [com.google.guava/guava]]
                  [com.novemberain/monger "1.7.0"]
                  [com.stuartsierra/component "0.2.1"]                 
                  [com.stuartsierra/dependency "0.1.1"]
