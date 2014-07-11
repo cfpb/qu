@@ -41,7 +41,7 @@ package { "java-1.7.0-openjdk":
 }
 
 exec { 'install leiningen':
-  command => "/usr/bin/curl -sL https://raw.github.com/technomancy/leiningen/stable/bin/lein > /usr/bin/lein",
+  command => "/usr/bin/curl -sL https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein > /usr/bin/lein",
   creates => "/usr/bin/lein",
 }
 
