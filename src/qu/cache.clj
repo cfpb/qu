@@ -80,9 +80,9 @@ the same backing database have access to the same data."
      (with-db database
        (let [collection (query-to-key query)]
          (if (coll/exists? collection)
-           (do (metrics/increment "cache.hit")
+           (do (metrics/increment "cache.hit.count")
              (extract-result collection query))
-           (do (metrics/increment "cache.wait")
+           (do (metrics/increment "cache.wait.count")
                not-found))))))
 
 (defn add-to-cache
@@ -258,7 +258,7 @@ one of `query_cache` will be used."
   [cache aggmap]
   (with-db (:database cache)
     (try
-      (metrics/increment "cache.queue")
+      (metrics/increment "cache.queue.count")
       (coll/insert-and-return *work-collection* {:_id (:to aggmap)
                                                  :status "unprocessed"
                                                  :created (now)
