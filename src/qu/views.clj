@@ -358,7 +358,7 @@
   [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
-    (metrics/increment "stream.channel.opened.count")ZZ
+    (metrics/increment "stream.channel.opened.count")
     (send! ch response false)
 
     (let [ch-future (future-stream ch write-fn data)]
