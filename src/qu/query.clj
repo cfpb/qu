@@ -122,7 +122,7 @@ parameters into something we can use. Specifically, pull out the clauses."
       (cond
         (not (valid? query))
         (do
-          (metrics/increment "queries.invalid")
+          (metrics/increment "queries.invalid.count")
           [])
 
         (is-aggregation? query)

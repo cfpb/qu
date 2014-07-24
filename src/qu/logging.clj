@@ -51,7 +51,7 @@
 
 (defn- log-exception
   [req ex total]
-  (metrics/increment "request.exception")
+  (metrics/increment "request.exception.count")
   (error (log-request-msg "Exception" req) (str total "ms"))
   (error ex)
   (error "--- END STACKTRACE ---"))

@@ -358,20 +358,20 @@
   [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
-    (metrics/increment "stream.channel.opened")
+    (metrics/increment "stream.channel.opened.count")
     (send! ch response false)
 
     (let [ch-future (future-stream ch write-fn data)]
       (on-close ch (fn [status]
                      (log/info "Channel closed" status)
-                     (metrics/increment "stream.channel.closed")
+                     (metrics/increment "stream.channel.closed.count")
                      (if-not (= status :server-close)
                        (future-cancel ch-future))))
       (try
         (deref ch-future)
         (catch java.util.concurrent.CancellationException ex
           (log/info "Channel closed early: future cancelled")
-          (metrics/increment "stream.channel.cancelled")))))
+          (metrics/increment "stream.channel.cancelled.count")))))
   response)
 
 (defn- stream-slice-query-csv
