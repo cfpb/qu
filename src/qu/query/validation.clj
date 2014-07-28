@@ -133,16 +133,36 @@
 (defn- validate-integer
   [query clause]
   (let [val (clause query)]
-    (if (integer? val)
-      query
-      (try
-        (let [_ (cond
-                 (integer? val) val
-                 (nil? val) 0
-                 :default (Integer/parseInt val))]
-          query)
-        (catch NumberFormatException e
-          (add-error query clause "Please use an integer."))))))
+     (if (integer? val)
+       query
+        (try 
+          (let [_ (cond   ;begin first statement in try
+                   (integer? val) val
+                    (nil? val) 0
+                    :default (Integer/parseInt val))]
+            query)
+          (catch NumberFormatException e;
+           (add-error query clause "Please use an integer."))))))
+
+(defn- validate-intsize
+  [query clause]
+  (let [val (clause query)]
+  (if (clojure.string/blank? val) (let [val 0] query)
+    (try
+      (if (and (integer? (Integer/parseInt val)) (> 10000 (Integer/parseInt val)))
+        query
+        (if (and (integer? (Integer/parseInt val)) (< 10000 (Integer/parseInt val)))
+          (add-error query clause "Offset must be < 10000.")
+          (try
+          (let [_ (cond
+                   (integer? val) val
+                   (nil? val) 0
+                   :default (Integer/parseInt val))]
+           query)
+            (catch NumberFormatException e;
+              (add-error query clause "Please use an integer.")))))
+      (catch NumberFormatException e;
+        (add-error query clause "Please use an integer."))))))
 
 (defn- validate-max-limit
   [query max]
@@ -157,7 +177,7 @@
 
 (defn- validate-offset
   [query]
-  (validate-integer query :offset))
+  (validate-intsize query :offset))
 
 (defn validate
   "Check the query for any errors."
