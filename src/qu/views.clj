@@ -50,7 +50,7 @@
 
 (defn- write-csv [data]
   (with-out-str (csv/write-csv *out* data))
-  (flush)
+  (flush))
 
 (defn slice-html
   [view-map]
