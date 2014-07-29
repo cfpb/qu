@@ -32,6 +32,23 @@ package { "npm":
   require => [Yumrepo["epel"], Package["nodejs"]],
 }
 
+package { "unzip":
+  ensure => present,
+}
+
+package { "p7zip":
+  ensure => present,
+  require => Yumrepo["epel"],
+}
+
+file { "/usr/bin/7z":
+  ensure => link,
+  target => "/usr/bin/7za",
+  mode => "0755",
+  owner => "root",
+  require => Package["p7zip"],
+}
+
 package { "git":
   ensure => present,
 }

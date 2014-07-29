@@ -15,4 +15,9 @@ Vagrant.configure("2") do |config|
     puppet.manifests_path = "doc/manifests"
     puppet.manifest_file = "vagrant.pp"
   end
+
+  # Optional - expand memory limit for the virtual machine to improve performance with larger datasets
+  # config.vm.provider "virtualbox" do |v|
+  #   v.memory = 2048
+  # end
 end
