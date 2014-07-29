@@ -49,8 +49,7 @@
          (response/content-type "text/html"))))
 
 (defn- write-csv [data]
-  (with-out-str (csv/write-csv *out* data))
-  (flush))
+  (with-out-str (csv/write-csv *out* data)))
 
 (defn slice-html
   [view-map]
