@@ -133,16 +133,23 @@
 (defn- validate-integer
   [query clause]
   (let [val (clause query)]
-    (if (integer? val)
-      query
-      (try
-        (let [_ (cond
-                 (integer? val) val
-                 (nil? val) 0
-                 :default (Integer/parseInt val))]
-          query)
-        (catch NumberFormatException e
-          (add-error query clause "Please use an integer."))))))
+     (if (integer? val)
+       query
+        (try 
+          (let [_ (cond   ;begin first statement in try
+                   (integer? val) val
+                    (nil? val) 0
+                    :default (Integer/parseInt val))]
+            query)
+          (catch NumberFormatException e;
+           (add-error query clause "Please enter a number."))))))
+
+(defn- validate-max-offset
+  [query]
+  (let [offset (->int (:offset query) 0)]
+    (if (> offset 10000)
+      (add-error query :offset (str "The maximum offset is 10,000."))
+      query)))
 
 (defn- validate-max-limit
   [query max]
@@ -170,5 +177,6 @@
         validate-where
         validate-order-by
         validate-limit
-        validate-offset)
+        validate-offset
+        validate-max-offset)
     query))

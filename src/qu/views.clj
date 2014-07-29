@@ -229,10 +229,11 @@
           current-page (or (get-in resource [:properties :page]) 1)
           href (:href resource)
           limit (get-in resource [:properties :query :limit])
+          limit-total (if (> total 10000) 10000 total)
           total-pages (if (zero? limit)
                         1
-                        (+ (quot total limit)
-                           (if (zero? (rem total limit)) 0 1)))
+                        (+ (quot limit-total limit)
+                           (if (zero? (rem limit-total limit)) 0 1)))
           window (range (max 1 (- current-page window-size))
                         (inc (min total-pages (+ current-page window-size))))
           in-window? (fn [page]
@@ -250,10 +251,7 @@
                  :href (href-for-page resource 1)})
           (concat [{:page "Next"
                     :class (when (>= current-page total-pages) "disabled")
-                    :href (href-for-page resource (inc current-page))}
-                   {:page "Last"
-                    :class (when (in-window? total-pages) "disabled")
-                    :href (href-for-page resource total-pages)}])))
+                    :href (when (< current-page total-pages) (href-for-page resource (inc current-page)))}])))
     []))
 
 (defmulti slice-query (fn [format _ _] format))
@@ -358,20 +356,20 @@
   [request response data write-fn]
   (with-channel request ch
     (log/info "Channel opened")
-    (metrics/increment "stream.channel.opened")
+    (metrics/increment "stream.channel.opened.count")
     (send! ch response false)
 
     (let [ch-future (future-stream ch write-fn data)]
       (on-close ch (fn [status]
                      (log/info "Channel closed" status)
-                     (metrics/increment "stream.channel.closed")
+                     (metrics/increment "stream.channel.closed.count")
                      (if-not (= status :server-close)
                        (future-cancel ch-future))))
       (try
         (deref ch-future)
         (catch java.util.concurrent.CancellationException ex
           (log/info "Channel closed early: future cancelled")
-          (metrics/increment "stream.channel.cancelled")))))
+          (metrics/increment "stream.channel.cancelled.count")))))
   response)
 
 (defn- stream-slice-query-csv
