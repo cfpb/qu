@@ -142,26 +142,14 @@
                     :default (Integer/parseInt val))]
             query)
           (catch NumberFormatException e;
-           (add-error query clause "Please use an integer."))))))
+           (add-error query clause "Please enter a number."))))))
 
-(defn- validate-intsize
-  [query clause]
-  (let [val (clause query)]
-    (try
-      (if (and (integer? (Integer/parseInt val)) (> 10000 (Integer/parseInt val)))
-        query
-        (if (and (integer? (Integer/parseInt val)) (< 10000 (Integer/parseInt val)))
-          (add-error query clause "Offset must be < 10000.")
-          (try
-          (let [_ (cond
-                   (integer? val) val
-                   (nil? val) 0
-                   :default (Integer/parseInt val))]
-           query)
-            (catch NumberFormatException e;
-              (add-error query clause "Please use an integer.")))))
-      (catch NumberFormatException e;
-        (add-error query clause "Please use an integer.")))))
+(defn- validate-max-offset
+  [query]
+  (let [offset (->int (:offset query) 0)]
+    (if (> offset 10000)
+      (add-error query :offset (str "The maximum offset is 10,000."))
+      query)))
 
 (defn- validate-max-limit
   [query max]
@@ -176,7 +164,7 @@
 
 (defn- validate-offset
   [query]
-  (validate-intsize query :offset))
+  (validate-integer query :offset))
 
 (defn validate
   "Check the query for any errors."
@@ -189,5 +177,6 @@
         validate-where
         validate-order-by
         validate-limit
-        validate-offset)
+        validate-offset
+        validate-max-offset)
     query))
