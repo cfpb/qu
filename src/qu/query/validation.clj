@@ -142,7 +142,7 @@
                     :default (Integer/parseInt val))]
             query)
           (catch NumberFormatException e;
-           (add-error query clause "Please enter a number."))))))
+           (add-error query clause "Please use an integer."))))))
 
 (defn- validate-max-offset
   [query]
