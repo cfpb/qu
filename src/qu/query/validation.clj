@@ -144,6 +144,13 @@
         (catch NumberFormatException e
           (add-error query clause "Please use an integer."))))))
 
+(defn- validate-max-offset
+  [query]
+  (let [offset (->int (:offset query) 0)]
+    (if (> offset 10000)
+      (add-error query :offset (str "The maximum offset is 10,000."))
+      query)))
+
 (defn- validate-max-limit
   [query max]
   (let [limit (->int (:limit query) 0)]
@@ -170,5 +177,6 @@
         validate-where
         validate-order-by
         validate-limit
-        validate-offset)
+        validate-offset
+        validate-max-offset)
     query))
