@@ -1,3 +1,44 @@
+# Changelog
+
+## v1.1.3 - 2014-07-24
+
+### Added
+
+ - All incrementing metrics, such as cache hit, now end in `.count`.
+   - This will require any graphite dashboards to be updated.
+
+### Fixed
+
+ - Data loader uses `allowDiskUse` for derived slices. Without this, errors ensue. (80ebb01)
+ - Fix 404 error for lein in vagrant provisioning (0c22dd7)
+
+## v1.1.2 - 2014-06-13
+
+### Added
+ - MongoDB 2.6 now required. Aggregations now use the Mongo Aggregation Framework and no longer use MapReduce (ca9940c)
+    - Existing cached aggregations will need to be removed and recreated
+ - Liberator tracing to dev environment (efbbf5a)
+ - More integration tests (6c7b5b8)
+ - Support for new style configuration file (fc06091)
+ - Metrics around open/close/cancel stream channels (92d2840)
+
+
+### Removed
+ - Support for MongoDB 2.4. Aggregations now require MongoDB 2.6 (ca9940c)
+ - JDK 6 no longer a testing target in TravisCI (94de20b)
+ _ "_id" is no longer included in aggregation results (661120e)
+
+### Fixed
+
+ - Sorting on aggregations (1f04252)
+ - StatsD port can be passed from environment variable without validation error (92d2840)
+ - One-off error in HTML view for query (df51ed3)
+
+### Security
+
+ - DB authentication details no longer printed in logs if environment is not "DEV" (7688434)
+
+
 ## v0.9.2
 
 ### Major additions
