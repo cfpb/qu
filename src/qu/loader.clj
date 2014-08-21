@@ -299,10 +299,11 @@ transform that data into the form we want."
         fields (data/slice-columns slicedef)
         zip-fn (field-zip-fn slicedef)
         rename-map (reduce (fn [acc field]
-                             (merge acc {(zip-fn field) field})) {} fields)
+                             (merge acc {field (zip-fn field)})) {} fields)
         agg-results (mongo/command (sorted-map :aggregate from-collection :pipeline agg-query :allowDiskUse true))]
     (log/info "Aggregation for " slice agg-query)
     (log/info "Results of aggregation for" slice agg-results)
+    ;; Convert field names to compressed fields
     (coll/update slice {} {"$rename" rename-map} :multi true)))
 
 (defmethod load-slice :default
