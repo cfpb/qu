@@ -1,5 +1,19 @@
 # Changelog
 
+## v1.1.4 - 2014-08-26
+
+### Removed
+
+ - Disabled the use of large offsets, which are extremely inefficient in mongo
+   - Offset must be less than 10,000 in HTML requests (7b8d9a9)
+   - Remove the "last" button in the website pagination (ae91e39)
+
+### Fixed
+
+ - Fix loading of derived slices, which had incorrect field titles (aedd275)
+ - Drakefile for [cfpb/api](https://github.com/cfpb/api) no longer fails in Vagrant environment due to unzip/7z issues (9ecdbe6)
+ - Fixed mistake in download instructions (c55236c)
+
 ## v1.1.3 - 2014-07-24
 
 ### Added
