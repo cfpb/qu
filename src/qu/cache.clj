@@ -83,7 +83,8 @@ the same backing database have access to the same data."
            (do (metrics/increment "cache.hit.count")
              (extract-result collection query))
            (do (metrics/increment "cache.wait.count")
-               not-found))))))
+               not-found))
+        (log/info "FOUND Cached Aggregation - Id:" collection)))))
 
 (defn add-to-cache
   "Add the specified aggregation to the cache by running it through
