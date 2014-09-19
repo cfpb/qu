@@ -1,4 +1,9 @@
 # Changelog
+## v1.1.5 - 2014-09-19
+
+### Added
+
+ - Logging to print out aggregation id if use query matches pre-built aggregation. 
 
 ## v1.1.4 - 2014-08-26
 
