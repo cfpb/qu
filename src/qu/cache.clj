@@ -80,7 +80,8 @@ the same backing database have access to the same data."
      (with-db database
        (let [collection (query-to-key query)]
          (if (coll/exists? collection)
-           (do (metrics/increment "cache.hit.count")
+           (do (log/info "FOUND Aggregation - ID:" collection)
+			(metrics/increment "cache.hit.count")
              (extract-result collection query))
            (do (metrics/increment "cache.wait.count")
                not-found))))))
