@@ -79,12 +79,12 @@ the same backing database have access to the same data."
   ([database query not-found]
      (with-db database
        (let [collection (query-to-key query)]
+		(log/info "FOUND Aggregation - ID:" collection)
          (if (coll/exists? collection)
            (do (metrics/increment "cache.hit.count")
              (extract-result collection query))
            (do (metrics/increment "cache.wait.count")
-               not-found))
-        (log/info "FOUND Cached Aggregation - Id:" collection)))))
+               not-found))))))
 
 (defn add-to-cache
   "Add the specified aggregation to the cache by running it through
