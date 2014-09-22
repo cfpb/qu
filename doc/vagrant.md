@@ -7,7 +7,7 @@ With Vagrant, everything you need for Qu should be isolated on a virtual machine
 After downloading the code via git like so:
 
 ```sh
-git clone git@github.com:cfpb/qu.git
+git clone https://github.com/cfpb/qu.git
 cd qu
 ```
 
