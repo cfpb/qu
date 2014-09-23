@@ -51,8 +51,8 @@ commands:
 ```sh
 cd /vagrant/
 lein deps
-npm install -g grunt-cli bower
-npm install && bower install
+sudo npm install -g grunt-cli bower
+sudo npm install && bower install
 grunt
 ```
 
@@ -68,11 +68,23 @@ You can run `grunt` to compile the files once.
 #### Vagrant
 
 Start a VM by running `vagrant up`. Provisioning will take a few minutes.
+If you get a bower or grunt install error, try the following: 
 
+```sh
+cd /vagrant/
+sudo npm install bower
+sudo npm install -g grunt-cli
+```
 After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM. Then run:
 
 ```
 cd /vagrant
+```
+If you get a shared folder mount error, try the following: 
+
+```sh
+sudo mount -t vboxsf -o uid=`id -u vagrant`,gid=`id -g vagrant` vagrant /vagrant
+
 ```
 
 to change the working directory to the Qu codebase.
