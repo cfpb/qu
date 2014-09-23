@@ -49,7 +49,7 @@ expanded into a directory (which we will call "qu"), run the following
 commands:
 
 ```sh
-cd qu
+cd /vagrant/
 lein deps
 npm install -g grunt-cli bower
 npm install && bower install
