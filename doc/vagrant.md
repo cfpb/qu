@@ -28,6 +28,27 @@ cd /vagrant
 
 which will put you into a shell on the virtual machine in the Qu working directory. All other commands in this documentation are run on the virtual machine in this directory.
 
+After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM. Then run:
+
+```
+cd /vagrant
+```
+to change the working directory to the Qu codebase.
+
+If you get a bower or grunt install error, try the following from inside your vagrant box: 
+
+```sh
+cd /vagrant/
+sudo npm install bower
+sudo npm install -g grunt-cli
+```
+
+If you get a shared folder mount error, try the following: 
+
+```sh
+sudo mount -t vboxsf -o uid=`id -u vagrant`,gid=`id -g vagrant` vagrant /vagrant
+```
+
 
 ## Front-end assets
 
