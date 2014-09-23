@@ -137,6 +137,14 @@ HTTP_PORT=3000
 HTTP_THREADS=4
 ```
 
+You can also do this in the `QU_CONFIG` config file:
+
+```clojure
+{ :http-ip "0.0.0.0"
+:http-port 3000
+:http-threads 50 }
+```
+
 #### MongoDB
 
 In development mode, the application will connect to your local MongoDB server. In production, or if you want to connect to a different Mongo server in dev, you will have to specify the Mongo host and port.
@@ -148,12 +156,25 @@ MONGO_HOST=192.168.21.98
 MONGO_PORT=27017
 ```
 
-If you prefer to connect via a URI, use `MONGO_URI`.
-
-If you need to connect to several servers to read from multiple replica sets, set specific Mongo options, or authenticate, you will have to set your configuration in a file as specified under `QU_PROJECT`. Your configuration should look like the following:
+You can also do this in the `QU_CONFIG` config file:
 
 ```clojure
-{ ;; Set a vector of vectors, each made up of the IP address and port.
+{ :mongo-host "192.168.21.98"
+:mongo-port 27017 }
+```
+
+If you prefer to connect via a URI, use `MONGO_URI`.
+
+If you need to connect to several servers to read from multiple replica sets, set specific Mongo options, or authenticate, you will have to set your configuration in a file as specified under `QU_CONFIG`. Your configuration should look like the following:
+
+```clojure
+{
+  ;; General settings
+  :http-ip "0.0.0.0"
+  :http-port 3000
+  :http-threads 50
+
+  ;; Set a vector of vectors, each made up of the IP address and port.
   :mongo-hosts [["127.0.0.1" 27017] ["192.168.1.1" 27017]]
   
   ;; Mongo options should be in a map.
@@ -166,7 +187,11 @@ If you need to connect to several servers to read from multiple replica sets, se
   ;; "dbAdminAnyDatabase" as well.
   ;; If you choose not to have a user on the admin database, you will need a user for every dataset
   ;; and for the "metadata" database.
-  :mongo-auth {:admin ["admin" "s3cr3t"]}
+  :mongo-auth {
+    :admin ["admin-user" "s3cr3t"]
+    :slicename ["admin-user" "s3cr3t"]
+    :metadata ["admin-user" "s3cr3t"]
+    :query_cache ["admin-user" "s3cr3t"]}
 }
 ```
 
