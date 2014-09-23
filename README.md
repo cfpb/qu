@@ -80,11 +80,11 @@ After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM.
 ```
 cd /vagrant
 ```
+
 If you get a shared folder mount error, try the following: 
 
 ```sh
 sudo mount -t vboxsf -o uid=`id -u vagrant`,gid=`id -g vagrant` vagrant /vagrant
-
 ```
 
 to change the working directory to the Qu codebase.
