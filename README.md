@@ -65,30 +65,6 @@ grunt watch
 
 You can run `grunt` to compile the files once.
 
-#### Vagrant
-
-Start a VM by running `vagrant up`. Provisioning will take a few minutes.
-After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM. Then run:
-
-```
-cd /vagrant
-```
-to change the working directory to the Qu codebase.
-
-If you get a bower or grunt install error, try the following: 
-
-```sh
-cd /vagrant/
-sudo npm install bower
-sudo npm install -g grunt-cli
-```
-
-If you get a shared folder mount error, try the following: 
-
-```sh
-sudo mount -t vboxsf -o uid=`id -u vagrant`,gid=`id -g vagrant` vagrant /vagrant
-```
-
 #### Clojure
 
 To start a Clojure REPL to work with the software, run:
