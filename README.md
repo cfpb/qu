@@ -49,10 +49,10 @@ expanded into a directory (which we will call "qu"), run the following
 commands:
 
 ```sh
-cd qu
+cd /vagrant/
 lein deps
-npm install -g grunt-cli bower
-npm install && bower install
+sudo npm install -g grunt-cli bower
+sudo npm install && bower install
 grunt
 ```
 
@@ -64,18 +64,6 @@ grunt watch
 ```
 
 You can run `grunt` to compile the files once.
-
-#### Vagrant
-
-Start a VM by running `vagrant up`. Provisioning will take a few minutes.
-
-After a VM is started, you should be able to run `vagrant ssh` to SSH to the VM. Then run:
-
-```
-cd /vagrant
-```
-
-to change the working directory to the Qu codebase.
 
 #### Clojure
 
