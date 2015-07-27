@@ -151,10 +151,12 @@ transform that data into the form we want."
   close the CSV. Therefore, this can suck up a lot of memory
   and is only recommended for small CSV files."
   [file]
-  (with-open [in-file (io/reader (io/resource file))]
-    (let [data (csv/read-csv in-file)
-          headers (map keyword (first data))]
-      (map (partial zipmap headers) (doall (rest data))))))
+  (let [res (io/resource file)]
+    (assert res (str file " should exist but does not"))
+    (with-open [in-file (io/reader res)]
+      (let [data (csv/read-csv in-file)
+            headers (map keyword (first data))]
+        (map (partial zipmap headers) (doall (rest data)))))))
 
 (defn- read-table
   [table definition]
