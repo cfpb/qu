@@ -1,4 +1,11 @@
 # Changelog
+## v1.1.6 - 2015-07-27
+
+### Added
+
+ - Logging to print out raw result of aggregation
+ - For data load, add assertion that .csv file exists before processing
+ 
 ## v1.1.5 - 2014-09-19
 
 ### Added

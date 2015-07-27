@@ -3,9 +3,8 @@
 (def git-commit (or (System/getenv "GIT_COMMIT")
                     (System/getenv "TRAVIS_COMMIT")))
 
-(defproject qu/qu-core "1.1.5"
-  :description "qu is an **in-progress** data platform created by the CFPB to
-serve their public data sets."
+(defproject qu/qu-core "1.1.6"
+  :description "qu is a data platform created by the CFPB to serve their public data sets."
   :license {:name "Public Domain"}
   :scm {:name "git"
         :url "https://github.com/cfpb/qu.git"}
