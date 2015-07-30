@@ -27,6 +27,7 @@
 (deftest ^:integration test-json
   (testing "it returns a content-type of application/json"
     (let [resp (GET "/data/integration_test/slice/incomes.json")]
+      (print "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "application/json;charset=UTF-8"}))))
@@ -34,6 +35,7 @@
 (deftest ^:integration test-jsonp
   (testing "it uses the callback we supply"
     (let [resp (GET "/data/integration_test/slice/incomes.jsonp?$callback=foo")]
+      (print "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/javascript;charset=UTF-8"})
@@ -41,6 +43,7 @@
 
   (testing "it uses 'callback' by default"
     (let [resp (GET "/data/integration_test/slice/incomes.jsonp")]
+      (print "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/javascript;charset=UTF-8"})
