@@ -9,6 +9,7 @@
 (deftest ^:integration test-query-slice-with-no-params
   (testing "it returns successfully as text/html"
     (let [resp (GET "/data/integration_test/slice/incomes")]
+      (print "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/html;charset=UTF-8" "Vary" "Accept"}))))
