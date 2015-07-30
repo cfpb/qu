@@ -9,7 +9,7 @@
 (deftest ^:integration test-query-slice-with-no-params
   (testing "it returns successfully as text/html"
     (let [resp (GET "/data/integration_test/slice/incomes")]
-      (print "RESPONSE" resp)
+      (println "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/html;charset=UTF-8" "Vary" "Accept"}))))
@@ -27,7 +27,7 @@
 (deftest ^:integration test-json
   (testing "it returns a content-type of application/json"
     (let [resp (GET "/data/integration_test/slice/incomes.json")]
-      (print "RESPONSE" resp)
+      (println "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "application/json;charset=UTF-8"}))))
@@ -35,7 +35,7 @@
 (deftest ^:integration test-jsonp
   (testing "it uses the callback we supply"
     (let [resp (GET "/data/integration_test/slice/incomes.jsonp?$callback=foo")]
-      (print "RESPONSE" resp)
+      (println "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/javascript;charset=UTF-8"})
@@ -43,7 +43,7 @@
 
   (testing "it uses 'callback' by default"
     (let [resp (GET "/data/integration_test/slice/incomes.jsonp")]
-      (print "RESPONSE" resp)
+      (println "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "text/javascript;charset=UTF-8"})
@@ -52,6 +52,7 @@
 (deftest ^:integration test-xml
   (testing "it returns a content-type of application/xml"
     (let [resp (GET "/data/integration_test/slice/incomes.xml")]
+      (println "RESPONSE" resp)
       (does= (:status resp) 200)
       (does-contain (:headers resp)
                     {"Content-Type" "application/xml;charset=UTF-8"}))))
