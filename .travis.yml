@@ -1,8 +1,10 @@
 language: clojure
 sudo: false
-lein: lein2
-script: lein2 inttest
+lein: lein
+script: lein inttest
 jdk:
   - oraclejdk7
+  - oraclejdk8
   - openjdk7
+  - openjdk8
 
