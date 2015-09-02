@@ -10,15 +10,11 @@ layout: default
 In order to install and use _qu_, you need the following languages and
 tools installed:
 
-* [Java][]
-* [Node.js][]
-* [Leiningen][]
-* [MongoDB][]
+* [Java](http://www.java.com/en/)
+* [Node.js](http://nodejs.org/)
+* [Leiningen](http://leiningen.org/)
+* [MongoDB 2.6+](http://www.mongodb.org/)
 
-[Java]: http://www.java.com/en/
-[Node.js]: http://nodejs.org/
-[Leiningen]: http://leiningen.org/
-[MongoDB]: http://www.mongodb.org/
 
 ### Setup
 

@@ -4,19 +4,12 @@ published: true
 layout: default
 ---
 
-This roadmap is provisional and pre-decisional. It may change at any time, but reflects current plans.
+This roadmap is provisional and pre-decisional.
 
-## Recent Changes
-
-* Turned Qu into a library that can be used to create new data APIs.
-  * Added a [Leiningen template](https://github.com/qu-platform/lein-template) for creating new Qu instances.
-* Made HTML templates customizable per API.
-
-## Near Future
+## Possibilities
 
 * Allow for pluggable data sources
   * MongoDB
-    - MongoDB 2.6 - move back to aggregation framework
     - MongoDB with compression vs without compression
   * Postgres
   * In-memory
@@ -28,9 +21,6 @@ This roadmap is provisional and pre-decisional. It may change at any time, but r
   * All of these are currently supported, but we want to make them pluggable.
 * Have VMs available for download to try out Qu.
 * Create a publicly available deployment strategy guide.
-
-## Next Steps
-
 * Data loading improvements
   * Simplify data definition format
   * Allow for incremental data loads
@@ -40,9 +30,6 @@ This roadmap is provisional and pre-decisional. It may change at any time, but r
   * Track usage and hot queries
   * Add new datasets through dashboard
   * Identify useful indexes based on query logs
-
-## Possibilities
-
 * API keys
   * Rate limiting
   * Data access controls
