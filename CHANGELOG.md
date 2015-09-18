@@ -1,4 +1,10 @@
 # Changelog
+## v1.1.7 - 2015-09-18
+
+### Added
+
+ - Do not escape html in dataset description text when browsing the html api
+ 
 ## v1.1.6 - 2015-07-27
 
 ### Added
