@@ -70,6 +70,7 @@ file { "/usr/bin/lein":
 }
 
 exec { 'install bower':
+  timeout => 1800,
   command => "/usr/bin/npm install -g bower",
   creates => "/usr/bin/bower",
   require => Package["npm"],
