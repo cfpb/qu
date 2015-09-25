@@ -83,5 +83,6 @@ exec { 'install grunt':
 }
 
 service { "iptables":
-  ensure => "stopped"
+  ensure => "stopped",
+  enable => false,
 }
