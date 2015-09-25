@@ -74,7 +74,6 @@ exec { 'install bower':
   command => "/usr/bin/npm install -g bower",
   creates => "/usr/bin/bower",
   require => Package["npm"],
-  timeout => 600,
 }
 
 exec { 'install grunt':
