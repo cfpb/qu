@@ -1,7 +1,7 @@
 language: clojure
 sudo: false
 lein: lein
-script: lein inttest
+script: lein do classpath, inttest
 jdk:
   - oraclejdk7
   - oraclejdk8
