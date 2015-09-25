@@ -53,7 +53,7 @@ package { "git":
   ensure => present,
 }
 
-package { "java-1.7.0-openjdk":
+package { "java-1.8.0-openjdk":
   ensure => present,
 }
 
@@ -73,6 +73,7 @@ exec { 'install bower':
   command => "/usr/bin/npm install -g bower",
   creates => "/usr/bin/bower",
   require => Package["npm"],
+  timeout => 600,
 }
 
 exec { 'install grunt':
