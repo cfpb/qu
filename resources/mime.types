@@ -1,0 +1,84 @@
+application/atom+xml				atom
+application/docbook+xml				dbk docbook
+application/epub+zip				epub
+application/java-archive			jar
+application/java-vm				class
+application/json            json
+application/jsonml+json				jsonml
+application/mathml+xml				mathml
+application/msword				doc dot
+application/pdf             pdf
+application/pgp-encrypted			pgp
+application/postscript      ps
+application/rdf+xml         rdf
+application/rsd+xml				rsd
+application/rss+xml				rss
+application/rss+xml         rss
+application/rtf					rtf
+application/vnd.amazon.ebook			azw
+application/vnd.android.package-archive		apk
+application/vnd.apple.installer+xml		mpkg
+application/vnd.google-earth.kml+xml		kml
+application/vnd.ms-excel			xls xlm xla xlc xlt xlw
+application/vnd.ms-powerpoint			ppt pps pot
+application/wsdl+xml				wsdl
+application/x-7z-compressed			7z
+application/x-apple-diskimage			dmg
+application/x-bittorrent			torrent
+application/x-bzip				bz
+application/x-bzip2				bz2 boz
+application/x-cpio				cpio
+application/x-dvi				dvi
+application/x-font-ttf				ttf ttc
+application/x-font-ttf      ttf
+application/x-font-woff				woff
+application/x-font-woff     woff
+application/x-gtar				gtar
+application/x-gzip          gz
+application/x-latex				latex
+application/x-sql				sql
+application/xml					xml xsl
+application/xml             xml xsl
+application/xml-dtd				dtd
+application/xml-dtd         dtd
+application/xop+xml         xop
+application/zip					zip
+application/zip             zip
+image/bmp					bmp
+image/cgm					cgm
+image/gif					gif
+image/gif                   gif
+image/jpeg					jpeg jpg jpe
+image/jpeg                  jpeg jpg
+image/png                   png
+image/svg+xml					svg svgz
+image/svg+xml               svg
+image/tiff					tiff tif
+image/tiff                  tiff tif
+image/vnd.adobe.photoshop			psd
+image/vnd.microsoft.icon    ico
+image/webp					webp
+text/cache-manifest				appcache
+text/calendar					ics
+text/css                    css
+text/csv                    csv
+text/html					html htm
+text/javascript             js jsonp
+text/plain					txt text conf def list log in
+text/plain                  txt md markdown mdown log text conf def list in
+text/tab-separated-values			tsv
+text/troff					t tr roff man me ms
+text/vcard                  vcard
+text/x-asm					s asm
+text/x-c					c cc cxx cpp h hh dic
+text/x-clojure    clj cljs
+text/x-fortran					f for f77 f90
+text/x-java-source				java
+text/x-nfo					nfo
+text/x-opml					opml
+text/x-pascal					p pas
+text/x-setext					etx
+text/x-sfv					sfv
+text/x-uuencode					uu
+text/x-vcalendar				vcs
+text/x-vcard					vcf
