@@ -70,7 +70,7 @@
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
-                   :embongo {:version "0.2.2"}
+                   :embongo {:version "3.0.6"}
                    :codox {:output-dir "doc/codox"
                            :src-dir-uri "https://github.com/cfpb/qu/blob/master"
                            :src-linenum-anchor-prefix "L"
