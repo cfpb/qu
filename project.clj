@@ -18,7 +18,7 @@
   :repl-options {:init-ns user
                  :timeout 600000}
   :plugins [[lein-environ "0.4.0"]
-            [lein-embongo "0.2.1"]
+            [lein-embongo "0.2.2"]
             [lein-cloverage "1.0.2"]            
             [test2junit "1.0.1"]            
             [slothcfg "1.0.1"]
@@ -70,7 +70,7 @@
              :test {:injections [(taoensso.timbre/set-level! :error)]}
              :dev {:source-paths ["dev"]
                    :env {:dev true}
-                   :embongo {:version "2.6.0"}
+                   :embongo {:version "3.0.6"}
                    :codox {:output-dir "doc/codox"
                            :src-dir-uri "https://github.com/cfpb/qu/blob/master"
                            :src-linenum-anchor-prefix "L"
