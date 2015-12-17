@@ -239,18 +239,18 @@
           in-window? (fn [page]
                        (contains? (set window) page))
           pagination (map #(hash-map :page %
-                                     :class (when (= % current-page) "active")
+                                     :disabled (= % current-page)
                                      :href (href-for-page resource %))
                           window)]
       (-> pagination
           (conj {:page "Prev"
-                 :class (when (<= current-page 1) "disabled")
+                 :disabled (<= current-page 1)
                  :href (href-for-page resource (dec current-page))})
           (conj {:page "First"
-                 :class (when (in-window? 1) "disabled")
+                 :disabled (in-window? 1)
                  :href (href-for-page resource 1)})
           (concat [{:page "Next"
-                    :class (when (>= current-page total-pages) "disabled")
+                    :disabled (>= current-page total-pages)
                     :href (when (< current-page total-pages) (href-for-page resource (inc current-page)))}])))
     []))
 
