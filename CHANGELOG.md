@@ -1,4 +1,10 @@
 # Changelog
+
+## v1.1.10 - 2015-12-29
+
+ - Disables pagination links in HTML view when they should not be clickable (43516f9)
+ - No longer sends statsd metrics for responses with 4XX status codes (37e6d8a)
+
 ## v1.1.7 - 2015-09-18
 
 ### Added
