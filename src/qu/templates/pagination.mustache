@@ -1,7 +1,12 @@
 <div class="pagination">
   <ul>
     {{#pagination}}
-      <li class="{{class}}"><a href="{{href}}">{{page}}</a></li>
+        {{#disabled}}
+            <li class="disabled"><a href="javascript:void(0)">{{page}}</a></li>
+        {{/disabled}}
+        {{^disabled}}
+            <li class="{{class}}"><a href="{{href}}">{{page}}</a></li>
+        {{/disabled}}
     {{/pagination}}
   </ul>
 </div>
