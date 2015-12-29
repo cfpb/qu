@@ -4,7 +4,7 @@ published: true
 layout: default
 ---
 
-Qu is a framework for building data APIs. It is still under heavy development and is changing rapidly.
+Qu is a framework for building data APIs.
 
 Qu was created to serve the Consumer Financial Protection Bureau's public data sets.
 
@@ -16,7 +16,7 @@ Qu serves up data stored in MongoDB. Qu provides an API that allows for rich que
 
 Qu queries are very similar to the <a href="http://dev.socrata.com/consumers/getting-started">SODA 2.0 API</a>.
     
-Data is imported into Qu using a JSON variant of <a href="https://developers.google.com/public-data/">        Google's Dataset Publishing Language</a>.
+Data is imported into Qu using a JSON variant of <a href="https://developers.google.com/public-data/">Google's Dataset Publishing Language</a>.
     
 Qu is REST-ful. Using hypermedia and response headers, it should present a fully-discoverable API to clients.
 
