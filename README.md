@@ -197,6 +197,20 @@ If you need to connect to several servers to read from multiple replica sets, se
 
 See [the Monger documentation for all available Mongo connection options](http://clojuremongodb.info/articles/connecting.html#connecting_to_mongodb_using_connection_options).
 
+#### StatsD
+
+The application can generate metrics related to its execution and send them to statsd. 
+
+However by default metrics publishing is disabled. To enable it you need to provide statsd hostname in the configuration file:
+
+```clojure
+{
+  :statsd-host "localhost"
+  ;; Standard statsd port
+  :statsd-port 8125
+}
+```
+
 #### App URL
 
 To control the HREF of the links that are created for data slices, you can set the APP_URL environment variable.
