@@ -72,6 +72,12 @@
          
     (testing "it errors if offset is not an integer string"
       (does-contain (errors (q :offset "ten")) :offset)
-      (does-not-contain (errors (q :offset "10")) :offset))))
+      (does-not-contain (errors (q :offset "10")) :offset))
+
+    (testing "it errors if page is not a positive integer string"
+      (does-contain (errors (q :page "ten")) :page)
+      (does-contain (errors (q :page "-1")) :page)
+      (does-contain (errors (q :page "0")) :page)
+      (does-not-contain (errors (q :page "10")) :page))))
 
 ;; (run-tests)

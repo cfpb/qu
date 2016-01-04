@@ -144,6 +144,15 @@
         (catch NumberFormatException e
           (add-error query clause "Please use an integer."))))))
 
+(defn- validate-positive-integer
+  [query clause]
+  (let [query (validate-integer query clause)
+        val (->int (clause query) 1)]
+    (if (>= 0 val)
+      (add-error query clause "Should be positive")
+      query)))
+
+
 (defn- validate-max-offset
   [query]
   (let [offset (->int (:offset query) 0)]
@@ -166,6 +175,11 @@
   [query]
   (validate-integer query :offset))
 
+(defn- validate-page
+  [query]
+  (validate-positive-integer query :page))
+
+
 (defn validate
   "Check the query for any errors."
   [query]
@@ -178,5 +192,6 @@
         validate-order-by
         validate-limit
         validate-offset
+        validate-page
         validate-max-offset)
     query))
