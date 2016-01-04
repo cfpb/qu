@@ -17,7 +17,8 @@ functions to return the resource that will be presented later."
             [qu.query :as query :refer [params->Query]]
             [qu.urls :as urls]
             [qu.views :as views]
-            [ring.util.response :refer [response status]]))
+            [ring.util.response :refer [response status]]
+            [qu.query.validation :as v]))
 
 (defn not-found
   ([] (not-found "Route not found"))
@@ -223,6 +224,17 @@ functions to return the resource that will be presented later."
                              :dimensions (:dimensions query)
                              :results (:data results)}))))
 
+(defn- is-html
+  [representation]
+  (= (:media-type representation)
+     "text/html"))
+
+(defn- validate-limit
+  [query representation]
+  (if (is-html representation)
+     (v/validate-max-limit query 100)
+     query))
+
 (defresource
   ^{:doc "Resource for a query on an individual slice."}
   slice-query [webserver]
@@ -249,6 +261,7 @@ functions to return the resource that will be presented later."
                      query (-> (:params request)
                                (params->Query metadata slice)
                                (query/prepare))
+                     query (validate-limit query  representation)
                      results (query/execute query)
                      resource (slice-resource webserver dataset slice request query results)
                      view-data (merge (:view webserver)
