@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.11 - 2016-02-08
+
+ - Validate `$page` argument (a44a85b)
+ 
 ## v1.1.10 - 2015-12-29
 
  - Disables pagination links in HTML view when they should not be clickable (43516f9)
