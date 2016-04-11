@@ -1,5 +1,9 @@
 # Changelog
 
+## v1.1.12 - 2016-04-08
+
+ - Lock down front-end dependencies using `npm shrinkwrap` (c962a27)
+
 ## v1.1.11 - 2016-02-08
 
  - Validate `$page` argument (a44a85b)
