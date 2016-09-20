@@ -16,8 +16,7 @@
                     :slice :county_taxes
                     :metadata metadata}
                    query))
-        errors (comp :errors v/validate)
-        limit-errors (fn [query] (:errors (v/validate-max-limit query 100)))]
+        errors (comp :errors v/validate)]
 
     (testing "it errors when it cannot parse SELECT"
       (does-contain (errors (q :select "what what")) :select))
@@ -67,14 +66,10 @@
       (does-contain (errors (q :limit "ten")) :limit)
       (does-not-contain (errors (q :limit "10")) :limit))
 
-    (testing "it errors if limit is greater than 100"
-      (does-contain (limit-errors (q :limit "101")) :limit)
-      (does-not-contain (limit-errors (q :limit "100")) :limit))
-
-    (testing "it errors if limit is less than 0"
-      (does-contain (errors (q :limit "-1")) :limit)
-      (does-not-contain (errors (q :limit "0")) :limit))
-
+    (testing "it does not error if limit is greater than 1000"
+      (does-not-contain (errors (q :limit "1001"))
+                        {:limit ["The maximum limit is 1000."]}))
+         
     (testing "it errors if offset is not an integer string"
       (does-contain (errors (q :offset "ten")) :offset)
       (does-not-contain (errors (q :offset "10")) :offset))

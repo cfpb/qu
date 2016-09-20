@@ -13,7 +13,7 @@
 
 (defn valid-field? [{:keys [metadata slice]} field]
   (let [fields (->> (slice-columns (get-in metadata [:slices (keyword slice)]))
-                     (map name)
+                     (map name)                     
                      set)
         fields (conj fields "_id")]
     (contains? fields field)))
@@ -152,14 +152,6 @@
       (add-error query clause "Should be positive")
       query)))
 
-(defn- validate-non-negative-integer
-  [query clause]
-  (let [query (validate-integer query clause)
-        val (->int (clause query) 0)]
-    (if (> 0 val)
-      (add-error query clause "Should be non-negative")
-      query)))
-
 
 (defn- validate-max-offset
   [query]
@@ -168,19 +160,16 @@
       (add-error query :offset (str "The maximum offset is 10,000."))
       query)))
 
-(defn validate-max-limit
+(defn- validate-max-limit
   [query max]
   (let [limit (->int (:limit query) 0)]
     (if (> limit max)
-      (add-error query :limit (str "The maximum HTML limit is "
-                                   max
-                                   ". The entire result set is available in CSV, JSON and XML formats."))
+      (add-error query :limit (str "The maximum limit is " max "."))
       query)))
 
 (defn- validate-limit
   [query]
-  (validate-non-negative-integer query :limit))
-
+  (validate-integer query :limit))
 
 (defn- validate-offset
   [query]

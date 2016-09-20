@@ -297,6 +297,7 @@
                 dec)
         total (get-in resource [:properties :total])
         has-data? (>= (- end start) 0)
+        has-more-data? (> data-size 100)
         pagination (create-pagination resource)
         computing (get-in resource [:properties :computing])
         computing? (->bool computing)
@@ -318,6 +319,7 @@
                           :total total
                           :pagination pagination
                           :has-data? has-data?
+                          :has-more-data? has-more-data?
                           :computing? computing?
                           :computing computing
                           :data data})]
