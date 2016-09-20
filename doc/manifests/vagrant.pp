@@ -69,6 +69,10 @@ file { "/usr/bin/lein":
   require => Exec["install leiningen"],
 }
 
+package{"nss":
+  ensure => "latest",
+}
+
 exec { 'install bower':
   timeout => 1800,
   command => "/usr/bin/npm install -g bower",
