@@ -41,9 +41,13 @@
       if (format === 'jsonp') {
           callback_container.removeClass('hide');
           $("#field-callback").prop('disabled', '');
+      } else if (format === 'html') {
+          $('#field-limit').val(100);
+          $('#field-limit').attr('disabled', 'disabled');
       } else {
           callback_container.addClass('hide');
           $("#field-callback").val('').prop('disabled', 'disabled');
+          $('#field-limit').removeAttr('disabled');
       }
     }
   };
