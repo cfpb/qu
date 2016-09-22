@@ -1,5 +1,10 @@
 # Changelog
 
+## v1.1.13 - 2016-09-22
+
+ - Frontend improvements to pagination and limits for HTML format.
+ - Fixes SSL bug when retrieving dependencies.
+
 ## v1.1.12 - 2016-04-08
 
  - Lock down front-end dependencies using `npm shrinkwrap` (c962a27)
