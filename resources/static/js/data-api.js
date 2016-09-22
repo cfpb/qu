@@ -1,11 +1,9 @@
 (function ($) {
   var $form = $("#query-form");
 
-  var buildQueryUrl = function () {
 
-    if ($form.length == 0) return;
-
-    var formVals = _($form.serializeArray())
+  var formVals = function(){
+    return _($form.serializeArray())
       .chain()
       .reject(function (field) {
         return $.trim(field.value) === "";
@@ -15,15 +13,42 @@
         return memo;
       }, {})
       .value();
+  };
 
+
+  var setFormOptions = function(){
+    // set options based on selected format
+    var fv = formVals();
+    var format = fv["$format"] || "html";
+
+    if (format === 'html') {
+        $('#field-limit').attr('disabled', 'disabled');
+        $('#field-limit').val(100);
+    } else {
+        $('#field-limit').removeAttr('disabled');
+    }
+
+    if ($('#field-callback').length > 0) {
+      var callback_container = $form.find("#field-callback").closest('.control-group');
+      if (format === 'jsonp') {
+          callback_container.removeClass('hide');
+          $("#field-callback").prop('disabled', '');
+      } else {
+          callback_container.addClass('hide');
+          $("#field-callback").val('').prop('disabled', 'disabled');
+      }
+    }
+  };
+
+
+  var buildQueryUrl = function () {
     var href = $form.data('href');
-
-    var format = formVals["$format"] || "html";
-    delete formVals["$format"];
-
+    var fv = formVals();
+    var format = fv["$format"] || "html";
+    delete fv["$format"];
     var action = href + "." + format;
 
-    var formString = _(formVals)
+    var formString = _(fv)
       .chain()
       .pairs()
       .map(function (pair) {
@@ -34,29 +59,23 @@
       .join("&");
 
     $form.attr("action", action);
-    $("#query-url").html((formString === "") ? action : action + "?" + formString)
 
-    if ($('#field-callback').length > 0) {
-      var callback_container = $form.find("#field-callback").closest('.control-group');
-      if (format === 'jsonp') {
-          callback_container.removeClass('hide');
-          $("#field-callback").prop('disabled', '');
-      } else if (format === 'html') {
-          $('#field-limit').val(100);
-          $('#field-limit').attr('disabled', 'disabled');
-      } else {
-          callback_container.addClass('hide');
-          $("#field-callback").val('').prop('disabled', 'disabled');
-          $('#field-limit').removeAttr('disabled');
-      }
-    }
+    $("#query-url").html((formString === "") ? action : action + "?" + formString)
+  };
+
+
+  var rebuildQuery = function(){
+    if ($form.length == 0) return;
+
+    setFormOptions();
+    buildQueryUrl();
   };
 
 
   $(document).ready(function () {
-    buildQueryUrl();
-    $form.on("keyup", "input[type=text]", buildQueryUrl);
-    $form.on("click", "input[type=radio]", buildQueryUrl);
+    rebuildQuery();
+    $form.on("change", "input[type=text]",  rebuildQuery);
+    $form.on("click", "input[type=radio]", rebuildQuery);
 
     $form.find('#field-select, #field-group, #field-where, #field-orderBy').typeahead({
         source: (jQuery('#typeahead-candidates').val() || '').split(','),
