@@ -1,14 +1,20 @@
 {
   "name": "data-api",
-  "version": "1.1.0",
+  "version": "1.1.1",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cfpb/qu"
+  },
+  "description": "A data platform created to serve public data sets.",
+  "license": "SEE LICENSE IN TERMS.md",
   "devDependencies": {
-    "grunt": "0.4.1",
+    "bower": "1.2.8",
+    "grunt": "1.0.1",
     "grunt-contrib-jshint": "0.1.1",
     "grunt-contrib-nodeunit": "0.1.2",
     "grunt-contrib-requirejs": "0.4.0",
-    "grunt-recess": "0.3.5",
-    "grunt-contrib-uglify": "0.1.2",
-    "grunt-contrib-watch": "0.3.1",
-    "bower": "1.2.8"
+    "grunt-contrib-uglify": "3.0.0",
+    "grunt-contrib-watch": "1.0.0",
+    "grunt-recess": "1.0.1"
   }
 }

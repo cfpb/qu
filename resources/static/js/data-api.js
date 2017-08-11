@@ -1,11 +1,9 @@
 (function ($) {
   var $form = $("#query-form");
 
-  var buildQueryUrl = function () {
 
-    if ($form.length == 0) return;
-
-    var formVals = _($form.serializeArray())
+  var formVals = function(){
+    return _($form.serializeArray())
       .chain()
       .reject(function (field) {
         return $.trim(field.value) === "";
@@ -15,26 +13,20 @@
         return memo;
       }, {})
       .value();
+  };
 
-    var href = $form.data('href');
 
-    var format = formVals["$format"] || "html";
-    delete formVals["$format"];
+  var setFormOptions = function(){
+    // set options based on selected format
+    var fv = formVals();
+    var format = fv["$format"] || "html";
 
-    var action = href + "." + format;
-
-    var formString = _(formVals)
-      .chain()
-      .pairs()
-      .map(function (pair) {
-        return pair[0] + "=" +
-          encodeURIComponent(pair[1]).replace(/%20/g,'+');
-      })
-      .value()
-      .join("&");
-
-    $form.attr("action", action);
-    $("#query-url").html((formString === "") ? action : action + "?" + formString)
+    if (format === 'html') {
+        $('#field-limit').attr('disabled', 'disabled');
+        $('#field-limit').val(100);
+    } else {
+        $('#field-limit').removeAttr('disabled');
+    }
 
     if ($('#field-callback').length > 0) {
       var callback_container = $form.find("#field-callback").closest('.control-group');
@@ -49,10 +41,41 @@
   };
 
 
-  $(document).ready(function () {
+  var buildQueryUrl = function () {
+    var href = $form.data('href');
+    var fv = formVals();
+    var format = fv["$format"] || "html";
+    delete fv["$format"];
+    var action = href + "." + format;
+
+    var formString = _(fv)
+      .chain()
+      .pairs()
+      .map(function (pair) {
+        return pair[0] + "=" +
+          encodeURIComponent(pair[1]).replace(/%20/g,'+');
+      })
+      .value()
+      .join("&");
+
+    $form.attr("action", action);
+
+    $("#query-url").html((formString === "") ? action : action + "?" + formString)
+  };
+
+
+  var rebuildQuery = function(){
+    if ($form.length == 0) return;
+
+    setFormOptions();
     buildQueryUrl();
-    $form.on("keyup", "input[type=text]", buildQueryUrl);
-    $form.on("click", "input[type=radio]", buildQueryUrl);
+  };
+
+
+  $(document).ready(function () {
+    rebuildQuery();
+    $form.on("change", "input[type=text]",  rebuildQuery);
+    $form.on("click", "input[type=radio]", rebuildQuery);
 
     $form.find('#field-select, #field-group, #field-where, #field-orderBy').typeahead({
         source: (jQuery('#typeahead-candidates').val() || '').split(','),
