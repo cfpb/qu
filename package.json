@@ -8,7 +8,7 @@
   "description": "A data platform created to serve public data sets.",
   "license": "SEE LICENSE IN TERMS.md",
   "devDependencies": {
-    "bower": "1.2.8",
+    "bower": "1.8.8",
     "grunt": "1.0.1",
     "grunt-contrib-jshint": "0.1.1",
     "grunt-contrib-nodeunit": "0.1.2",
